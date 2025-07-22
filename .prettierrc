@@ -1,0 +1,24 @@
+{
+  "bracketSameLine": false,
+  "bracketSpacing": true,
+  "importOrder": [
+    "<TYPES>",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "^src/(.*)$",
+    "",
+    "^(.|..)/(.*)$"
+  ],
+  "importOrderCaseSensitive": true,
+  "importOrderParserPlugins": ["typescript", "jsx"],
+  "importOrderTypeScriptVersion": "5.0.0",
+  "plugins": ["@ianvs/prettier-plugin-sort-imports"],
+  "printWidth": 80,
+  "quoteProps": "consistent",
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "useTabs": false
+}
