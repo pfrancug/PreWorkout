@@ -32,11 +32,11 @@ interface Message {
 }
 
 export const Chat = ({ dataset }: Props) => {
-  const apiKey = import.meta.env.VITE_API_KEY ?? null;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY ?? null;
 
   if (!apiKey) {
     throw new Error(
-      'API key is not set. Please set VITE_API_KEY in your environment variables.'
+      'API key is not set. Please set VITE_GEMINI_API_KEY in your environment variables.'
     );
   }
 

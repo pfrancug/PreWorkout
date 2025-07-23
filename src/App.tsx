@@ -1,4 +1,5 @@
 import type { IRow } from './types/types';
+import type { User } from 'firebase/auth';
 
 import { Add, DeleteSweep, Download } from '@mui/icons-material';
 import {
@@ -21,11 +22,19 @@ import {
   ToolbarButton,
   useGridApiContext,
 } from '@mui/x-data-grid';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 import { SparkChart } from './charts/SparkChart';
 import { Chat } from './components/Chat';
+import { Login } from './components/Login';
 import { columns } from './data/columns';
+import { firebaseConfig } from './firebase/config';
+
+const app = initializeApp(firebaseConfig);
+// const database = getDatabase(app);
+const auth = getAuth(app);
 
 const brand = {
   50: 'hsl(210, 100%, 95%)',
@@ -259,67 +268,147 @@ const App = () => {
     );
   };
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    // 2. Set up the onAuthStateChanged listener when the component mounts
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // 3. Update the state variable based on the listener's result
+      setCurrentUser(user);
+      setLoadingAuth(false); // Auth state has been determined
+      if (user) {
+        console.log('User state updated:', user.uid);
+      } else {
+        console.log('User state updated: logged out');
+      }
+    });
+
+    // 4. Return a cleanup function to unsubscribe when the component unmounts
+    //    This prevents memory leaks and unnecessary listeners
+    return () => unsubscribe();
+  }, []); // Empty dependency array means this effect runs once on mount
+
+  if (loadingAuth) {
+    return <div>{'Loading authentication state...'}</div>;
+  }
+
+  // const logoutUser = async () => {
+  //   try {
+  //     await signOut(auth);
+  //     console.log('User logged out successfully.');
+  //     // The onAuthStateChanged listener will detect this change and update your UI
+  //   } catch (error) {
+  //     console.error('Error logging out:', error);
+  //   }
+  // };
+
+  // if (!currentUser) {
+  //   console.error('User not authenticated. Please sign in to send messages.');
+  // }
+
+  // const handleSetData = async () => {
+  //   if (!currentUser) {
+  //     return;
+  //   }
+
+  //   const messagesRef = ref(database, 'messages');
+
+  //   try {
+  //     await push(messagesRef, {
+  //       text: 'test',
+  //       senderId: currentUser.uid,
+  //       timestamp: serverTimestamp(),
+  //       isBot: false,
+  //     });
+  //     console.log('User message sent successfully!');
+  //   } catch (error) {
+  //     console.error('Error sending user message:', error);
+  //   }
+  // };
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
 
-      <Container maxWidth={'xl'} sx={{ p: isMobile ? 2 : 3, width: '100%' }}>
-        <Grid container spacing={3}>
-          {/* ---- Chart Section ---- */}
+      {!currentUser ? <Login /> : null}
 
-          <Grid container size={12} spacing={{ xs: 2, md: 3 }}>
-            <Grid size={{ xs: 12, lg: 4 }}>
-              <SparkChart color={'primary'} data={dataSet} value={'weight'} />
-            </Grid>
+      {currentUser ? (
+        <Container maxWidth={'xl'} sx={{ p: isMobile ? 2 : 3, width: '100%' }}>
+          {/* <Button
+            fullWidth
+            onClick={handleSetData}
+            sx={{ m: 2 }}
+            variant={'outlined'}
+          >
+            {'Set Data '}
+          </Button>
 
-            <Grid size={{ xs: 6, lg: 4 }}>
-              <SparkChart color={'warning'} data={dataSet} value={'kcal'} />
-            </Grid>
+          <Button onClick={logoutUser} variant={'outlined'}>
+            {'Log Out'}
+          </Button> */}
 
-            <Grid size={{ xs: 6, lg: 4 }}>
-              <SparkChart color={'success'} data={dataSet} value={'protein'} />
-            </Grid>
-          </Grid>
+          <Grid container spacing={3}>
+            {/* ---- Chart Section ---- */}
 
-          {/* ---- Data Grid Section ---- */}
+            <Grid container size={12} spacing={{ xs: 2, md: 3 }}>
+              <Grid size={{ xs: 12, lg: 4 }}>
+                <SparkChart color={'primary'} data={dataSet} value={'weight'} />
+              </Grid>
 
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <Stack>
-              <Stack height={650} width={'100%'}>
-                <DataGrid
-                  checkboxSelection
-                  disableColumnFilter
-                  disableColumnMenu
-                  disableColumnResize
-                  showToolbar
-                  columns={columns}
-                  density={'compact'}
-                  editMode={'row'}
-                  pageSizeOptions={[14]}
-                  processRowUpdate={onRowChange}
-                  rows={dataSet ?? undefined}
-                  slots={{ toolbar: CustomToolbar }}
-                  initialState={{
-                    pagination: { paginationModel: { pageSize: 14 } },
-                    sorting: { sortModel: [{ field: 'date', sort: 'desc' }] },
-                  }}
-                  sx={{
-                    borderRadius: 4,
-                    borderWidth: 1,
-                    borderColor: (theme) => theme.palette.divider,
-                  }}
+              <Grid size={{ xs: 6, lg: 4 }}>
+                <SparkChart color={'warning'} data={dataSet} value={'kcal'} />
+              </Grid>
+
+              <Grid size={{ xs: 6, lg: 4 }}>
+                <SparkChart
+                  color={'success'}
+                  data={dataSet}
+                  value={'protein'}
                 />
+              </Grid>
+            </Grid>
+
+            {/* ---- Data Grid Section ---- */}
+
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Stack>
+                <Stack height={650} width={'100%'}>
+                  <DataGrid
+                    checkboxSelection
+                    disableColumnFilter
+                    disableColumnMenu
+                    disableColumnResize
+                    showToolbar
+                    columns={columns}
+                    density={'compact'}
+                    editMode={'row'}
+                    pageSizeOptions={[14]}
+                    processRowUpdate={onRowChange}
+                    rows={dataSet ?? undefined}
+                    slots={{ toolbar: CustomToolbar }}
+                    initialState={{
+                      pagination: { paginationModel: { pageSize: 14 } },
+                      sorting: { sortModel: [{ field: 'date', sort: 'desc' }] },
+                    }}
+                    sx={{
+                      borderRadius: 4,
+                      borderWidth: 1,
+                      borderColor: (theme) => theme.palette.divider,
+                    }}
+                  />
+                </Stack>
               </Stack>
-            </Stack>
-          </Grid>
+            </Grid>
 
-          {/* ---- Chat Section ---- */}
+            {/* ---- Chat Section ---- */}
 
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <Chat dataset={dataSet} />
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Chat dataset={dataSet} />
+            </Grid>
           </Grid>
-        </Grid>
-      </Container>
+        </Container>
+      ) : null}
     </ThemeProvider>
   );
 };
