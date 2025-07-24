@@ -26,9 +26,9 @@ interface Props {
 }
 
 interface Message {
-  role: string;
-  parts: { text: string }[];
   attachedDataset?: IRow[];
+  parts: { text: string }[];
+  role: string;
 }
 
 export const Chat = ({ dataset }: Props) => {

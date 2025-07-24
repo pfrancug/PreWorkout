@@ -4,79 +4,24 @@ import {
   AlertTitle,
   Button,
   Collapse,
-  Container,
   Divider,
   Link,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { FirebaseError, initializeApp } from 'firebase/app';
-import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  getAuth,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-} from 'firebase/auth';
 import { useState } from 'react';
 
-import { firebaseConfig } from '../firebase/config';
+import { loginUser, registerUser, signInWithGoogle } from '../firebase/auth';
 
-export const Login = () => {
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isRegister, setIsRegister] = useState(false);
+export const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const registerUser = async (email: string, password: string) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
-      console.log('User registered:', user.email);
-    } catch (error) {
-      const errorMessage = (error as FirebaseError).message;
-      setErrorMessage(errorMessage);
-    }
-  };
-
-  const loginUser = async (email: string, password: string) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
-      console.log('User logged in:', user.email);
-    } catch (error) {
-      const errorMessage = (error as FirebaseError).message;
-      setErrorMessage(errorMessage);
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log('Signed in with Google:', user.email, user.displayName);
-    } catch (error) {
-      const errorMessage = (error as FirebaseError).message;
-      setErrorMessage(errorMessage);
-    }
-  };
+  const [isRegister, setIsRegister] = useState(false);
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
 
   return (
-    <Container maxWidth={'xs'} sx={{ mt: 4 }}>
+    <Stack justifySelf={'center'} maxWidth={350} minWidth={250} width={'100%'}>
       <Typography
         gutterBottom
         sx={{ mb: 5 }}
@@ -101,7 +46,7 @@ export const Login = () => {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            loginUser(email, password);
+            loginUser({ email, password, onError: setErrorMessage });
           }}
         >
           <Stack
@@ -138,7 +83,6 @@ export const Login = () => {
 
             <Button
               fullWidth
-              onClick={() => loginUser(email, password)}
               size={'small'}
               type={'submit'}
               variant={'contained'}
@@ -149,7 +93,7 @@ export const Login = () => {
             <Divider variant={'middle'}>{'or'}</Divider>
 
             <Button
-              onClick={signInWithGoogle}
+              onClick={() => signInWithGoogle({ onError: setErrorMessage })}
               startIcon={<Google />}
               variant={'outlined'}
             >
@@ -186,7 +130,12 @@ export const Login = () => {
       ) : null}
 
       {isRegister ? (
-        <form>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            registerUser({ email, password, onError: setErrorMessage });
+          }}
+        >
           <Stack
             sx={{
               flexDirection: 'column',
@@ -221,7 +170,6 @@ export const Login = () => {
 
             <Button
               fullWidth
-              onClick={() => registerUser(email, password)}
               size={'small'}
               type={'submit'}
               variant={'contained'}
@@ -257,6 +205,6 @@ export const Login = () => {
           </Stack>
         </form>
       ) : null}
-    </Container>
+    </Stack>
   );
 };
