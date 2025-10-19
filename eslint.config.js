@@ -21,6 +21,7 @@ export default tseslint.config([
       globals: globals.browser,
     },
     plugins: { react },
+    settings: { react: { version: 'detect' } },
     rules: {
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
