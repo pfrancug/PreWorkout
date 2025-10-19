@@ -1,30 +1,36 @@
-## features
+# Diet Tracker Application
 
-- sparkline charts
-- state preservation
-- AI - implementation
-- AI - chat
-- AI - dataset attachement
-- config - export from CSV
-- page - login / register
+A modern web application for tracking diet and fitness progress, built with React, TypeScript, and Firebase.
 
-## roadmap
+## Features
 
-- config - drawer
-- config - personal API key
-- config - import from CSV
+- **Authentication** - Secure user authentication powered by Firebase
+- **Data Visualization** - Interactive charts for:
+  - Calorie tracking
+  - Protein intake
+  - Weight progress
+  - Spark trends
+- **Data Management** - Custom data table with advanced filtering and sorting
+- **Real-time Updates** - Firebase Firestore integration for live data synchronization
+- **Responsive Design** - Material UI theme with custom palette
 
-- add extra space per day to input meals and products
+## Tech Stack
 
-- menu - top nav
-- menu - side nav
-- react router
-- page - extended charts
-- page - calories calculator
-- week by week selection to display on chart
+- React + TypeScript
+- Vite for build tooling
+- Firebase (Authentication & Firestore)
+- Material UI
+- Custom charting components
 
-## to do
+## Getting Started
 
-- chat - loading state while awaing message
-- logout
-- unify breakpoints for mobile
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Set up Firebase configuration
+4. Start the development server:
+   ```
+   npm run dev
+   ```
