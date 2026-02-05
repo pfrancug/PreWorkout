@@ -17,8 +17,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Streamdown } from 'streamdown';
 
-import { CHAT_ROLES, STORAGE_KEYS } from '../constants/storage';
+import { CHAT_ROLES } from '../constants/storage';
+import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
+import {
+  clearUserMessages,
+  saveUserMessages,
+  subscribeToUserMessages,
+} from '../firebase/database';
 
 const LoadingDots = () => (
   <div className={'flex items-center gap-1 py-1'}>
@@ -45,7 +51,7 @@ interface Props {
   onClose?: () => void;
 }
 
-interface Message {
+export interface Message {
   attachedDataset?: IRow[];
   parts: { text: string }[];
   role: string;
@@ -54,6 +60,7 @@ interface Message {
 export const Chat = ({ dataset, onClose }: Props) => {
   const { t } = useTranslation();
   const { settings } = useSettings();
+  const { user } = useAuth();
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY ?? null;
 
   if (!apiKey) {
@@ -90,31 +97,24 @@ export const Chat = ({ dataset, onClose }: Props) => {
     ]);
   }, [t]);
 
-  // Load messages from local storage on initial render
+  // Subscribe to messages from Firebase for logged-in user (load only)
   useEffect(() => {
-    try {
-      const storedMessages = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
-
-      if (storedMessages) {
-        setMessages(JSON.parse(storedMessages));
-      }
-    } catch {
-      // Invalid JSON, keep welcome message
+    if (!user) {
+      return;
     }
 
-    setTimeout(() => scrollToBottom('instant'), 0);
-  }, []);
+    const unsubscribe = subscribeToUserMessages(
+      user.uid,
+      (firebaseMessages) => {
+        if (firebaseMessages.length > 0) {
+          setMessages(firebaseMessages);
+        }
+        setTimeout(() => scrollToBottom('instant'), 0);
+      },
+    );
 
-  // Save messages to local storage whenever they change
-  useEffect(() => {
-    if (messages.length > 1) {
-      localStorage.setItem(
-        STORAGE_KEYS.CHAT_MESSAGES,
-        JSON.stringify(messages),
-      );
-      scrollToBottom();
-    }
-  }, [messages]);
+    return () => unsubscribe();
+  }, [user]);
 
   const handleSubmit = async () => {
     const trimmedText = input.trim();
@@ -126,7 +126,9 @@ export const Chat = ({ dataset, onClose }: Props) => {
 
     setInput('');
     setIsAttached(false);
-    setMessages((prev) => [...prev, newUserMessage]);
+
+    const messagesWithUser = [...messages, newUserMessage];
+    setMessages(messagesWithUser);
 
     const messagesWithDataset: Message = {
       role: newUserMessage.role,
@@ -148,6 +150,12 @@ export const Chat = ({ dataset, onClose }: Props) => {
     };
     setMessages((prev) => [...prev, emptyModelMessage]);
     setIsStreaming(true);
+
+    let finalMessages: Message[] = [
+      ...messages,
+      newUserMessage,
+      emptyModelMessage,
+    ];
 
     try {
       // Build system instruction with user settings
@@ -178,28 +186,28 @@ export const Chat = ({ dataset, onClose }: Props) => {
       let fullText = '';
       for await (const chunk of stream) {
         fullText += chunk.text ?? '';
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: 'model',
-            parts: [{ text: fullText }],
-          };
-
-          return updated;
-        });
-      }
-    } catch {
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
+        const modelMessage: Message = {
           role: 'model',
-          parts: [{ text: t('chat.errorGenerating') }],
+          parts: [{ text: fullText }],
         };
-
-        return updated;
-      });
+        finalMessages = [...messages, newUserMessage, modelMessage];
+        setMessages(finalMessages);
+      }
+    } catch (error) {
+      console.error('Gemini API error:', error);
+      const errorMessage: Message = {
+        role: 'model',
+        parts: [{ text: t('chat.errorGenerating') }],
+      };
+      finalMessages = [...messages, newUserMessage, errorMessage];
+      setMessages(finalMessages);
     } finally {
       setIsStreaming(false);
+      // Save to Firebase after streaming completes
+      if (user && finalMessages.length > 1) {
+        await saveUserMessages(user.uid, finalMessages);
+      }
+      scrollToBottom();
     }
   };
 
@@ -229,7 +237,9 @@ export const Chat = ({ dataset, onClose }: Props) => {
                   variant={'ghost'}
                   onClick={() => {
                     setMessages((prev) => [prev[0]]);
-                    localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
+                    if (user) {
+                      clearUserMessages(user.uid);
+                    }
                   }}
                 >
                   <Trash2 className={'h-4 w-4'} />

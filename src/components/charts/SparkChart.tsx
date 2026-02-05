@@ -1,4 +1,3 @@
- 
 import type { IRow } from '@app-types/types';
 import type { ChartConfig } from '@components/ui/chart';
 

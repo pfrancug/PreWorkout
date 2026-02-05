@@ -1,8 +1,8 @@
 import type { UserSettings } from '../contexts/SettingsContext';
 import type { Message } from '@components/Chat';
 
-import { get, getDatabase, ref, set } from 'firebase/database';
-import { onValue, push } from 'firebase/database';
+import { get, getDatabase, ref, remove, set } from 'firebase/database';
+import { onValue } from 'firebase/database';
 
 import { app } from './config';
 
@@ -35,12 +35,24 @@ export const loadUserSettings = async (
 export const getUserMessagesRef = (userId: string) =>
   ref(database, `users/${userId}/messages`);
 
-export const saveUserMessage = async (
+export const saveUserMessages = async (
   userId: string,
-  message: Message,
+  messages: Message[],
 ): Promise<void> => {
+  // Clean messages - remove undefined values (Firebase doesn't support undefined)
+  const cleanedMessages = messages.map((msg) => ({
+    role: msg.role,
+    parts: msg.parts,
+    ...(msg.attachedDataset ? { attachedDataset: msg.attachedDataset } : {}),
+  }));
+
   const messagesRef = getUserMessagesRef(userId);
-  await push(messagesRef, message);
+  await set(messagesRef, cleanedMessages);
+};
+
+export const clearUserMessages = async (userId: string): Promise<void> => {
+  const messagesRef = getUserMessagesRef(userId);
+  await remove(messagesRef);
 };
 
 export const subscribeToUserMessages = (

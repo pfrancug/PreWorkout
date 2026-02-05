@@ -6,6 +6,10 @@
           ".read": "auth.uid == $userId",
           ".write": "auth.uid == $userId",
           ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('age').isString() && newData.child('height').isString() && newData.child('sex').isString()"
+        },
+        "messages": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId"
         }
       }
     }
