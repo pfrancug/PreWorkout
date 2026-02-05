@@ -17,7 +17,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { DataTablePagination } from './DataTablePagination';
 import { DataTableToolbar } from './DataTableToolbar';
@@ -27,6 +27,8 @@ interface Props {
   dataSet: IRow[] | null;
   setDataSet: Dispatch<SetStateAction<IRow[] | null>>;
 }
+
+const EMPTY_ARRAY: IRow[] = [];
 
 export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
   const [sorting, setSorting] = useState<SortingState>([
@@ -38,27 +40,19 @@ export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
     columnId: string;
   } | null>(null);
 
-  const editableColumns = ['date', 'weight', 'kcal', 'protein', 'fat', 'carbs'];
+  const tableData = dataSet ?? EMPTY_ARRAY;
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table works correctly without React Compiler memoization
-  const table = useReactTable({
-    data: dataSet ?? [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      rowSelection,
-    },
-    initialState: {
-      pagination: {
-        pageSize: 14,
-      },
-    },
-    meta: {
+  const tableMeta = useMemo(() => {
+    const editableColumns = [
+      'date',
+      'weight',
+      'kcal',
+      'protein',
+      'fat',
+      'carbs',
+    ];
+
+    return {
       editingCell,
       setEditingCell,
       editableColumns,
@@ -80,7 +74,28 @@ export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
           });
         });
       },
+    };
+  }, [editingCell, setDataSet]);
+
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table works correctly without React Compiler memoization
+  const table = useReactTable({
+    data: tableData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      rowSelection,
     },
+    initialState: {
+      pagination: {
+        pageSize: 14,
+      },
+    },
+    meta: tableMeta,
   });
 
   return (
@@ -113,11 +128,13 @@ export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
+                  className={'border-0'}
                   data-state={row.getIsSelected() && 'selected'}
                   key={row.id}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
+                      className={'h-10 max-h-10 overflow-hidden'}
                       key={cell.id}
                       style={{ width: cell.column.getSize() }}
                     >
@@ -130,12 +147,14 @@ export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
                 </TableRow>
               ))
             ) : (
-              <TableRow>
+              <TableRow className={'border-0'}>
                 <TableCell
                   className={'h-24 text-center'}
                   colSpan={columns.length}
                 >
-                  {'No results.'}
+                  <span className={'text-muted-foreground'}>
+                    {'No results.'}
+                  </span>
                 </TableCell>
               </TableRow>
             )}

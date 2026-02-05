@@ -14,22 +14,22 @@ import { RadioGroup, RadioGroupItem } from '@components/ui/radio-group';
 import { Save } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 import { useSettings } from '../contexts/useSettings';
 
 export const SettingsPage = () => {
   const { t } = useTranslation();
-  const { settings, updateSettings, updateField } = useSettings();
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    updateSettings(settings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
+  const { settings, saveSettings } = useSettings();
+  const [formData, setFormData] = useState<UserSettings>(settings);
 
   const handleChange = (field: keyof UserSettings, value: string) => {
-    updateField(field, value);
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    await saveSettings(formData);
+    toast.success(t('settings.savedSuccess'));
   };
 
   return (
@@ -58,7 +58,7 @@ export const SettingsPage = () => {
                 id={'name'}
                 onChange={(e) => handleChange('name', e.target.value)}
                 placeholder={t('settings.fields.namePlaceholder')}
-                value={settings.name}
+                value={formData.name}
               />
             </div>
 
@@ -68,7 +68,7 @@ export const SettingsPage = () => {
               <RadioGroup
                 className={'flex gap-4'}
                 onValueChange={(value) => handleChange('sex', value)}
-                value={settings.sex}
+                value={formData.sex}
               >
                 <div className={'flex items-center space-x-2'}>
                   <RadioGroupItem id={'sex-male'} value={'male'} />
@@ -105,7 +105,7 @@ export const SettingsPage = () => {
                   onChange={(e) => handleChange('age', e.target.value)}
                   placeholder={t('settings.fields.agePlaceholder')}
                   type={'number'}
-                  value={settings.age}
+                  value={formData.age}
                 />
               </div>
 
@@ -119,23 +119,17 @@ export const SettingsPage = () => {
                   onChange={(e) => handleChange('height', e.target.value)}
                   placeholder={t('settings.fields.heightPlaceholder')}
                   type={'number'}
-                  value={settings.height}
+                  value={formData.height}
                 />
               </div>
             </div>
 
-            <div className={'flex items-center gap-3 pt-4'}>
+            <div className={'pt-4'}>
               <Button onClick={handleSave}>
                 <Save className={'mr-2 h-4 w-4'} />
 
                 {t('settings.saveChanges')}
               </Button>
-
-              {saved && (
-                <span className={'text-sm text-green-600 dark:text-green-400'}>
-                  {t('settings.savedSuccess')}
-                </span>
-              )}
             </div>
           </CardContent>
         </Card>

@@ -1,31 +1,28 @@
-import type { IRow } from '../../types/types';
 import type { ICalculatorForm } from './types/form';
 import type { ICalculateResult } from './utils/calculate';
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { CALCULATOR_DEFAULTS, STORAGE_KEYS } from '../../constants/storage';
+import { CALCULATOR_DEFAULTS } from '../../constants/storage';
 import { useSettings } from '../../contexts/useSettings';
+import { useDataSet } from '../../hooks/useDataSet';
 import { CalculatorForm } from './components/CalculatorForm';
 import { Equation } from './components/Equation';
 import { Results } from './components/Results';
 import { calculate } from './utils/calculate';
 
-function getLastWeight(): number | null {
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEYS.DATA_SET);
-    if (!storedData) {
+export const CalculatorPage = () => {
+  const { t } = useTranslation();
+  const { settings } = useSettings();
+  const { dataSet } = useDataSet();
+
+  const lastWeight = useMemo(() => {
+    if (!dataSet || dataSet.length === 0) {
       return null;
     }
 
-    const data: IRow[] = JSON.parse(storedData).map((row: IRow) => ({
-      ...row,
-      date: new Date(row.date),
-    }));
-
-    // Sort by date descending and find first row with weight
-    const sorted = [...data].sort(
+    const sorted = [...dataSet].sort(
       (a, b) => b.date.getTime() - a.date.getTime(),
     );
     const rowWithWeight = sorted.find(
@@ -33,14 +30,7 @@ function getLastWeight(): number | null {
     );
 
     return rowWithWeight?.weight ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export function CalculatorPage() {
-  const { t } = useTranslation();
-  const { settings } = useSettings();
+  }, [dataSet]);
 
   const initialValues = useMemo<ICalculatorForm>(
     () => ({
@@ -52,10 +42,10 @@ export function CalculatorPage() {
       height: settings.height
         ? Number(settings.height)
         : CALCULATOR_DEFAULTS.HEIGHT,
-      weight: getLastWeight() ?? CALCULATOR_DEFAULTS.WEIGHT,
+      weight: lastWeight ?? CALCULATOR_DEFAULTS.WEIGHT,
       activity: CALCULATOR_DEFAULTS.ACTIVITY,
     }),
-    [settings.sex, settings.age, settings.height],
+    [settings.sex, settings.age, settings.height, lastWeight],
   );
 
   const [formValues, setFormValues] = useState<ICalculatorForm>(initialValues);
@@ -100,4 +90,4 @@ export function CalculatorPage() {
       <Results result={result} />
     </div>
   );
-}
+};

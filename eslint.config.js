@@ -32,6 +32,7 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/consistent-type-imports': 'warn',
       curly: ['warn', 'all'],
+      'func-style': ['warn', 'expression'],
       'padding-line-between-statements': [
         'warn',
         { blankLine: 'always', prev: '*', next: 'return' },

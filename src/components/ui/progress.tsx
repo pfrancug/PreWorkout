@@ -2,14 +2,14 @@ import { cn } from '@lib/utils';
 import { Progress as ProgressPrimitive } from 'radix-ui';
 import * as React from 'react';
 
-function Progress({
+const Progress = ({
   className,
   value,
   indicatorClassName,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root> & {
   indicatorClassName?: string;
-}) {
+}) => {
   return (
     <ProgressPrimitive.Root
       data-slot={'progress'}
@@ -29,6 +29,6 @@ function Progress({
       />
     </ProgressPrimitive.Root>
   );
-}
+};
 
 export { Progress };

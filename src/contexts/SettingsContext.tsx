@@ -7,10 +7,16 @@ export interface UserSettings {
   sex: 'male' | 'female' | '';
 }
 
+export interface UserPreferences {
+  sidebarOpen: boolean;
+  chatPanelOpen: boolean;
+}
+
 export interface SettingsContextValue {
   settings: UserSettings;
-  updateSettings: (settings: UserSettings) => void;
-  updateField: (field: keyof UserSettings, value: string) => void;
+  preferences: UserPreferences;
+  updatePreference: (field: keyof UserPreferences, value: boolean) => void;
+  saveSettings: (newSettings: UserSettings) => Promise<void>;
 }
 
 export const defaultSettings: UserSettings = {
@@ -18,6 +24,11 @@ export const defaultSettings: UserSettings = {
   age: '',
   height: '',
   sex: '',
+};
+
+export const defaultPreferences: UserPreferences = {
+  sidebarOpen: true,
+  chatPanelOpen: false,
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

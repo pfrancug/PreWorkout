@@ -1,4 +1,7 @@
-import type { UserSettings } from '../contexts/SettingsContext';
+import type {
+  UserPreferences,
+  UserSettings,
+} from '../contexts/SettingsContext';
 import type { Message } from '@components/Chat';
 
 import { get, getDatabase, ref, remove, set } from 'firebase/database';
@@ -27,6 +30,30 @@ export const loadUserSettings = async (
 
   if (snapshot.exists()) {
     return snapshot.val() as UserSettings;
+  }
+
+  return null;
+};
+
+export const getUserPreferencesRef = (userId: string) =>
+  ref(database, `users/${userId}/preferences`);
+
+export const saveUserPreferences = async (
+  userId: string,
+  preferences: UserPreferences,
+): Promise<void> => {
+  const preferencesRef = getUserPreferencesRef(userId);
+  await set(preferencesRef, preferences);
+};
+
+export const loadUserPreferences = async (
+  userId: string,
+): Promise<UserPreferences | null> => {
+  const preferencesRef = getUserPreferencesRef(userId);
+  const snapshot = await get(preferencesRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as UserPreferences;
   }
 
   return null;
@@ -67,6 +94,58 @@ export const subscribeToUserMessages = (
       callback(messages);
     } else {
       callback([]);
+    }
+  });
+
+  return unsubscribe;
+};
+
+// User Data (diary entries)
+export interface IRowData {
+  id: number;
+  date: string; // ISO string for Firebase storage
+  weight: number | null;
+  kcal: number | null;
+  protein: number | null;
+  fat: number | null;
+  carbs: number | null;
+}
+
+export const getUserDataRef = (userId: string) =>
+  ref(database, `users/${userId}/data`);
+
+export const saveUserData = async (
+  userId: string,
+  data: IRowData[],
+): Promise<void> => {
+  const dataRef = getUserDataRef(userId);
+  await set(dataRef, data);
+};
+
+export const loadUserData = async (
+  userId: string,
+): Promise<IRowData[] | null> => {
+  const dataRef = getUserDataRef(userId);
+  const snapshot = await get(dataRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as IRowData[];
+  }
+
+  return null;
+};
+
+export const subscribeToUserData = (
+  userId: string,
+  callback: (data: IRowData[] | null) => void,
+): (() => void) => {
+  const dataRef = getUserDataRef(userId);
+  const unsubscribe = onValue(dataRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      callback(Array.isArray(data) ? data : Object.values(data));
+    } else {
+      callback(null);
     }
   });
 

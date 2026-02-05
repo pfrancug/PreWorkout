@@ -7,6 +7,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@components/ui/sidebar';
+import { Toaster } from '@components/ui/sonner';
 import { MessageSquare } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,35 +26,38 @@ import {
   RightPanel,
   RightPanelProvider,
   RightPanelTrigger,
-  useRightPanel,
 } from './components/RightPanel';
 import { AuthProvider } from './contexts/AuthProvider';
+import { DataProvider } from './contexts/DataContext';
 import { SettingsProvider } from './contexts/SettingsProvider';
 import { useAuth } from './contexts/useAuth';
+import { useSettings } from './contexts/useSettings';
 import { useDataSet } from './hooks/useDataSet';
+import { cn } from './lib/utils';
 import { CalculatorPage } from './pages/Calculator';
+import { ChatPage } from './pages/ChatPage';
 import { DiaryPage } from './pages/DiaryPage';
 import { LoginPage } from './pages/LoginPage';
 import { MainPage } from './pages/MainPage';
 import { SettingsPage } from './pages/SettingsPage';
 
-function ChatPanel({ dataset }: { dataset: IRow[] | null }) {
-  const { setIsOpen } = useRightPanel();
-
-  return <Chat dataset={dataset} onClose={() => setIsOpen(false)} />;
-}
+const ChatPanel = ({ dataset }: { dataset: IRow[] | null }) => {
+  return <Chat dataset={dataset} />;
+};
 
 const pageTitleKeys: Record<string, string> = {
   '/': 'nav.dashboard',
   '/dashboard': 'nav.dashboard',
   '/diary': 'nav.diary',
   '/calculator': 'nav.calculator',
+  '/chat': 'nav.chat',
   '/settings': 'nav.settings',
 };
 
-function AppRoutes() {
+const AppRoutes = () => {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
+  const { preferences, updatePreference } = useSettings();
   const location = useLocation();
   const { dataSet } = useDataSet();
 
@@ -88,7 +92,10 @@ function AppRoutes() {
 
   return (
     <RightPanelProvider>
-      <SidebarProvider>
+      <SidebarProvider
+        onOpenChange={(open) => updatePreference('sidebarOpen', open)}
+        open={preferences.sidebarOpen}
+      >
         <AppSidebar />
 
         <SidebarInset>
@@ -100,9 +107,29 @@ function AppRoutes() {
             <Separator className={'mr-2 h-4'} orientation={'vertical'} />
 
             <span className={'text-sm font-medium'}>{pageTitle}</span>
+
+            <div className={'ml-auto'}>
+              <RightPanelTrigger disabled={location.pathname === '/chat'}>
+                <Button
+                  className={'-mr-1 size-7'}
+                  disabled={location.pathname === '/chat'}
+                  size={'icon'}
+                  variant={'ghost'}
+                >
+                  <MessageSquare className={'h-4 w-4'} />
+                </Button>
+              </RightPanelTrigger>
+            </div>
           </header>
 
-          <div className={'flex-1 overflow-auto p-4'}>
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 flex-col',
+              location.pathname === '/chat'
+                ? 'overflow-hidden'
+                : 'overflow-auto p-4',
+            )}
+          >
             <Routes>
               <Route element={<MainPage />} path={'/'} />
 
@@ -112,6 +139,8 @@ function AppRoutes() {
 
               <Route element={<CalculatorPage />} path={'/calculator'} />
 
+              <Route element={<ChatPage />} path={'/chat'} />
+
               <Route element={<SettingsPage />} path={'/settings'} />
 
               <Route element={<Navigate replace to={'/'} />} path={'/login'} />
@@ -119,24 +148,15 @@ function AppRoutes() {
               <Route element={<Navigate replace to={'/'} />} path={'*'} />
             </Routes>
           </div>
-
-          <RightPanelTrigger className={'fixed right-6 bottom-6'}>
-            <Button
-              className={'h-14 w-14 rounded-full shadow-lg'}
-              size={'icon'}
-            >
-              <MessageSquare className={'h-6 w-6'} />
-            </Button>
-          </RightPanelTrigger>
         </SidebarInset>
 
-        <RightPanel>
+        <RightPanel suppressed={location.pathname === '/chat'}>
           <ChatPanel dataset={dataSet} />
         </RightPanel>
       </SidebarProvider>
     </RightPanelProvider>
   );
-}
+};
 
 export const App = () => {
   useEffect(() => {
@@ -154,7 +174,10 @@ export const App = () => {
     <BrowserRouter>
       <AuthProvider>
         <SettingsProvider>
-          <AppRoutes />
+          <DataProvider>
+            <AppRoutes />
+            <Toaster />
+          </DataProvider>
         </SettingsProvider>
       </AuthProvider>
     </BrowserRouter>

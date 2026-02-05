@@ -25,11 +25,11 @@ interface CalculatorFormProps {
   onCalculate: () => void;
 }
 
-export function CalculatorForm({
+export const CalculatorForm = ({
   values,
   onChange,
   onCalculate,
-}: CalculatorFormProps) {
+}: CalculatorFormProps) => {
   const { t } = useTranslation();
 
   return (
@@ -138,4 +138,4 @@ export function CalculatorForm({
       </CardContent>
     </Card>
   );
-}
+};

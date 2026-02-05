@@ -25,7 +25,7 @@ export const DiaryPage = () => {
         <p className={'text-muted-foreground'}>{t('diary.description')}</p>
       </div>
 
-      <div className={'h-[650px] w-full'}>
+      <div className={'w-full'}>
         <DataTable
           columns={columns}
           dataSet={dataSet}

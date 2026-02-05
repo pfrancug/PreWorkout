@@ -1,5 +1,4 @@
 export const STORAGE_KEYS = {
-  DATA_SET: 'dataSet',
   CHAT_MESSAGES: 'chatMessages',
   USER_SETTINGS: 'userSettings',
 } as const;

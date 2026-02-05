@@ -7,7 +7,16 @@
           ".write": "auth.uid == $userId",
           ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('age').isString() && newData.child('height').isString() && newData.child('sex').isString()"
         },
+        "preferences": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId",
+          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean()"
+        },
         "messages": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId"
+        },
+        "data": {
           ".read": "auth.uid == $userId",
           ".write": "auth.uid == $userId"
         }

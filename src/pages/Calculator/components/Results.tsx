@@ -9,7 +9,7 @@ interface ResultsProps {
   result: ICalculateResult | null;
 }
 
-export function Results({ result }: ResultsProps) {
+export const Results = ({ result }: ResultsProps) => {
   const { t } = useTranslation();
 
   if (!result) {
@@ -55,4 +55,4 @@ export function Results({ result }: ResultsProps) {
       </CardContent>
     </Card>
   );
-}
+};

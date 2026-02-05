@@ -1,12 +1,30 @@
-import type { UserSettings } from './SettingsContext';
+import type { UserPreferences, UserSettings } from './SettingsContext';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-import { loadUserSettings, saveUserSettings } from '../firebase/database';
-import { defaultSettings, SettingsContext } from './SettingsContext';
+import { Loader } from '../components/Loader';
+import {
+  loadUserPreferences,
+  loadUserSettings,
+  saveUserPreferences,
+  saveUserSettings,
+} from '../firebase/database';
+import {
+  defaultPreferences,
+  defaultSettings,
+  SettingsContext,
+} from './SettingsContext';
 import { useAuth } from './useAuth';
 
-async function fetchUserSettings(userId: string | null): Promise<UserSettings> {
+const fetchUserSettings = async (
+  userId: string | null,
+): Promise<UserSettings> => {
   if (!userId) {
     return defaultSettings;
   }
@@ -14,71 +32,119 @@ async function fetchUserSettings(userId: string | null): Promise<UserSettings> {
   const firebaseSettings = await loadUserSettings(userId);
 
   return firebaseSettings ?? defaultSettings;
-}
+};
 
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
+const fetchUserPreferences = async (
+  userId: string | null,
+): Promise<UserPreferences> => {
+  if (!userId) {
+    return defaultPreferences;
+  }
+
+  const firebasePreferences = await loadUserPreferences(userId);
+
+  return firebasePreferences ?? defaultPreferences;
+};
+
+type SettingsState =
+  | { status: 'loading' }
+  | {
+      status: 'loaded';
+      settings: UserSettings;
+      preferences: UserPreferences;
+    };
+
+export const SettingsProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const { user, loading: authLoading } = useAuth();
-  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const prevUserId = useRef<string | null>(null);
+  const [state, setState] = useState<SettingsState>({ status: 'loading' });
+  const prevUserId = useRef<string | null | undefined>(undefined);
 
   // Load settings from Firebase when user changes
   useEffect(() => {
     const currentUserId = user?.uid ?? null;
 
-    // Skip if user hasn't changed
-    if (currentUserId === prevUserId.current) {
+    // Skip if user hasn't changed (but not on first run)
+    if (
+      prevUserId.current !== undefined &&
+      currentUserId === prevUserId.current
+    ) {
       return;
     }
 
     prevUserId.current = currentUserId;
 
-    let cancelled = false;
-
-    fetchUserSettings(currentUserId).then((loadedSettings) => {
-      if (!cancelled) {
-        setSettings(loadedSettings);
-        setIsLoaded(true);
-      }
+    // Reset to loading state for new user
+    startTransition(() => {
+      setState({ status: 'loading' });
     });
 
-    return () => {
-      cancelled = true;
-    };
+    Promise.all([
+      fetchUserSettings(currentUserId),
+      fetchUserPreferences(currentUserId),
+    ]).then(([loadedSettings, loadedPreferences]) => {
+      startTransition(() => {
+        setState({
+          status: 'loaded',
+          settings: loadedSettings,
+          preferences: loadedPreferences,
+        });
+      });
+    });
   }, [user]);
 
-  const updateSettings = useCallback(
-    (newSettings: UserSettings) => {
-      setSettings(newSettings);
-      if (user) {
-        saveUserSettings(user.uid, newSettings);
-      }
-    },
-    [user],
-  );
-
-  const updateField = useCallback(
-    (field: keyof UserSettings, value: string) => {
-      setSettings((prev) => {
-        const updated = { ...prev, [field]: value };
-        if (user) {
-          saveUserSettings(user.uid, updated);
+  const updatePreference = useCallback(
+    (field: keyof UserPreferences, value: boolean) => {
+      setState((prev) => {
+        if (prev.status !== 'loaded') {
+          return prev;
         }
 
-        return updated;
+        const updated = { ...prev.preferences, [field]: value };
+        if (user) {
+          saveUserPreferences(user.uid, updated);
+        }
+
+        return { ...prev, preferences: updated };
       });
     },
     [user],
   );
 
+  const saveSettings = useCallback(
+    async (newSettings: UserSettings) => {
+      if (user) {
+        await saveUserSettings(user.uid, newSettings);
+        setState((prev) => {
+          if (prev.status !== 'loaded') {
+            return prev;
+          }
+
+          return { ...prev, settings: newSettings };
+        });
+      }
+    },
+    [user],
+  );
+
   // Don't render children until auth and settings are loaded
-  if (authLoading || !isLoaded) {
-    return null;
+  if (authLoading || state.status === 'loading') {
+    return <Loader />;
   }
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, updateField }}>
+    <SettingsContext.Provider
+      value={{
+        settings: state.settings,
+        preferences: state.preferences,
+        updatePreference,
+        saveSettings,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );
-}
+};

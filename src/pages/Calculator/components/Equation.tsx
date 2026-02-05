@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { useTranslation } from 'react-i18next';
 
-export function Equation() {
+export const Equation = () => {
   const { t } = useTranslation();
 
   return (
@@ -41,4 +41,4 @@ export function Equation() {
       </CardContent>
     </Card>
   );
-}
+};

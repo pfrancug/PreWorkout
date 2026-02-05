@@ -21,7 +21,7 @@ type ChartContextProps = {
 
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
-function useChart() {
+const useChart = () => {
   const context = React.useContext(ChartContext);
 
   if (!context) {
@@ -29,9 +29,9 @@ function useChart() {
   }
 
   return context;
-}
+};
 
-function ChartContainer({
+const ChartContainer = ({
   id,
   className,
   children,
@@ -42,7 +42,7 @@ function ChartContainer({
   children: React.ComponentProps<
     typeof RechartsPrimitive.ResponsiveContainer
   >['children'];
-}) {
+}) => {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
 
@@ -65,7 +65,7 @@ function ChartContainer({
       </div>
     </ChartContext.Provider>
   );
-}
+};
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
@@ -103,7 +103,7 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-function ChartTooltipContent({
+const ChartTooltipContent = ({
   active,
   payload,
   className,
@@ -124,7 +124,7 @@ function ChartTooltipContent({
     indicator?: 'line' | 'dot' | 'dashed';
     nameKey?: string;
     labelKey?: string;
-  }) {
+  }) => {
   const { config } = useChart();
 
   const tooltipLabel = React.useMemo(() => {
@@ -255,11 +255,11 @@ function ChartTooltipContent({
       </div>
     </div>
   );
-}
+};
 
 const ChartLegend = RechartsPrimitive.Legend;
 
-function ChartLegendContent({
+const ChartLegendContent = ({
   className,
   hideIcon = false,
   payload,
@@ -269,7 +269,7 @@ function ChartLegendContent({
   Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
     hideIcon?: boolean;
     nameKey?: string;
-  }) {
+  }) => {
   const { config } = useChart();
 
   if (!payload?.length) {
@@ -314,14 +314,14 @@ function ChartLegendContent({
         })}
     </div>
   );
-}
+};
 
 // Helper to extract item config from a payload.
-function getPayloadConfigFromPayload(
+const getPayloadConfigFromPayload = (
   config: ChartConfig,
   payload: unknown,
   key: string,
-) {
+) => {
   if (typeof payload !== 'object' || payload === null) {
     return undefined;
   }
@@ -353,7 +353,7 @@ function getPayloadConfigFromPayload(
   return configLabelKey in config
     ? config[configLabelKey]
     : config[key as keyof typeof config];
-}
+};
 
 export {
   ChartContainer,

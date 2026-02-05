@@ -50,10 +50,19 @@
     "title": "Gains Buddy",
     "clearChat": "Clear chat",
     "placeholder": "Type your message...",
-    "attachDataset": "Attach dataset to message",
+    "send": "Send",
+    "attachDataset": "Data",
+    "datasetAttached": "Dataset is attached to your message",
+    "attachDatasetTooltip": "Click to attach your diary data",
     "dataAttached": "Data attached",
     "errorGenerating": "Error generating response",
-    "welcomeMessage": "Hey there! 🔥\n\nReady to crush it today?\nWeight? Calories? Meals? Let's track & win! 💪"
+    "welcomeMessage": "Hey there! 🔥\n\nReady to crush it today?\nWeight? Calories? Meals? Let's track & win! 💪",
+    "settingsAlert": {
+      "title": "Complete Your Profile",
+      "description": "Adding your details will help personalize answers and give you better recommendations.",
+      "goToSettings": "Go to Settings",
+      "skip": "Skip"
+    }
   },
   "auth": {
     "login": "Welcome back",

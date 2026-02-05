@@ -23,7 +23,6 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 import { logoutUser } from '../firebase/auth';
-import { useRightPanel } from './RightPanel';
 
 const menuItems = [
   {
@@ -41,12 +40,16 @@ const menuItems = [
     icon: Calculator,
     path: '/calculator',
   },
+  {
+    titleKey: 'nav.chat',
+    icon: MessageSquare,
+    path: '/chat',
+  },
 ];
 
-export function AppSidebar() {
+export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const { toggle: toggleChat } = useRightPanel();
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -115,14 +118,6 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleChat} tooltip={t('nav.chat')}>
-              <MessageSquare />
-
-              <span>{t('nav.chat')}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={isActive('/settings')}
@@ -150,4 +145,4 @@ export function AppSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
-}
+};

@@ -12,7 +12,7 @@ interface Props<TData> {
   table: Table<TData>;
 }
 
-export function DataTablePagination<TData>({ table }: Props<TData>) {
+export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
   return (
     <div className={'flex items-center justify-between px-2'}>
       <div className={'flex-1 text-sm text-muted-foreground'}>
@@ -79,4 +79,4 @@ export function DataTablePagination<TData>({ table }: Props<TData>) {
       </div>
     </div>
   );
-}
+};

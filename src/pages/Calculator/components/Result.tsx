@@ -15,7 +15,7 @@ const colorClasses = {
   red: 'bg-red-500',
 };
 
-export function Result({ title, calories, percentage, color }: ResultProps) {
+export const Result = ({ title, calories, percentage, color }: ResultProps) => {
   return (
     <Card>
       <CardHeader className={'pb-2'}>
@@ -43,4 +43,4 @@ export function Result({ title, calories, percentage, color }: ResultProps) {
       </CardContent>
     </Card>
   );
-}
+};
