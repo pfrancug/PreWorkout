@@ -1,3 +1,12 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@components/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -9,10 +18,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@components/ui/sidebar';
 import {
   BookOpen,
   Calculator,
+  ChevronsUpDown,
   Dumbbell,
   Home,
   LogOut,
@@ -20,8 +31,10 @@ import {
   Settings,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../contexts/useAuth';
+import { useSettings } from '../contexts/useSettings';
 import { logoutUser } from '../firebase/auth';
 
 const menuItems = [
@@ -50,6 +63,19 @@ const menuItems = [
 export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isMobile } = useSidebar();
+  const { user } = useAuth();
+  const { settings } = useSettings();
+
+  const displayName = settings.name || t('nav.anonymous');
+  const email = user?.email || '';
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -60,7 +86,7 @@ export const AppSidebar = () => {
   };
 
   return (
-    <Sidebar variant={'inset'}>
+    <Sidebar collapsible={'icon'} variant={'inset'}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -118,28 +144,93 @@ export const AppSidebar = () => {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive('/settings')}
-              tooltip={t('nav.settings')}
-            >
-              <Link to={'/settings'}>
-                <Settings />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size={'lg'}
+                  className={
+                    'data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
+                  }
+                >
+                  <Avatar className={'h-8 w-8 rounded-lg'}>
+                    <AvatarImage alt={displayName} src={settings.avatarUrl} />
 
-                <span>{t('nav.settings')}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+                    <AvatarFallback className={'rounded-lg'}>
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => logoutUser()}
-              tooltip={t('nav.logout')}
-            >
-              <LogOut />
+                  <div
+                    className={'grid flex-1 text-left text-sm leading-tight'}
+                  >
+                    <span className={'truncate font-medium'}>
+                      {displayName}
+                    </span>
 
-              <span>{t('nav.logout')}</span>
-            </SidebarMenuButton>
+                    <span className={'truncate text-xs text-muted-foreground'}>
+                      {email}
+                    </span>
+                  </div>
+
+                  <ChevronsUpDown className={'ml-auto size-4'} />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align={'end'}
+                side={isMobile ? 'bottom' : 'right'}
+                sideOffset={4}
+                className={
+                  'w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg'
+                }
+              >
+                <DropdownMenuLabel className={'p-0 font-normal'}>
+                  <div
+                    className={
+                      'flex items-center gap-2 px-1 py-1.5 text-left text-sm'
+                    }
+                  >
+                    <Avatar className={'h-8 w-8 rounded-lg'}>
+                      <AvatarImage alt={displayName} src={settings.avatarUrl} />
+
+                      <AvatarFallback className={'rounded-lg'}>
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div
+                      className={'grid flex-1 text-left text-sm leading-tight'}
+                    >
+                      <span className={'truncate font-medium'}>
+                        {displayName}
+                      </span>
+
+                      <span
+                        className={'truncate text-xs text-muted-foreground'}
+                      >
+                        {email}
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings />
+
+                  {t('nav.settings')}
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem onClick={() => logoutUser()}>
+                  <LogOut />
+
+                  {t('nav.logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

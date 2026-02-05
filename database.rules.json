@@ -5,7 +5,7 @@
         "settings": {
           ".read": "auth.uid == $userId",
           ".write": "auth.uid == $userId",
-          ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('age').isString() && newData.child('height').isString() && newData.child('sex').isString()"
+          ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('age').isString() && newData.child('height').isString() && newData.child('sex').isString() && (!newData.hasChild('avatarUrl') || newData.child('avatarUrl').isString())"
         },
         "preferences": {
           ".read": "auth.uid == $userId",

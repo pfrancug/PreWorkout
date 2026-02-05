@@ -19,7 +19,8 @@
     "calculator": "Calculator",
     "chat": "Chat",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "anonymous": "Anonymous"
   },
   "diary": {
     "title": "Food Diary",
@@ -45,6 +46,16 @@
     },
     "saveChanges": "Save Changes",
     "savedSuccess": "Settings saved successfully!",
+    "avatar": {
+      "title": "Profile Photo",
+      "description": "JPG, PNG or GIF. Will be cropped to square.",
+      "remove": "Remove photo",
+      "uploadSuccess": "Profile photo updated!",
+      "uploadError": "Failed to upload photo.",
+      "removeSuccess": "Profile photo removed.",
+      "removeError": "Failed to remove photo.",
+      "invalidType": "Please select an image file."
+    },
     "dataAccount": {
       "title": "Your Data",
       "description": "Download or import your data.",

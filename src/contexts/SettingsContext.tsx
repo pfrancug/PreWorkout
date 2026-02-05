@@ -5,6 +5,7 @@ export interface UserSettings {
   age: string;
   height: string;
   sex: 'male' | 'female' | '';
+  avatarUrl?: string;
 }
 
 export interface UserPreferences {
