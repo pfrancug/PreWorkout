@@ -1,10 +1,9 @@
 import type { ICalculatorForm } from '../types/form';
 
 import { Button } from '@components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
+import { Card, CardContent } from '@components/ui/card';
 import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -22,90 +21,105 @@ interface CalculatorFormProps {
     field: K,
     value: ICalculatorForm[K],
   ) => void;
-  onCalculate: () => void;
 }
 
-export const CalculatorForm = ({
-  values,
-  onChange,
-  onCalculate,
-}: CalculatorFormProps) => {
+export const CalculatorForm = ({ values, onChange }: CalculatorFormProps) => {
   const { t } = useTranslation();
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t('calculator.form.title')}</CardTitle>
-      </CardHeader>
-
-      <CardContent className={'space-y-6'}>
-        <div className={'space-y-3'}>
+      <CardContent className={'space-y-6 pt-6'}>
+        <div className={'space-y-2'}>
           <Label>{t('calculator.form.gender')}</Label>
 
-          <RadioGroup
-            className={'flex gap-4'}
-            value={values.gender}
-            onValueChange={(value) =>
-              onChange('gender', value as 'male' | 'female')
-            }
-          >
-            <div className={'flex items-center space-x-2'}>
-              <RadioGroupItem id={'male'} value={'male'} />
+          <div className={'grid grid-cols-2 gap-2'}>
+            <Button
+              className={'w-full'}
+              onClick={() => onChange('gender', 'male')}
+              variant={values.gender === 'male' ? 'default' : 'outline'}
+            >
+              {t('calculator.form.male')}
+            </Button>
 
-              <Label className={'font-normal cursor-pointer'} htmlFor={'male'}>
-                {t('calculator.form.male')}
-              </Label>
-            </div>
-
-            <div className={'flex items-center space-x-2'}>
-              <RadioGroupItem id={'female'} value={'female'} />
-
-              <Label
-                className={'font-normal cursor-pointer'}
-                htmlFor={'female'}
-              >
-                {t('calculator.form.female')}
-              </Label>
-            </div>
-          </RadioGroup>
+            <Button
+              className={'w-full'}
+              onClick={() => onChange('gender', 'female')}
+              variant={values.gender === 'female' ? 'default' : 'outline'}
+            >
+              {t('calculator.form.female')}
+            </Button>
+          </div>
         </div>
 
-        <div className={'grid grid-cols-1 md:grid-cols-3 gap-4'}>
+        <div className={'grid grid-cols-3 gap-4'}>
           <div className={'space-y-2'}>
             <Label htmlFor={'age'}>{t('calculator.form.age')}</Label>
 
-            <Input
-              id={'age'}
-              max={120}
-              min={1}
-              onChange={(e) => onChange('age', Number(e.target.value))}
-              type={'number'}
-              value={values.age}
-            />
+            <div className={'relative'}>
+              <Input
+                className={'pr-14'}
+                id={'age'}
+                max={120}
+                min={1}
+                onChange={(e) => onChange('age', Number(e.target.value))}
+                type={'number'}
+                value={values.age}
+              />
+
+              <span
+                className={
+                  'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground'
+                }
+              >
+                {t('calculator.form.years')}
+              </span>
+            </div>
           </div>
 
           <div className={'space-y-2'}>
-            <Label htmlFor={'height'}>{t('calculator.form.height')}</Label>
+            <Label htmlFor={'height'}>{t('calculator.form.heightLabel')}</Label>
 
-            <Input
-              id={'height'}
-              min={1}
-              onChange={(e) => onChange('height', Number(e.target.value))}
-              type={'number'}
-              value={values.height}
-            />
+            <div className={'relative'}>
+              <Input
+                className={'pr-10'}
+                id={'height'}
+                min={1}
+                onChange={(e) => onChange('height', Number(e.target.value))}
+                type={'number'}
+                value={values.height}
+              />
+
+              <span
+                className={
+                  'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground'
+                }
+              >
+                {'cm'}
+              </span>
+            </div>
           </div>
 
           <div className={'space-y-2'}>
-            <Label htmlFor={'weight'}>{t('calculator.form.weight')}</Label>
+            <Label htmlFor={'weight'}>{t('calculator.form.weightLabel')}</Label>
 
-            <Input
-              id={'weight'}
-              min={1}
-              onChange={(e) => onChange('weight', Number(e.target.value))}
-              type={'number'}
-              value={values.weight}
-            />
+            <div className={'relative'}>
+              <Input
+                className={'pr-10'}
+                id={'weight'}
+                min={1}
+                onChange={(e) => onChange('weight', Number(e.target.value))}
+                type={'number'}
+                value={values.weight}
+              />
+
+              <span
+                className={
+                  'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground'
+                }
+              >
+                {'kg'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -131,10 +145,6 @@ export const CalculatorForm = ({
             </SelectContent>
           </Select>
         </div>
-
-        <Button className={'w-full'} onClick={onCalculate}>
-          {t('calculator.form.calculate')}
-        </Button>
       </CardContent>
     </Card>
   );

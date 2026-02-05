@@ -2,14 +2,14 @@ import { BMR_CONSTANTS, CALORIE_DEFICITS } from '../../../constants/storage';
 import { type ICalculatorForm } from '../types/form';
 
 export interface ICalculateResult {
+  bmr: number;
   maintain: number;
-  maintainPercent: number;
   mid: number;
-  midPercent: number;
+  midDeficit: number;
   loss: number;
-  lossPercent: number;
+  lossDeficit: number;
   extreme: number;
-  extremePercent: number;
+  extremeDeficit: number;
 }
 
 export const calculate = (data: ICalculatorForm): ICalculateResult => {
@@ -21,21 +21,17 @@ export const calculate = (data: ICalculatorForm): ICalculateResult => {
       ? BMR_CONSTANTS.MALE_FACTOR
       : BMR_CONSTANTS.FEMALE_FACTOR;
 
-  const bmr = W + H - A + genderFactor;
+  const bmr = Math.round(W + H - A + genderFactor);
   const maintain = Math.round(bmr * data.activity);
 
-  const mid = maintain - CALORIE_DEFICITS.MILD;
-  const loss = maintain - CALORIE_DEFICITS.MODERATE;
-  const extreme = maintain - CALORIE_DEFICITS.EXTREME;
-
   return {
+    bmr,
     maintain,
-    maintainPercent: 100,
-    mid,
-    midPercent: Math.round((mid / maintain) * 100),
-    loss,
-    lossPercent: Math.round((loss / maintain) * 100),
-    extreme,
-    extremePercent: Math.round((extreme / maintain) * 100),
+    mid: maintain - CALORIE_DEFICITS.MILD,
+    midDeficit: CALORIE_DEFICITS.MILD,
+    loss: maintain - CALORIE_DEFICITS.MODERATE,
+    lossDeficit: CALORIE_DEFICITS.MODERATE,
+    extreme: maintain - CALORIE_DEFICITS.EXTREME,
+    extremeDeficit: CALORIE_DEFICITS.EXTREME,
   };
 };

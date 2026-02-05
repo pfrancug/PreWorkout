@@ -1,5 +1,4 @@
 import type { ICalculatorForm } from './types/form';
-import type { ICalculateResult } from './utils/calculate';
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +48,8 @@ export const CalculatorPage = () => {
   );
 
   const [formValues, setFormValues] = useState<ICalculatorForm>(initialValues);
-  const [result, setResult] = useState<ICalculateResult | null>(null);
+
+  const result = useMemo(() => calculate(formValues), [formValues]);
 
   const handleChange = <K extends keyof ICalculatorForm>(
     field: K,
@@ -58,17 +58,8 @@ export const CalculatorPage = () => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCalculate = () => {
-    const calcResult = calculate(formValues);
-    setResult(calcResult);
-  };
-
   return (
-    <div
-      className={
-        'mx-auto w-full max-w-screen-2xl flex flex-1 flex-col gap-6 p-6'
-      }
-    >
+    <div className={'mx-auto w-full max-w-3xl flex flex-1 flex-col gap-8 p-6'}>
       <div className={'space-y-1'}>
         <h1 className={'text-3xl font-bold tracking-tight'}>
           {t('calculator.title')}
@@ -77,17 +68,11 @@ export const CalculatorPage = () => {
         <p className={'text-muted-foreground'}>{t('calculator.description')}</p>
       </div>
 
-      <div className={'grid grid-cols-1 lg:grid-cols-2 gap-6'}>
-        <CalculatorForm
-          onCalculate={handleCalculate}
-          onChange={handleChange}
-          values={formValues}
-        />
-
-        <Equation />
-      </div>
+      <CalculatorForm onChange={handleChange} values={formValues} />
 
       <Results result={result} />
+
+      <Equation />
     </div>
   );
 };

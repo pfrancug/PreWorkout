@@ -140,218 +140,218 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div className={'mx-auto w-full max-w-screen-2xl p-6'}>
-      <div className={'mx-auto max-w-2xl space-y-6'}>
-        <div>
-          <h1 className={'text-2xl font-bold'}>{t('settings.title')}</h1>
+    <div className={'mx-auto w-full max-w-3xl flex flex-1 flex-col gap-8 p-6'}>
+      <div className={'space-y-1'}>
+        <h1 className={'text-3xl font-bold tracking-tight'}>
+          {t('settings.title')}
+        </h1>
 
-          <p className={'text-muted-foreground'}>{t('settings.description')}</p>
-        </div>
+        <p className={'text-muted-foreground'}>{t('settings.description')}</p>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.personalInfo.title')}</CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.personalInfo.title')}</CardTitle>
 
-            <CardDescription>
-              {t('settings.personalInfo.description')}
-            </CardDescription>
-          </CardHeader>
+          <CardDescription>
+            {t('settings.personalInfo.description')}
+          </CardDescription>
+        </CardHeader>
 
-          <CardContent className={'space-y-4'}>
+        <CardContent className={'space-y-4'}>
+          <div className={'space-y-2'}>
+            <Label htmlFor={'name'}>{t('settings.fields.name')}</Label>
+
+            <Input
+              id={'name'}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder={t('settings.fields.namePlaceholder')}
+              value={formData.name}
+            />
+          </div>
+
+          <div className={'space-y-3'}>
+            <Label>{t('settings.fields.sex')}</Label>
+
+            <RadioGroup
+              className={'flex gap-4'}
+              onValueChange={(value) => handleChange('sex', value)}
+              value={formData.sex}
+            >
+              <div className={'flex items-center space-x-2'}>
+                <RadioGroupItem id={'sex-male'} value={'male'} />
+
+                <Label
+                  className={'font-normal cursor-pointer'}
+                  htmlFor={'sex-male'}
+                >
+                  {t('settings.fields.male')}
+                </Label>
+              </div>
+
+              <div className={'flex items-center space-x-2'}>
+                <RadioGroupItem id={'sex-female'} value={'female'} />
+
+                <Label
+                  className={'font-normal cursor-pointer'}
+                  htmlFor={'sex-female'}
+                >
+                  {t('settings.fields.female')}
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className={'grid gap-4 sm:grid-cols-2'}>
             <div className={'space-y-2'}>
-              <Label htmlFor={'name'}>{t('settings.fields.name')}</Label>
+              <Label htmlFor={'age'}>{t('settings.fields.age')}</Label>
 
               <Input
-                id={'name'}
-                onChange={(e) => handleChange('name', e.target.value)}
-                placeholder={t('settings.fields.namePlaceholder')}
-                value={formData.name}
+                id={'age'}
+                max={'150'}
+                min={'1'}
+                onChange={(e) => handleChange('age', e.target.value)}
+                placeholder={t('settings.fields.agePlaceholder')}
+                type={'number'}
+                value={formData.age}
               />
             </div>
 
-            <div className={'space-y-3'}>
-              <Label>{t('settings.fields.sex')}</Label>
+            <div className={'space-y-2'}>
+              <Label htmlFor={'height'}>{t('settings.fields.height')}</Label>
 
-              <RadioGroup
-                className={'flex gap-4'}
-                onValueChange={(value) => handleChange('sex', value)}
-                value={formData.sex}
-              >
-                <div className={'flex items-center space-x-2'}>
-                  <RadioGroupItem id={'sex-male'} value={'male'} />
-
-                  <Label
-                    className={'font-normal cursor-pointer'}
-                    htmlFor={'sex-male'}
-                  >
-                    {t('settings.fields.male')}
-                  </Label>
-                </div>
-
-                <div className={'flex items-center space-x-2'}>
-                  <RadioGroupItem id={'sex-female'} value={'female'} />
-
-                  <Label
-                    className={'font-normal cursor-pointer'}
-                    htmlFor={'sex-female'}
-                  >
-                    {t('settings.fields.female')}
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className={'grid gap-4 sm:grid-cols-2'}>
-              <div className={'space-y-2'}>
-                <Label htmlFor={'age'}>{t('settings.fields.age')}</Label>
-
-                <Input
-                  id={'age'}
-                  max={'150'}
-                  min={'1'}
-                  onChange={(e) => handleChange('age', e.target.value)}
-                  placeholder={t('settings.fields.agePlaceholder')}
-                  type={'number'}
-                  value={formData.age}
-                />
-              </div>
-
-              <div className={'space-y-2'}>
-                <Label htmlFor={'height'}>{t('settings.fields.height')}</Label>
-
-                <Input
-                  id={'height'}
-                  max={'300'}
-                  min={'50'}
-                  onChange={(e) => handleChange('height', e.target.value)}
-                  placeholder={t('settings.fields.heightPlaceholder')}
-                  type={'number'}
-                  value={formData.height}
-                />
-              </div>
-            </div>
-
-            <div className={'pt-4'}>
-              <Button onClick={handleSave}>
-                <Save className={'mr-2 h-4 w-4'} />
-
-                {t('settings.saveChanges')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.dataAccount.title')}</CardTitle>
-
-            <CardDescription>
-              {t('settings.dataAccount.description')}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <div className={'flex flex-col gap-3 sm:flex-row'}>
-              <Button onClick={handleDownloadData} variant={'outline'}>
-                <Download className={'mr-2 h-4 w-4'} />
-                {t('settings.dataAccount.downloadData')}
-              </Button>
-
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                variant={'outline'}
-              >
-                <Upload className={'mr-2 h-4 w-4'} />
-                {t('settings.dataAccount.importData')}
-              </Button>
-
-              <input
-                accept={'.json'}
-                className={'hidden'}
-                onChange={handleImportData}
-                ref={fileInputRef}
-                type={'file'}
+              <Input
+                id={'height'}
+                max={'300'}
+                min={'50'}
+                onChange={(e) => handleChange('height', e.target.value)}
+                placeholder={t('settings.fields.heightPlaceholder')}
+                type={'number'}
+                value={formData.height}
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card className={'border-destructive/50'}>
-          <CardHeader>
-            <CardTitle className={'text-destructive'}>
-              {t('settings.dangerZone.title')}
-            </CardTitle>
+          <div className={'pt-4'}>
+            <Button onClick={handleSave}>
+              <Save className={'mr-2 h-4 w-4'} />
 
-            <CardDescription>
-              {t('settings.dangerZone.description')}
-            </CardDescription>
-          </CardHeader>
+              {t('settings.saveChanges')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-          <CardContent className={'space-y-4'}>
-            <div className={'flex items-center justify-between'}>
-              <div>
-                <p className={'text-sm font-medium'}>
-                  {t('settings.dataAccount.deleteData')}
-                </p>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('settings.dangerZone.deleteDataDescription')}
-                </p>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.dataAccount.title')}</CardTitle>
 
-              <Button
-                className={'ml-4 shrink-0'}
-                onClick={handleDeleteData}
-                variant={'outline'}
-              >
-                <Trash2 className={'mr-2 h-4 w-4'} />
+          <CardDescription>
+            {t('settings.dataAccount.description')}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div className={'flex flex-col gap-3 sm:flex-row'}>
+            <Button onClick={handleDownloadData} variant={'outline'}>
+              <Download className={'mr-2 h-4 w-4'} />
+              {t('settings.dataAccount.downloadData')}
+            </Button>
+
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              variant={'outline'}
+            >
+              <Upload className={'mr-2 h-4 w-4'} />
+              {t('settings.dataAccount.importData')}
+            </Button>
+
+            <input
+              accept={'.json'}
+              className={'hidden'}
+              onChange={handleImportData}
+              ref={fileInputRef}
+              type={'file'}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={'border-destructive/50'}>
+        <CardHeader>
+          <CardTitle className={'text-destructive'}>
+            {t('settings.dangerZone.title')}
+          </CardTitle>
+
+          <CardDescription>
+            {t('settings.dangerZone.description')}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className={'space-y-4'}>
+          <div className={'flex items-center justify-between'}>
+            <div>
+              <p className={'text-sm font-medium'}>
                 {t('settings.dataAccount.deleteData')}
-              </Button>
+              </p>
+              <p className={'text-sm text-muted-foreground'}>
+                {t('settings.dangerZone.deleteDataDescription')}
+              </p>
             </div>
 
-            <Separator />
+            <Button
+              className={'ml-4 shrink-0'}
+              onClick={handleDeleteData}
+              variant={'outline'}
+            >
+              <Trash2 className={'mr-2 h-4 w-4'} />
+              {t('settings.dataAccount.deleteData')}
+            </Button>
+          </div>
 
-            <div className={'flex items-center justify-between'}>
-              <div>
-                <p className={'text-sm font-medium'}>
-                  {t('settings.dataAccount.deleteAccount')}
-                </p>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('settings.dataAccount.deleteAccountDescription')}
-                </p>
-              </div>
+          <Separator />
 
-              <Button
-                className={'ml-4 shrink-0'}
-                disabled={isDeleting}
-                onClick={handleDeleteAccount}
-                variant={'destructive'}
-              >
-                <Trash2 className={'mr-2 h-4 w-4'} />
+          <div className={'flex items-center justify-between'}>
+            <div>
+              <p className={'text-sm font-medium'}>
                 {t('settings.dataAccount.deleteAccount')}
-              </Button>
+              </p>
+              <p className={'text-sm text-muted-foreground'}>
+                {t('settings.dataAccount.deleteAccountDescription')}
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <div className={'flex justify-center gap-4 text-sm'}>
-          <Link
-            to={'/privacy'}
-            className={
-              'text-muted-foreground hover:text-primary underline underline-offset-4'
-            }
-          >
-            {t('legal.privacyPolicy')}
-          </Link>
+            <Button
+              className={'ml-4 shrink-0'}
+              disabled={isDeleting}
+              onClick={handleDeleteAccount}
+              variant={'destructive'}
+            >
+              <Trash2 className={'mr-2 h-4 w-4'} />
+              {t('settings.dataAccount.deleteAccount')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Link
-            to={'/terms'}
-            className={
-              'text-muted-foreground hover:text-primary underline underline-offset-4'
-            }
-          >
-            {t('legal.termsOfService')}
-          </Link>
-        </div>
+      <div className={'flex justify-center gap-4 text-sm'}>
+        <Link
+          to={'/privacy'}
+          className={
+            'text-muted-foreground hover:text-primary underline underline-offset-4'
+          }
+        >
+          {t('legal.privacyPolicy')}
+        </Link>
+
+        <Link
+          to={'/terms'}
+          className={
+            'text-muted-foreground hover:text-primary underline underline-offset-4'
+          }
+        >
+          {t('legal.termsOfService')}
+        </Link>
       </div>
     </div>
   );

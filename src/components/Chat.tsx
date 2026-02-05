@@ -275,41 +275,71 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       )}
     >
       {/* Header */}
-      <header
-        className={'flex h-12 shrink-0 items-center justify-between px-4'}
-      >
-        <div className={'flex items-center gap-2'}>
-          <Bot
-            className={cn(
-              'h-4 w-4',
-              isPage ? 'text-muted-foreground' : 'text-sidebar-foreground/70',
-            )}
-          />
+      {isPage ? (
+        <div className={'shrink-0 px-6 pt-6 space-y-1'}>
+          <div className={'flex items-center justify-between'}>
+            <h1 className={'text-3xl font-bold tracking-tight'}>
+              {t('chat.title')}
+            </h1>
 
-          <span className={'text-sm font-medium'}>{t('chat.title')}</span>
-        </div>
+            <div className={'flex items-center gap-2'}>
+              <Button
+                className={'h-7 px-2 text-xs'}
+                disabled={!isGeminiAvailable() || showSettingsAlert}
+                onClick={() => setAiProvider('gemini')}
+                size={'sm'}
+                variant={aiProvider === 'gemini' ? 'default' : 'ghost'}
+              >
+                {'Gemini'}
+              </Button>
 
-        <div className={'flex items-center gap-2'}>
-          <Button
-            className={'h-7 px-2 text-xs'}
-            disabled={!isGeminiAvailable() || showSettingsAlert}
-            onClick={() => setAiProvider('gemini')}
-            size={'sm'}
-            variant={aiProvider === 'gemini' ? 'default' : 'ghost'}
-          >
-            {'Gemini'}
-          </Button>
-          <Button
-            className={'h-7 px-2 text-xs'}
-            disabled={!isGrokAvailable() || showSettingsAlert}
-            onClick={() => setAiProvider('grok')}
-            size={'sm'}
-            variant={aiProvider === 'grok' ? 'default' : 'ghost'}
-          >
-            {'Grok'}
-          </Button>
+              <Button
+                className={'h-7 px-2 text-xs'}
+                disabled={!isGrokAvailable() || showSettingsAlert}
+                onClick={() => setAiProvider('grok')}
+                size={'sm'}
+                variant={aiProvider === 'grok' ? 'default' : 'ghost'}
+              >
+                {'Grok'}
+              </Button>
+            </div>
+          </div>
+
+          <p className={'text-muted-foreground'}>{t('chat.description')}</p>
         </div>
-      </header>
+      ) : (
+        <header
+          className={'flex h-12 shrink-0 items-center justify-between px-4'}
+        >
+          <div className={'flex items-center gap-2'}>
+            <Bot className={'h-4 w-4 text-sidebar-foreground/70'} />
+
+            <span className={'text-sm font-medium'}>{t('chat.title')}</span>
+          </div>
+
+          <div className={'flex items-center gap-2'}>
+            <Button
+              className={'h-7 px-2 text-xs'}
+              disabled={!isGeminiAvailable() || showSettingsAlert}
+              onClick={() => setAiProvider('gemini')}
+              size={'sm'}
+              variant={aiProvider === 'gemini' ? 'default' : 'ghost'}
+            >
+              {'Gemini'}
+            </Button>
+
+            <Button
+              className={'h-7 px-2 text-xs'}
+              disabled={!isGrokAvailable() || showSettingsAlert}
+              onClick={() => setAiProvider('grok')}
+              size={'sm'}
+              variant={aiProvider === 'grok' ? 'default' : 'ghost'}
+            >
+              {'Grok'}
+            </Button>
+          </div>
+        </header>
+      )}
 
       {/* Messages */}
       <ScrollArea

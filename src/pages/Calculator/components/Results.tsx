@@ -1,58 +1,158 @@
 import type { ICalculateResult } from '../utils/calculate';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
+import { ArrowDown, Scale, TrendingDown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { Result } from './Result';
-
 interface ResultsProps {
-  result: ICalculateResult | null;
+  result: ICalculateResult;
 }
+
+interface ResultRowProps {
+  title: string;
+  calories: number;
+  deficit: number;
+  color: 'emerald' | 'yellow' | 'orange' | 'red';
+  icon: React.ReactNode;
+}
+
+const colorMap = {
+  emerald: {
+    border: 'border-l-emerald-500',
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-600 dark:text-emerald-400',
+  },
+  yellow: {
+    border: 'border-l-yellow-500',
+    bg: 'bg-yellow-500/10',
+    text: 'text-yellow-600 dark:text-yellow-400',
+  },
+  orange: {
+    border: 'border-l-orange-500',
+    bg: 'bg-orange-500/10',
+    text: 'text-orange-600 dark:text-orange-400',
+  },
+  red: {
+    border: 'border-l-red-500',
+    bg: 'bg-red-500/10',
+    text: 'text-red-600 dark:text-red-400',
+  },
+};
+
+const ResultRow = ({
+  title,
+  calories,
+  deficit,
+  color,
+  icon,
+}: ResultRowProps) => {
+  const { t } = useTranslation();
+  const colors = colorMap[color];
+
+  return (
+    <div
+      className={`flex items-center justify-between rounded-lg border border-l-4 ${colors.border} p-4 transition-colors hover:bg-muted/50`}
+    >
+      <div className={'flex items-center gap-3'}>
+        <div className={`rounded-md p-2 ${colors.bg} ${colors.text}`}>
+          {icon}
+        </div>
+
+        <div>
+          <p className={'text-sm font-medium'}>{title}</p>
+
+          {deficit > 0 && (
+            <p className={'text-xs text-muted-foreground'}>
+              {'-'}
+              {deficit} {t('calculator.results.deficit')}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className={'text-right'}>
+        <p className={'text-lg font-bold tabular-nums'}>
+          {calories.toLocaleString()}
+        </p>
+
+        <p className={'text-xs text-muted-foreground'}>
+          {t('calculator.results.perDay')}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export const Results = ({ result }: ResultsProps) => {
   const { t } = useTranslation();
 
-  if (!result) {
-    return null;
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('calculator.results.title')}</CardTitle>
-      </CardHeader>
+    <div className={'space-y-6'}>
+      <div className={'rounded-xl border bg-card p-6 text-center'}>
+        <p className={'text-sm font-medium text-muted-foreground'}>
+          {t('calculator.results.tdee')}
+        </p>
 
-      <CardContent>
-        <div className={'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'}>
-          <Result
+        <p className={'mt-1 text-5xl font-bold tracking-tight'}>
+          {result.maintain.toLocaleString()}
+        </p>
+
+        <p className={'mt-1 text-sm text-muted-foreground'}>
+          {t('calculator.results.perDay')}
+        </p>
+
+        <div className={'mt-4 border-t pt-4'}>
+          <p className={'text-xs text-muted-foreground'}>
+            {t('calculator.results.bmr')}
+            {': '}
+
+            <span className={'font-semibold text-foreground'}>
+              {result.bmr.toLocaleString()}
+            </span>
+
+            {' kcal'}
+          </p>
+        </div>
+      </div>
+
+      <div className={'space-y-3'}>
+        <h3 className={'text-sm font-medium text-muted-foreground'}>
+          {t('calculator.results.plans')}
+        </h3>
+
+        <div className={'grid gap-3'}>
+          <ResultRow
             calories={result.maintain}
-            color={'green'}
-            percentage={result.maintainPercent}
+            color={'emerald'}
+            deficit={0}
+            icon={<Scale className={'size-4'} />}
             title={t('calculator.results.maintain')}
           />
 
-          <Result
+          <ResultRow
             calories={result.mid}
             color={'yellow'}
-            percentage={result.midPercent}
+            deficit={result.midDeficit}
+            icon={<TrendingDown className={'size-4'} />}
             title={t('calculator.results.midLoss')}
           />
 
-          <Result
+          <ResultRow
             calories={result.loss}
             color={'orange'}
-            percentage={result.lossPercent}
+            deficit={result.lossDeficit}
+            icon={<ArrowDown className={'size-4'} />}
             title={t('calculator.results.loss')}
           />
 
-          <Result
+          <ResultRow
             calories={result.extreme}
             color={'red'}
-            percentage={result.extremePercent}
+            deficit={result.extremeDeficit}
+            icon={<Zap className={'size-4'} />}
             title={t('calculator.results.extreme')}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

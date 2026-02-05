@@ -74,6 +74,7 @@
   },
   "chat": {
     "title": "Gains Buddy",
+    "description": "Your AI-powered nutrition and fitness assistant.",
     "clearChat": "Clear chat",
     "placeholder": "Type your message...",
     "send": "Send",
@@ -124,7 +125,10 @@
       "female": "Female",
       "age": "Age",
       "height": "Height (cm)",
+      "heightLabel": "Height",
       "weight": "Weight (kg)",
+      "weightLabel": "Weight",
+      "years": "years",
       "activity": "Activity Level",
       "activityPlaceholder": "Select activity level",
       "calculate": "Calculate"
@@ -140,10 +144,16 @@
     "equation": {
       "title": "Mifflin-St Jeor Equation",
       "description": "The Mifflin-St Jeor equation is considered the most accurate for calculating basal metabolic rate (BMR).",
-      "note": "TDEE = BMR × Activity Factor"
+      "note": "TDEE = BMR × Activity Factor",
+      "howItWorks": "How is this calculated?"
     },
     "results": {
       "title": "Your Results",
+      "tdee": "Your Daily Energy Expenditure",
+      "bmr": "Basal Metabolic Rate",
+      "plans": "Calorie Plans",
+      "deficit": "kcal deficit",
+      "perDay": "kcal / day",
       "maintain": "Maintain Weight",
       "midLoss": "Mild Weight Loss",
       "loss": "Weight Loss",
