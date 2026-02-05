@@ -44,7 +44,33 @@
       "heightPlaceholder": "Enter your height"
     },
     "saveChanges": "Save Changes",
-    "savedSuccess": "Settings saved successfully!"
+    "savedSuccess": "Settings saved successfully!",
+    "dataAccount": {
+      "title": "Your Data",
+      "description": "Download or import your data.",
+      "downloadData": "Download My Data",
+      "downloadSuccess": "Your data has been downloaded.",
+      "downloadError": "Failed to download data.",
+      "deleteData": "Delete All Data",
+      "deleteDataConfirm": "Are you sure you want to delete all your data? This includes your diary, messages, and settings. This action cannot be undone.",
+      "deleteDataSuccess": "All your data has been deleted.",
+      "deleteDataError": "Failed to delete data.",
+      "deleteAccount": "Delete Account",
+      "deleteAccountDescription": "Permanently delete your account and all associated data. This will remove your Google sign-in connection and cannot be undone.",
+      "deleteAccountConfirm": "Are you sure you want to permanently delete your account? All your data will be lost and this action cannot be undone.",
+      "deleteAccountSuccess": "Your account has been deleted.",
+      "deleteAccountError": "Failed to delete account. You may need to sign in again before deleting.",
+      "importData": "Import Data",
+      "importConfirm": "This will overwrite your existing data with the imported file. Are you sure?",
+      "importSuccess": "Data imported successfully.",
+      "importError": "Failed to import data. Make sure the file is a valid PreWorkout export."
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Irreversible and destructive actions.",
+      "deleteDataDescription": "Remove all diary entries, messages, and settings.",
+      "deleteAccountDescription": "Permanently delete your account and disconnect Google sign-in."
+    }
   },
   "chat": {
     "title": "Gains Buddy",
@@ -65,8 +91,8 @@
     }
   },
   "auth": {
-    "login": "Welcome back",
-    "loginDescription": "Sign in to your account to continue",
+    "login": "Welcome to PreWorkout",
+    "loginDescription": "Sign in to track your nutrition and fitness",
     "signIn": "Sign In",
     "signInWithGoogle": "Sign in with Google",
     "register": "Sign Up",
@@ -122,6 +148,74 @@
       "midLoss": "Mild Weight Loss",
       "loss": "Weight Loss",
       "extreme": "Extreme Weight Loss"
+    }
+  },
+  "legal": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "lastUpdated": "Last updated",
+    "backToLogin": "Back to Login",
+    "backToSettings": "Back to Settings",
+    "privacy": {
+      "title": "Privacy Policy",
+      "description": "This privacy policy explains how we collect, use, and protect your personal information.",
+      "sections": {
+        "dataCollection": {
+          "title": "Information We Collect",
+          "content": "We collect the following information when you use PreWorkout:\n\n• **Account Information**: Email address and name when you sign in with Google.\n• **Health Data**: Weight, age, height, gender, and dietary information you voluntarily enter.\n• **Usage Data**: Your food diary entries, calorie calculations, and chat conversations with our AI assistant."
+        },
+        "dataUsage": {
+          "title": "How We Use Your Information",
+          "content": "We use your information to:\n\n• Provide personalized nutrition tracking and recommendations.\n• Display your progress and historical data.\n• Improve our AI assistant's responses based on your profile.\n• Send important service updates (if applicable)."
+        },
+        "dataStorage": {
+          "title": "Data Storage & Security",
+          "content": "Your data is stored securely in Firebase (Google Cloud Platform) with the following protections:\n\n• All data is encrypted in transit using HTTPS.\n• Firebase Security Rules ensure only you can access your data.\n• We do not sell, share, or rent your personal information to third parties."
+        },
+        "thirdParties": {
+          "title": "Third-Party Services",
+          "content": "We use the following third-party services:\n\n• **Firebase Authentication**: For secure sign-in (Google).\n• **Firebase Realtime Database**: To store your data.\n• **Google Gemini / xAI Grok**: AI services for chat functionality. Your messages may be processed by these providers according to their privacy policies."
+        },
+        "yourRights": {
+          "title": "Your Rights",
+          "content": "You have the right to:\n\n• **Access**: View all data we have about you.\n• **Delete**: Request deletion of your account and all associated data.\n• **Export**: Download your data in a portable format.\n\nTo exercise these rights, please contact us or use the settings page to delete your account."
+        },
+        "contact": {
+          "title": "Contact",
+          "content": "If you have questions about this privacy policy, please open an issue on our GitHub repository."
+        }
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "description": "Please read these terms carefully before using PreWorkout.",
+      "sections": {
+        "acceptance": {
+          "title": "Acceptance of Terms",
+          "content": "By accessing and using PreWorkout, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application."
+        },
+        "healthDisclaimer": {
+          "title": "Health Disclaimer",
+          "warning": "Important: Not Medical Advice",
+          "content": "PreWorkout is a fitness and nutrition tracking tool for informational purposes only. It is NOT a substitute for professional medical advice, diagnosis, or treatment.\n\n• Always consult a healthcare provider before starting any diet or exercise program.\n• The calorie calculations and AI recommendations are estimates and may not be accurate for your specific needs.\n• If you have any health conditions, please seek professional medical guidance."
+        },
+        "userResponsibilities": {
+          "title": "User Responsibilities",
+          "content": "When using PreWorkout, you agree to:\n\n• Provide accurate information about yourself.\n• Use the service for personal, non-commercial purposes only.\n• Not attempt to access other users' data or compromise the security of the application.\n• Not use the AI chat for any harmful, illegal, or inappropriate purposes."
+        },
+        "intellectualProperty": {
+          "title": "Intellectual Property",
+          "content": "PreWorkout is open-source software licensed under the MIT License. You may use, modify, and distribute the code according to the license terms. However, the PreWorkout name and logo remain the property of the project maintainers."
+        },
+        "limitation": {
+          "title": "Limitation of Liability",
+          "content": "PreWorkout is provided \"as is\" without warranties of any kind. We are not liable for:\n\n• Any health issues resulting from following recommendations.\n• Loss of data or service interruptions.\n• Inaccuracies in calculations or AI responses.\n\nYou use the application at your own risk."
+        },
+        "changes": {
+          "title": "Changes to Terms",
+          "content": "We may update these terms from time to time. Continued use of PreWorkout after changes constitutes acceptance of the new terms."
+        }
+      }
     }
   }
 }

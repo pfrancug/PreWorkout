@@ -9,6 +9,13 @@ import { onValue } from 'firebase/database';
 
 import { app } from './config';
 
+export interface AllUserData {
+  settings: UserSettings | null;
+  preferences: UserPreferences | null;
+  messages: Message[] | null;
+  data: IRowData[] | null;
+}
+
 const database = getDatabase(app);
 
 export const getUserSettingsRef = (userId: string) =>
@@ -130,6 +137,61 @@ export const loadUserData = async (
 
   if (snapshot.exists()) {
     return snapshot.val() as IRowData[];
+  }
+
+  return null;
+};
+
+export const deleteAllUserData = async (userId: string): Promise<void> => {
+  await Promise.all([
+    remove(getUserSettingsRef(userId)),
+    remove(getUserPreferencesRef(userId)),
+    remove(getUserMessagesRef(userId)),
+    remove(getUserDataRef(userId)),
+  ]);
+};
+
+export const importAllUserData = async (
+  userId: string,
+  data: AllUserData,
+): Promise<void> => {
+  const promises: Promise<void>[] = [];
+
+  if (data.settings) {
+    promises.push(saveUserSettings(userId, data.settings));
+  }
+  if (data.preferences) {
+    promises.push(saveUserPreferences(userId, data.preferences));
+  }
+  if (data.messages) {
+    promises.push(saveUserMessages(userId, data.messages));
+  }
+  if (data.data) {
+    promises.push(saveUserData(userId, data.data));
+  }
+
+  await Promise.all(promises);
+};
+
+export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
+  const [settings, preferences, messages, data] = await Promise.all([
+    loadUserSettings(userId),
+    loadUserPreferences(userId),
+    loadUserMessages(userId),
+    loadUserData(userId),
+  ]);
+
+  return { settings, preferences, messages, data };
+};
+
+export const loadUserMessages = async (
+  userId: string,
+): Promise<Message[] | null> => {
+  const messagesRef = getUserMessagesRef(userId);
+  const snapshot = await get(messagesRef);
+
+  if (snapshot.exists()) {
+    return Object.values(snapshot.val()) as Message[];
   }
 
   return null;

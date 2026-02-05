@@ -39,7 +39,9 @@ import { ChatPage } from './pages/ChatPage';
 import { DiaryPage } from './pages/DiaryPage';
 import { LoginPage } from './pages/LoginPage';
 import { MainPage } from './pages/MainPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TermsPage } from './pages/TermsPage';
 
 const ChatPanel = ({ dataset }: { dataset: IRow[] | null }) => {
   return <Chat dataset={dataset} />;
@@ -81,6 +83,24 @@ const AppRoutes = () => {
               <div className={'flex w-full max-w-sm flex-col gap-6'}>
                 <LoginPage />
               </div>
+            </div>
+          }
+        />
+
+        <Route
+          path={'/privacy'}
+          element={
+            <div className={'bg-muted min-h-svh'}>
+              <PrivacyPage />
+            </div>
+          }
+        />
+
+        <Route
+          path={'/terms'}
+          element={
+            <div className={'bg-muted min-h-svh'}>
+              <TermsPage />
             </div>
           }
         />
@@ -142,6 +162,10 @@ const AppRoutes = () => {
               <Route element={<ChatPage />} path={'/chat'} />
 
               <Route element={<SettingsPage />} path={'/settings'} />
+
+              <Route element={<PrivacyPage />} path={'/privacy'} />
+
+              <Route element={<TermsPage />} path={'/terms'} />
 
               <Route element={<Navigate replace to={'/'} />} path={'/login'} />
 

@@ -7,38 +7,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@components/ui/card';
-// import { Input } from '@components/ui/input';
-// import { Label } from '@components/ui/label';
 import { cn } from '@lib/utils';
 import { Dumbbell, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import { signInWithGoogle } from '../firebase/auth';
-// import { loginUser, registerUser } from '../firebase/auth';
 
 export const LoginPage = () => {
   const { t } = useTranslation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // const [isRegister, setIsRegister] = useState(false);
-  // const [password, setPassword] = useState('');
-  // const [email, setEmail] = useState('');
-
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (isRegister) {
-  //     registerUser({ email, password, onError: setErrorMessage });
-  //   } else {
-  //     loginUser({ email, password, onError: setErrorMessage });
-  //   }
-  // };
-
-  // const switchMode = () => {
-  //   setErrorMessage(null);
-  //   setEmail('');
-  //   setPassword('');
-  //   setIsRegister(!isRegister);
-  // };
 
   return (
     <div className={cn('flex flex-col gap-6')}>
@@ -98,69 +77,25 @@ export const LoginPage = () => {
 
               {t('auth.signInWithGoogle')}
             </Button>
-
-            {/* Email login commented out
-            <div
-              className={
-                'relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border'
-              }
-            >
-              <span
-                className={
-                  'relative z-10 bg-card px-2 text-muted-foreground'
-                }
-              >
-                {t('auth.or')}
-              </span>
-            </div>
-
-            <div className={'space-y-2'}>
-              <Label htmlFor={'email'}>{t('auth.email')}</Label>
-              <Input
-                required
-                id={'email'}
-                placeholder={'email@example.com'}
-                type={'email'}
-                value={email}
-                onChange={(e) => {
-                  setErrorMessage(null);
-                  setEmail(e.target.value);
-                }}
-              />
-            </div>
-
-            <div className={'space-y-2'}>
-              <Label htmlFor={'password'}>{t('auth.password')}</Label>
-              <Input
-                required
-                id={'password'}
-                type={'password'}
-                value={password}
-                onChange={(e) => {
-                  setErrorMessage(null);
-                  setPassword(e.target.value);
-                }}
-              />
-            </div>
-
-            <Button className={'w-full'} type={'submit'}>
-              {isRegister ? t('auth.register') : t('auth.signIn')}
-            </Button>
-
-            <div className={'text-center text-sm'}>
-              {isRegister ? t('auth.haveAccount') : t('auth.noAccount')}{' '}
-              <button
-                className={'underline underline-offset-4 hover:text-primary'}
-                onClick={switchMode}
-                type={'button'}
-              >
-                {isRegister ? t('auth.signIn') : t('auth.register')}
-              </button>
-            </div>
-            */}
           </div>
         </CardContent>
       </Card>
+
+      <div className={'text-center text-xs text-muted-foreground'}>
+        <Link
+          className={'underline underline-offset-4 hover:text-primary'}
+          to={'/privacy'}
+        >
+          {t('legal.privacyPolicy')}
+        </Link>
+        <span className={'mx-2'}>{'•'}</span>
+        <Link
+          className={'underline underline-offset-4 hover:text-primary'}
+          to={'/terms'}
+        >
+          {t('legal.termsOfService')}
+        </Link>
+      </div>
     </div>
   );
 };

@@ -3,8 +3,10 @@ import type { Dispatch, SetStateAction } from 'react';
 import { FirebaseError } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   getAuth,
   GoogleAuthProvider,
+  reauthenticateWithPopup,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -71,4 +73,13 @@ export const signInWithGoogle = async ({ onError }: ErrorHandlerProps) => {
 
 export const logoutUser = async () => {
   await signOut(auth);
+};
+
+export const deleteAccount = async (): Promise<void> => {
+  const user = auth.currentUser;
+  if (user) {
+    const provider = new GoogleAuthProvider();
+    await reauthenticateWithPopup(user, provider);
+    await deleteUser(user);
+  }
 };
