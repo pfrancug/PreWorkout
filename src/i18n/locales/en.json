@@ -22,9 +22,33 @@
     "logout": "Logout",
     "anonymous": "Anonymous"
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Overview of your progress and activity."
+  },
   "diary": {
     "title": "Food Diary",
     "description": "Track your daily nutrition and weight."
+  },
+  "calendar": {
+    "title": "Activity Calendar",
+    "weekDays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "activities": {
+      "training": "Training",
+      "personal": "Personal Training",
+      "run": "Run",
+      "another": "Another"
+    },
+    "note": "Note",
+    "notePlaceholder": "Add a note..."
   },
   "settings": {
     "title": "Settings",

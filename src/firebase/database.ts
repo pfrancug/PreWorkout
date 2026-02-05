@@ -14,12 +14,24 @@ export interface DailyMessageLimit {
   count: number;
 }
 
+export type CalendarActivity = 'training' | 'personal' | 'run' | 'another';
+
+export interface CalendarData {
+  [date: string]: CalendarActivity[];
+}
+
+export interface CalendarNotes {
+  [date: string]: string;
+}
+
 export interface AllUserData {
   settings: UserSettings | null;
   preferences: UserPreferences | null;
   messages: Message[] | null;
   data: IRowData[] | null;
   limits: DailyMessageLimit | null;
+  calendar: CalendarData | null;
+  calendarNotes: CalendarNotes | null;
 }
 
 const database = getDatabase(app);
@@ -155,6 +167,8 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserMessagesRef(userId)),
     remove(getUserDataRef(userId)),
     remove(getUserLimitsRef(userId)),
+    remove(getUserCalendarRef(userId)),
+    remove(getUserCalendarNotesRef(userId)),
   ]);
 };
 
@@ -181,15 +195,33 @@ export const importAllUserData = async (
 };
 
 export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
-  const [settings, preferences, messages, data, limits] = await Promise.all([
+  const [
+    settings,
+    preferences,
+    messages,
+    data,
+    limits,
+    calendar,
+    calendarNotes,
+  ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
     loadUserMessages(userId),
     loadUserData(userId),
     loadDailyMessageLimit(userId),
+    loadCalendarData(userId),
+    loadCalendarNotes(userId),
   ]);
 
-  return { settings, preferences, messages, data, limits };
+  return {
+    settings,
+    preferences,
+    messages,
+    data,
+    limits,
+    calendar,
+    calendarNotes,
+  };
 };
 
 const loadDailyMessageLimit = async (
@@ -272,6 +304,100 @@ export const subscribeToUserData = (
     if (snapshot.exists()) {
       const data = snapshot.val();
       callback(Array.isArray(data) ? data : Object.values(data));
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+// Calendar
+export const getUserCalendarRef = (userId: string) =>
+  ref(database, `users/${userId}/calendar`);
+
+export const loadCalendarData = async (
+  userId: string,
+): Promise<CalendarData | null> => {
+  const calendarRef = getUserCalendarRef(userId);
+  const snapshot = await get(calendarRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as CalendarData;
+  }
+
+  return null;
+};
+
+export const saveCalendarDay = async (
+  userId: string,
+  date: string,
+  activities: CalendarActivity[],
+): Promise<void> => {
+  const dayRef = ref(database, `users/${userId}/calendar/${date}`);
+
+  if (activities.length === 0) {
+    await remove(dayRef);
+  } else {
+    await set(dayRef, activities);
+  }
+};
+
+export const subscribeToCalendarData = (
+  userId: string,
+  callback: (data: CalendarData | null) => void,
+): (() => void) => {
+  const calendarRef = getUserCalendarRef(userId);
+  const unsubscribe = onValue(calendarRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as CalendarData);
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+// Calendar Notes
+export const getUserCalendarNotesRef = (userId: string) =>
+  ref(database, `users/${userId}/calendarNotes`);
+
+export const loadCalendarNotes = async (
+  userId: string,
+): Promise<CalendarNotes | null> => {
+  const notesRef = getUserCalendarNotesRef(userId);
+  const snapshot = await get(notesRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as CalendarNotes;
+  }
+
+  return null;
+};
+
+export const saveCalendarNote = async (
+  userId: string,
+  date: string,
+  note: string,
+): Promise<void> => {
+  const noteRef = ref(database, `users/${userId}/calendarNotes/${date}`);
+
+  if (!note.trim()) {
+    await remove(noteRef);
+  } else {
+    await set(noteRef, note.trim());
+  }
+};
+
+export const subscribeToCalendarNotes = (
+  userId: string,
+  callback: (data: CalendarNotes | null) => void,
+): (() => void) => {
+  const notesRef = getUserCalendarNotesRef(userId);
+  const unsubscribe = onValue(notesRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as CalendarNotes);
     } else {
       callback(null);
     }

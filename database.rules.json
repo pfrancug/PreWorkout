@@ -24,6 +24,14 @@
           ".read": "auth.uid == $userId",
           ".write": "auth.uid == $userId",
           ".validate": "newData.hasChildren(['date', 'count']) && newData.child('date').isString() && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('count').val() <= 10"
+        },
+        "calendar": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId"
+        },
+        "calendarNotes": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId"
         }
       }
     }
