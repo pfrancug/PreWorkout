@@ -56,24 +56,37 @@ export const SparkChart = ({ color, data, days = 14, value }: Props) => {
     [color, value],
   );
 
-  const chartData = useMemo(() => {
+  const sortedData = useMemo(() => {
     if (!data || data.length === 0) {
       return [];
     }
 
-    return data.slice(data.length - days - 1, data.length - 1).map((row) => ({
-      date: dateFormatter.format(row.date),
-      [value]: row[value] ?? 0,
-    }));
-  }, [data, days, value]);
+    return [...data].sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [data]);
+
+  const chartData = useMemo(() => {
+    if (sortedData.length === 0) {
+      return [];
+    }
+
+    return sortedData
+      .slice(sortedData.length - days - 1, sortedData.length - 1)
+      .map((row) => ({
+        date: dateFormatter.format(row.date),
+        [value]: row[value] ?? 0,
+      }));
+  }, [sortedData, days, value]);
 
   const slicedData = useMemo(() => {
-    if (!data || data.length === 0) {
+    if (sortedData.length === 0) {
       return [];
     }
 
-    return data.slice(data.length - days - 1, data.length - 1);
-  }, [data, days]);
+    return sortedData.slice(
+      sortedData.length - days - 1,
+      sortedData.length - 1,
+    );
+  }, [sortedData, days]);
 
   const { minValue, maxValue } = useMemo(() => {
     if (slicedData.length === 0) {
