@@ -1,48 +1,80 @@
 import type { UserSettings } from './SettingsContext';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { STORAGE_KEYS } from '../constants/storage';
+import { loadUserSettings, saveUserSettings } from '../firebase/database';
 import { defaultSettings, SettingsContext } from './SettingsContext';
+import { useAuth } from './useAuth';
 
-function getInitialSettings(): UserSettings {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.USER_SETTINGS);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    // Invalid JSON
+async function fetchUserSettings(userId: string | null): Promise<UserSettings> {
+  if (!userId) {
+    return defaultSettings;
   }
 
-  return defaultSettings;
+  const firebaseSettings = await loadUserSettings(userId);
+
+  return firebaseSettings ?? defaultSettings;
 }
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<UserSettings>(getInitialSettings);
+  const { user, loading: authLoading } = useAuth();
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const prevUserId = useRef<string | null>(null);
 
-  const updateSettings = useCallback((newSettings: UserSettings) => {
-    setSettings(newSettings);
-    localStorage.setItem(
-      STORAGE_KEYS.USER_SETTINGS,
-      JSON.stringify(newSettings),
-    );
-  }, []);
+  // Load settings from Firebase when user changes
+  useEffect(() => {
+    const currentUserId = user?.uid ?? null;
+
+    // Skip if user hasn't changed
+    if (currentUserId === prevUserId.current) {
+      return;
+    }
+
+    prevUserId.current = currentUserId;
+
+    let cancelled = false;
+
+    fetchUserSettings(currentUserId).then((loadedSettings) => {
+      if (!cancelled) {
+        setSettings(loadedSettings);
+        setIsLoaded(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const updateSettings = useCallback(
+    (newSettings: UserSettings) => {
+      setSettings(newSettings);
+      if (user) {
+        saveUserSettings(user.uid, newSettings);
+      }
+    },
+    [user],
+  );
 
   const updateField = useCallback(
     (field: keyof UserSettings, value: string) => {
       setSettings((prev) => {
         const updated = { ...prev, [field]: value };
-        localStorage.setItem(
-          STORAGE_KEYS.USER_SETTINGS,
-          JSON.stringify(updated),
-        );
+        if (user) {
+          saveUserSettings(user.uid, updated);
+        }
 
         return updated;
       });
     },
-    [],
+    [user],
   );
+
+  // Don't render children until auth and settings are loaded
+  if (authLoading || !isLoaded) {
+    return null;
+  }
 
   return (
     <SettingsContext.Provider value={{ settings, updateSettings, updateField }}>
