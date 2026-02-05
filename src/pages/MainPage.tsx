@@ -1,69 +1,22 @@
-import type { IRow } from '../types/types';
+import { SparkChart } from '@components/charts/SparkChart';
 
-import { Grid, Stack } from '@mui/material';
-import { useEffect, useState } from 'react';
-
-import { SparkChart } from '../charts/SparkChart';
-import { Chat } from '../components/Chat';
-import { DataTable } from '../components/DataTable/DataTable';
+import { useDataSet } from '../hooks/useDataSet';
 
 export const MainPage = () => {
-  const [dataSet, setDataSet] = useState<IRow[] | null>(null);
-
-  useEffect(() => {
-    const storedData = localStorage.getItem('dataSet');
-
-    if (storedData) {
-      const parsedData = JSON.parse(storedData).map((row: IRow) => ({
-        ...row,
-        date: new Date(row.date),
-      }));
-
-      setDataSet(parsedData);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (dataSet) {
-      localStorage.setItem('dataSet', JSON.stringify(dataSet));
-    }
-  }, [dataSet]);
+  const { dataSet } = useDataSet();
 
   return (
-    <>
-      <Grid container spacing={3}>
-        {/* ---- Chart Section ---- */}
+    <div className={'mx-auto w-full max-w-screen-2xl p-6'}>
+      <div className={'grid gap-4 lg:gap-6'}>
+        {/* Chart Section */}
+        <div className={'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'}>
+          <SparkChart color={'primary'} data={dataSet} value={'weight'} />
 
-        <Grid container size={12} spacing={{ xs: 2, md: 3 }}>
-          <Grid size={{ xs: 12, lg: 4 }}>
-            <SparkChart color={'primary'} data={dataSet} value={'weight'} />
-          </Grid>
+          <SparkChart color={'warning'} data={dataSet} value={'kcal'} />
 
-          <Grid size={{ xs: 6, lg: 4 }}>
-            <SparkChart color={'warning'} data={dataSet} value={'kcal'} />
-          </Grid>
-
-          <Grid size={{ xs: 6, lg: 4 }}>
-            <SparkChart color={'success'} data={dataSet} value={'protein'} />
-          </Grid>
-        </Grid>
-
-        {/* ---- Data Grid Section ---- */}
-
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Stack>
-            <Stack height={650} width={'100%'}>
-              <DataTable dataSet={dataSet} setDataSet={setDataSet} />
-            </Stack>
-          </Stack>
-        </Grid>
-
-        {/* ---- Chat Section ---- */}
-
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Chat dataset={dataSet} />
-        </Grid>
-      </Grid>
-    </>
+          <SparkChart color={'success'} data={dataSet} value={'protein'} />
+        </div>
+      </div>
+    </div>
   );
 };

@@ -2,9 +2,9 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import { FirebaseError } from 'firebase/app';
 import {
-  GoogleAuthProvider,
   createUserWithEmailAndPassword,
   getAuth,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -41,13 +41,7 @@ export const registerUser = async ({
   onError,
 }: AuthCredentials) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const user = userCredential.user;
-    console.log('User registered:', user.email);
+    await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
     handleError({ error, onError });
   }
@@ -59,13 +53,7 @@ export const loginUser = async ({
   onError,
 }: AuthCredentials) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const user = userCredential.user;
-    console.log('User logged in:', user.email);
+    await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     handleError({ error, onError });
   }
@@ -75,19 +63,12 @@ export const signInWithGoogle = async ({ onError }: ErrorHandlerProps) => {
   const provider = new GoogleAuthProvider();
 
   try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    console.log('Signed in with Google:', user.email, user.displayName);
+    await signInWithPopup(auth, provider);
   } catch (error) {
     handleError({ error, onError });
   }
 };
 
 export const logoutUser = async () => {
-  try {
-    await signOut(auth);
-    console.log('User logged out successfully.');
-  } catch (error) {
-    console.error('Error logging out:', error);
-  }
+  await signOut(auth);
 };

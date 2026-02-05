@@ -1,28 +1,48 @@
 import type { IRow } from '../types/types';
 
-import { GoogleGenAI } from '@google/genai';
-import { DatasetOutlined, DeleteSweep, Send } from '@mui/icons-material';
+import { Button } from '@components/ui/button';
+import { Checkbox } from '@components/ui/checkbox';
+import { ScrollArea } from '@components/ui/scroll-area';
+import { Textarea } from '@components/ui/textarea';
 import {
-  Card,
-  CardActions,
-  CardContent,
-  Checkbox,
-  Divider,
-  FormControlLabel,
-  IconButton,
-  InputBase,
-  Stack,
   Tooltip,
-  Typography,
-} from '@mui/material';
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@components/ui/tooltip';
+import { GoogleGenAI } from '@google/genai';
+import { cn } from '@lib/utils';
+import { Bot, Database, Send, Trash2, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useTranslation } from 'react-i18next';
+import { Streamdown } from 'streamdown';
 
-import { Roles } from '../enums/roles';
+import { CHAT_ROLES, STORAGE_KEYS } from '../constants/storage';
+import { useSettings } from '../contexts/useSettings';
+
+const LoadingDots = () => (
+  <div className={'flex items-center gap-1 py-1'}>
+    <span
+      className={
+        'h-2 w-2 animate-pulse rounded-full bg-sidebar-foreground/40 [animation-delay:-0.3s]'
+      }
+    />
+
+    <span
+      className={
+        'h-2 w-2 animate-pulse rounded-full bg-sidebar-foreground/40 [animation-delay:-0.15s]'
+      }
+    />
+
+    <span
+      className={'h-2 w-2 animate-pulse rounded-full bg-sidebar-foreground/40'}
+    />
+  </div>
+);
 
 interface Props {
   dataset: IRow[] | null;
+  onClose?: () => void;
 }
 
 interface Message {
@@ -31,58 +51,75 @@ interface Message {
   role: string;
 }
 
-export const Chat = ({ dataset }: Props) => {
+export const Chat = ({ dataset, onClose }: Props) => {
+  const { t } = useTranslation();
+  const { settings } = useSettings();
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY ?? null;
 
   if (!apiKey) {
     throw new Error(
-      'API key is not set. Please set VITE_GEMINI_API_KEY in your environment variables.'
+      'API key is not set. Please set VITE_GEMINI_API_KEY in your environment variables.',
     );
   }
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = (behavior: 'instant' | 'smooth' = 'smooth') => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior,
+      });
+    }
+  };
 
   const [input, setInput] = useState('');
   const [isAttached, setIsAttached] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: Roles.Model,
-      parts: [
-        {
-          text: 'This is beginning of a conversation about nutrition tracking.',
-        },
-      ],
-    },
-  ]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Initialize with welcome message on first render
+  useEffect(() => {
+    setMessages([
+      {
+        role: CHAT_ROLES.MODEL,
+        parts: [{ text: t('chat.welcomeMessage') }],
+      },
+    ]);
+  }, [t]);
 
   // Load messages from local storage on initial render
   useEffect(() => {
-    const storedMessages = localStorage.getItem('chatMessages');
+    try {
+      const storedMessages = localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES);
 
-    if (storedMessages) {
-      setMessages(JSON.parse(storedMessages));
-      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+      if (storedMessages) {
+        setMessages(JSON.parse(storedMessages));
+      }
+    } catch {
+      // Invalid JSON, keep welcome message
     }
 
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
-    }, 0);
+    setTimeout(() => scrollToBottom('instant'), 0);
   }, []);
 
   // Save messages to local storage whenever they change
   useEffect(() => {
     if (messages.length > 1) {
-      localStorage.setItem('chatMessages', JSON.stringify(messages));
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      localStorage.setItem(
+        STORAGE_KEYS.CHAT_MESSAGES,
+        JSON.stringify(messages),
+      );
+      scrollToBottom();
     }
   }, [messages]);
 
   const handleSubmit = async () => {
     const trimmedText = input.trim();
     const newUserMessage: Message = {
-      role: Roles.User,
+      role: CHAT_ROLES.USER,
       parts: [{ text: trimmedText }],
       attachedDataset: isAttached && dataset ? [...dataset] : undefined,
     };
@@ -104,218 +141,259 @@ export const Chat = ({ dataset }: Props) => {
       ],
     };
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [...messages, messagesWithDataset],
-    });
-
-    const newModelMessage = {
+    // Add empty model message for streaming
+    const emptyModelMessage: Message = {
       role: 'model',
-      parts: [{ text: response.text ?? 'Error' }],
+      parts: [{ text: '' }],
     };
+    setMessages((prev) => [...prev, emptyModelMessage]);
+    setIsStreaming(true);
 
-    setMessages((prev) => [...prev, newModelMessage]);
+    try {
+      // Build system instruction with user settings
+      const userInfo = [];
+      if (settings.name) {
+        userInfo.push(`Name: ${settings.name}`);
+      }
+      if (settings.age) {
+        userInfo.push(`Age: ${settings.age}`);
+      }
+      if (settings.height) {
+        userInfo.push(`Height: ${settings.height}cm`);
+      }
+
+      const systemInstruction =
+        userInfo.length > 0
+          ? `You are a helpful fitness and nutrition assistant. The user's profile: ${userInfo.join(', ')}. Use this information to provide personalized advice.`
+          : 'You are a helpful fitness and nutrition assistant.';
+
+      const stream = await ai.models.generateContentStream({
+        model: 'gemini-2.5-flash',
+        config: {
+          systemInstruction,
+        },
+        contents: [...messages, messagesWithDataset],
+      });
+
+      let fullText = '';
+      for await (const chunk of stream) {
+        fullText += chunk.text ?? '';
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: 'model',
+            parts: [{ text: fullText }],
+          };
+
+          return updated;
+        });
+      }
+    } catch {
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: 'model',
+          parts: [{ text: t('chat.errorGenerating') }],
+        };
+
+        return updated;
+      });
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   return (
-    <Stack
-      sx={{
-        width: '100%',
-        height: 650,
-        gap: 3,
-        alignItems: 'center',
-      }}
+    <div
+      className={
+        'flex h-full w-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground'
+      }
     >
-      {/* auto scroll to bottom */}
-      <Card
-        sx={{
-          borderColor: (theme) => theme.palette.divider,
-          borderRadius: 4,
-          borderStyle: 'solid',
-          borderWidth: 1,
-          height: '100%',
-          maxHeight: '100%',
-          overflowY: 'auto',
-          p: 2,
-          width: '100%',
-        }}
+      {/* Header */}
+      <header
+        className={'flex h-12 shrink-0 items-center justify-between px-4'}
       >
-        <Stack gap={2}>
-          {messages.map((message) => {
-            if (message.role === Roles.User) {
-              return (
-                <Card
-                  key={message.parts[0].text}
-                  sx={{
-                    alignSelf: 'flex-end',
-                    bgcolor: (theme) => theme.palette.primary.dark,
-                    borderRadius: 3,
-                    height: 'auto',
-                    maxWidth: '75%',
-                    width: 'fit-content',
+        <div className={'flex items-center gap-2'}>
+          <Bot className={'h-4 w-4 text-sidebar-foreground/70'} />
+
+          <span className={'text-sm font-medium'}>{t('chat.title')}</span>
+        </div>
+
+        <div className={'flex items-center gap-1'}>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  className={'h-7 w-7'}
+                  size={'icon'}
+                  variant={'ghost'}
+                  onClick={() => {
+                    setMessages((prev) => [prev[0]]);
+                    localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
                   }}
                 >
-                  <CardContent
-                    sx={{
-                      'px': 1.5,
-                      'py': 1,
+                  <Trash2 className={'h-4 w-4'} />
+                </Button>
+              </TooltipTrigger>
 
-                      '&:last-child': {
-                        pb: 1,
-                      },
-                    }}
-                  >
-                    <Typography variant={'caption'}>
-                      {message.parts[0].text}
-                    </Typography>
-                  </CardContent>
+              <TooltipContent>{t('chat.clearChat')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-                  {message.attachedDataset ? (
-                    <CardActions
-                      sx={{
-                        justifyContent: 'flex-end',
-                        mt: -1.5,
-                      }}
-                    >
-                      <Tooltip title={'Data attached'}>
-                        <DatasetOutlined />
-                      </Tooltip>
-                    </CardActions>
-                  ) : null}
-                </Card>
-              );
-            }
+          {onClose && (
+            <Button
+              className={'h-7 w-7'}
+              onClick={onClose}
+              size={'icon'}
+              variant={'ghost'}
+            >
+              <X className={'h-4 w-4'} />
+            </Button>
+          )}
+        </div>
+      </header>
+
+      {/* Messages */}
+      <ScrollArea
+        viewportRef={scrollRef}
+        className={
+          'min-h-0 flex-1 [mask-image:linear-gradient(to_bottom,transparent_0%,black_32px,black_calc(100%-32px),transparent_100%)]'
+        }
+      >
+        <div className={'space-y-4 p-4'}>
+          {messages.map((message, index) => {
+            const isUser = message.role === CHAT_ROLES.USER;
+            const isLastMessage = index === messages.length - 1;
+            const isCurrentlyStreaming =
+              isStreaming && isLastMessage && !isUser;
 
             return (
-              <Card
-                key={message.parts[0].text}
-                sx={{
-                  alignSelf: 'flex-start',
-                  bgcolor: (theme) => theme.palette.action.focus,
-                  borderRadius: 3,
-                  height: 'auto',
-                  maxWidth: '75%',
-                  width: 'fit-content',
-                }}
+              <div
+                className={cn('flex gap-3', isUser && 'flex-row-reverse')}
+                key={index}
               >
-                <CardContent
-                  sx={{
-                    'p': 0,
-                    'px': 1.5,
-                    'py': 0,
-
-                    '&:last-child': {
-                      pb: 0,
-                    },
-                  }}
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+                    isUser ? 'bg-sidebar-primary' : 'bg-sidebar-accent',
+                  )}
                 >
-                  <Typography variant={'caption'}>
-                    <Markdown remarkPlugins={[remarkGfm]}>
-                      {message.parts[0].text}
-                    </Markdown>
-                  </Typography>
-                </CardContent>
-              </Card>
+                  {isUser ? (
+                    <User
+                      className={'h-4 w-4 text-sidebar-primary-foreground'}
+                    />
+                  ) : (
+                    <Bot className={'h-4 w-4 text-sidebar-accent-foreground'} />
+                  )}
+                </div>
+
+                <div
+                  className={cn(
+                    'flex max-w-[75%] flex-col gap-1',
+                    isUser && 'items-end',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'rounded-lg px-3 py-2 text-sm',
+                      isUser
+                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                        : 'bg-sidebar-accent text-sidebar-accent-foreground',
+                    )}
+                  >
+                    {isUser ? (
+                      message.parts[0].text
+                    ) : isCurrentlyStreaming && !message.parts[0].text ? (
+                      <LoadingDots />
+                    ) : (
+                      <div
+                        className={
+                          'prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0'
+                        }
+                      >
+                        <Streamdown
+                          caret={isCurrentlyStreaming ? 'block' : undefined}
+                          isAnimating={isCurrentlyStreaming}
+                          mode={isCurrentlyStreaming ? 'streaming' : 'static'}
+                        >
+                          {message.parts[0].text}
+                        </Streamdown>
+                      </div>
+                    )}
+                  </div>
+
+                  {message.attachedDataset && (
+                    <div
+                      className={
+                        'flex items-center gap-1 text-xs text-sidebar-foreground/60'
+                      }
+                    >
+                      <Database className={'h-3 w-3'} />
+
+                      <span>{t('chat.dataAttached')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             );
           })}
+        </div>
+      </ScrollArea>
 
-          <Stack ref={messagesEndRef} sx={{ my: -1 }} />
-        </Stack>
-      </Card>
-
-      <Card
-        variant={'outlined'}
-        sx={{
-          borderRadius: 4,
-          overflow: 'visible',
-          width: '100%',
-        }}
-      >
-        <CardContent
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 1,
-            alignItems: 'center',
-            width: '100%',
-            px: 2,
-            py: 1,
-          }}
-        >
-          <InputBase
-            fullWidth
-            multiline
-            maxRows={4}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder={'Type your message here...'}
-            type={'text'}
+      {/* Input */}
+      <div className={'shrink-0 p-4'}>
+        <div className={'flex items-end gap-2'}>
+          <Textarea
+            placeholder={t('chat.placeholder')}
+            rows={1}
             value={input}
-            onKeyDown={(event) => {
-              if (input.trim() && event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
+            className={
+              'min-h-[40px] flex-1 resize-none border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50'
+            }
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setInput(e.target.value)
+            }
+            onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+              if (
+                input.trim() &&
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !isStreaming
+              ) {
+                e.preventDefault();
                 handleSubmit();
               }
             }}
           />
 
-          <Divider flexItem orientation={'vertical'} sx={{ mx: 1 }} />
-
-          <IconButton
-            aria-label={'directions'}
-            color={'primary'}
-            disabled={!input.trim()}
+          <Button
+            disabled={!input.trim() || isStreaming}
             onClick={handleSubmit}
+            size={'icon'}
+            className={
+              'h-[40px] w-[40px] bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90'
+            }
           >
-            <Send />
-          </IconButton>
-        </CardContent>
+            <Send className={'h-4 w-4'} />
+          </Button>
+        </div>
 
-        <Divider />
-
-        <CardActions
-          sx={{
-            py: 0.5,
-            flexDirection: 'row',
-            display: 'flex',
-            gap: 1,
-          }}
-        >
-          <FormControlLabel
+        <div className={'mt-2 flex items-center gap-2'}>
+          <Checkbox
+            checked={isAttached}
             disabled={!dataset}
-            control={
-              <Checkbox
-                checked={isAttached}
-                color={'primary'}
-                onChange={(event) => setIsAttached(event.target.checked)}
-                size={'small'}
-              />
-            }
-            label={
-              <Typography color={'textSecondary'} variant={'caption'}>
-                {'Attach data'}
-              </Typography>
-            }
-            sx={{
-              ml: 0,
-              mr: 0.5,
-            }}
+            id={'attach-data'}
+            onCheckedChange={(checked) => setIsAttached(checked === true)}
           />
 
-          <Divider orientation={'vertical'} sx={{ height: 20 }} />
-
-          <Tooltip title={'Clear chat'}>
-            <IconButton
-              size={'small'}
-              onClick={() => {
-                setMessages((prev) => [prev[0]]);
-                localStorage.removeItem('chatMessages');
-              }}
-            >
-              <DeleteSweep fontSize={'small'} />
-            </IconButton>
-          </Tooltip>
-        </CardActions>
-      </Card>
-    </Stack>
+          <label
+            className={'text-xs text-sidebar-foreground/60'}
+            htmlFor={'attach-data'}
+          >
+            {t('chat.attachDataset')}
+          </label>
+        </div>
+      </div>
+    </div>
   );
 };

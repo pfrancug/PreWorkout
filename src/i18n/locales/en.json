@@ -1,0 +1,118 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "app": {
+    "name": "PreWorkout",
+    "tagline": "Fuel Your Gains"
+  },
+  "nav": {
+    "menu": "Menu",
+    "dashboard": "Dashboard",
+    "diary": "Diary",
+    "calculator": "Calculator",
+    "chat": "Chat",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "diary": {
+    "title": "Food Diary",
+    "description": "Track your daily nutrition and weight."
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your personal information and preferences.",
+    "personalInfo": {
+      "title": "Personal Information",
+      "description": "Enter your details for personalized tracking and recommendations."
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "Enter your name",
+      "sex": "Sex",
+      "male": "Male",
+      "female": "Female",
+      "age": "Age",
+      "agePlaceholder": "Enter your age",
+      "height": "Height (cm)",
+      "heightPlaceholder": "Enter your height"
+    },
+    "saveChanges": "Save Changes",
+    "savedSuccess": "Settings saved successfully!"
+  },
+  "chat": {
+    "title": "Gains Buddy",
+    "clearChat": "Clear chat",
+    "placeholder": "Type your message...",
+    "attachDataset": "Attach dataset to message",
+    "dataAttached": "Data attached",
+    "errorGenerating": "Error generating response",
+    "welcomeMessage": "Hey there! 🔥\n\nReady to crush it today?\nWeight? Calories? Meals? Let's track & win! 💪"
+  },
+  "auth": {
+    "login": "Welcome back",
+    "loginDescription": "Sign in to your account to continue",
+    "signIn": "Sign In",
+    "signInWithGoogle": "Sign in with Google",
+    "register": "Sign Up",
+    "createAccount": "Create an account",
+    "createAccountDescription": "Enter your details to get started",
+    "email": "Email",
+    "password": "Password",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "or": "or continue with"
+  },
+  "table": {
+    "selectAll": "Select all",
+    "selectRow": "Select row",
+    "date": "Date",
+    "weight": "Weight (kg)",
+    "calories": "Calories (kcal)",
+    "protein": "Protein (g)",
+    "fat": "Fat (g)",
+    "carbs": "Carbs (g)"
+  },
+  "calculator": {
+    "title": "Calorie Calculator",
+    "description": "Calculate your daily caloric needs using the Mifflin-St Jeor equation.",
+    "form": {
+      "title": "Your Details",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "age": "Age",
+      "height": "Height (cm)",
+      "weight": "Weight (kg)",
+      "activity": "Activity Level",
+      "activityPlaceholder": "Select activity level",
+      "calculate": "Calculate"
+    },
+    "activity": {
+      "sedentary": "Sedentary (little or no exercise)",
+      "light": "Light (exercise 1-3 days/week)",
+      "moderate": "Moderate (exercise 3-5 days/week)",
+      "active": "Active (exercise 6-7 days/week)",
+      "veryActive": "Very Active (hard exercise daily)",
+      "extraActive": "Extra Active (very hard exercise)"
+    },
+    "equation": {
+      "title": "Mifflin-St Jeor Equation",
+      "description": "The Mifflin-St Jeor equation is considered the most accurate for calculating basal metabolic rate (BMR).",
+      "note": "TDEE = BMR × Activity Factor"
+    },
+    "results": {
+      "title": "Your Results",
+      "maintain": "Maintain Weight",
+      "midLoss": "Mild Weight Loss",
+      "loss": "Weight Loss",
+      "extreme": "Extreme Weight Loss"
+    }
+  }
+}

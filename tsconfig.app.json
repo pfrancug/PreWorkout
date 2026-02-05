@@ -15,6 +15,23 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@app-types/*": ["./src/types/*"],
+      "@components/*": ["./src/components/*"],
+      "@constants/*": ["./src/constants/*"],
+      "@contexts/*": ["./src/contexts/*"],
+      "@data/*": ["./src/data/*"],
+      "@firebase-config/*": ["./src/firebase/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@i18n": ["./src/i18n"],
+      "@i18n/*": ["./src/i18n/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@styles/*": ["./src/styles/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

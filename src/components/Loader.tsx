@@ -1,35 +1,9 @@
-import { CircularProgress, Stack, useTheme } from '@mui/material';
+import { Loader2 } from 'lucide-react';
 
 export const Loader = () => {
-  const theme = useTheme();
-
   return (
-    <Stack
-      sx={{
-        height: '100%',
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <svg height={0} width={0}>
-        <defs>
-          <linearGradient
-            id={'loader_gradient'}
-            x1={'0%'}
-            x2={'0%'}
-            y1={'0%'}
-            y2={'100%'}
-          >
-            <stop offset={'0%'} stopColor={theme.palette.secondary.dark} />
-            <stop offset={'100%'} stopColor={theme.palette.primary.light} />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      <CircularProgress
-        sx={{ 'svg circle': { stroke: 'url(#loader_gradient)' } }}
-      />
-    </Stack>
+    <div className={'flex h-screen w-full items-center justify-center'}>
+      <Loader2 className={'h-8 w-8 animate-spin text-primary'} />
+    </div>
   );
 };
