@@ -289,7 +289,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
           <span className={'text-sm font-medium'}>{t('chat.title')}</span>
         </div>
 
-        <div className={'flex items-center gap-1'}>
+        <div className={'flex items-center gap-2'}>
           <Button
             className={'h-7 px-2 text-xs'}
             disabled={!isGeminiAvailable() || showSettingsAlert}
@@ -321,7 +321,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       >
         <div
           className={cn(
-            'space-y-6 p-4',
+            'w-full space-y-6 overflow-hidden p-4',
             showSettingsAlert && 'flex h-full items-center justify-center',
           )}
         >
@@ -359,16 +359,19 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                 <div
                   key={index}
                   className={cn(
-                    'flex',
+                    'flex w-full',
                     isUser ? 'justify-end' : 'justify-start',
                   )}
                 >
                   <div
-                    className={cn('flex flex-col gap-1', isUser && 'items-end')}
+                    className={cn(
+                      'flex min-w-0 flex-col gap-1 overflow-hidden',
+                      isUser ? 'max-w-[85%] items-end' : 'w-full',
+                    )}
                   >
                     <div
                       className={cn(
-                        'text-sm',
+                        'min-w-0 overflow-hidden text-sm',
                         isUser
                           ? 'rounded-3xl rounded-br-sm border border-zinc-200 px-4 py-2.5 dark:border-zinc-700'
                           : 'py-1',
@@ -382,13 +385,15 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                       )}
                     >
                       {isUser ? (
-                        message.parts[0].text
+                        <span className={'break-words'}>
+                          {message.parts[0].text}
+                        </span>
                       ) : isCurrentlyStreaming && !message.parts[0].text ? (
                         <LoadingDots />
                       ) : (
                         <div
                           className={
-                            'prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0'
+                            'prose prose-sm dark:prose-invert max-w-full break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_code]:break-all'
                           }
                         >
                           <Streamdown
