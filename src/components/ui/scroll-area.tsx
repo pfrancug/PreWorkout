@@ -14,7 +14,7 @@ const ScrollArea = ({
 }) => {
   return (
     <ScrollAreaPrimitive.Root
-      className={cn('relative', className)}
+      className={cn('relative overflow-hidden', className)}
       data-slot={'scroll-area'}
       {...props}
     >

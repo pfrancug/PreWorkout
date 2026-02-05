@@ -1,6 +1,7 @@
 import type { IRow } from './types/types';
 
 import { Button } from '@components/ui/button';
+import { ScrollArea } from '@components/ui/scroll-area';
 import { Separator } from '@components/ui/separator';
 import {
   SidebarInset,
@@ -33,7 +34,6 @@ import { SettingsProvider } from './contexts/SettingsProvider';
 import { useAuth } from './contexts/useAuth';
 import { useSettings } from './contexts/useSettings';
 import { useDataSet } from './hooks/useDataSet';
-import { cn } from './lib/utils';
 import { CalculatorPage } from './pages/Calculator';
 import { ChatPage } from './pages/ChatPage';
 import { DiaryPage } from './pages/DiaryPage';
@@ -142,36 +142,38 @@ const AppRoutes = () => {
             </div>
           </header>
 
-          <div
-            className={cn(
-              'flex min-h-0 flex-1 flex-col',
-              location.pathname === '/chat'
-                ? 'overflow-hidden'
-                : 'overflow-auto p-4',
-            )}
-          >
-            <Routes>
-              <Route element={<MainPage />} path={'/'} />
+          {location.pathname === '/chat' ? (
+            <div className={'flex min-h-0 flex-1 flex-col overflow-hidden'}>
+              <Routes>
+                <Route element={<ChatPage />} path={'/chat'} />
+              </Routes>
+            </div>
+          ) : (
+            <ScrollArea className={'min-h-0 flex-1'}>
+              <Routes>
+                <Route element={<MainPage />} path={'/'} />
 
-              <Route element={<MainPage />} path={'/dashboard'} />
+                <Route element={<MainPage />} path={'/dashboard'} />
 
-              <Route element={<DiaryPage />} path={'/diary'} />
+                <Route element={<DiaryPage />} path={'/diary'} />
 
-              <Route element={<CalculatorPage />} path={'/calculator'} />
+                <Route element={<CalculatorPage />} path={'/calculator'} />
 
-              <Route element={<ChatPage />} path={'/chat'} />
+                <Route element={<SettingsPage />} path={'/settings'} />
 
-              <Route element={<SettingsPage />} path={'/settings'} />
+                <Route element={<PrivacyPage />} path={'/privacy'} />
 
-              <Route element={<PrivacyPage />} path={'/privacy'} />
+                <Route element={<TermsPage />} path={'/terms'} />
 
-              <Route element={<TermsPage />} path={'/terms'} />
+                <Route
+                  element={<Navigate replace to={'/'} />}
+                  path={'/login'}
+                />
 
-              <Route element={<Navigate replace to={'/'} />} path={'/login'} />
-
-              <Route element={<Navigate replace to={'/'} />} path={'*'} />
-            </Routes>
-          </div>
+                <Route element={<Navigate replace to={'/'} />} path={'*'} />
+              </Routes>
+            </ScrollArea>
+          )}
         </SidebarInset>
 
         <RightPanel suppressed={location.pathname === '/chat'}>
