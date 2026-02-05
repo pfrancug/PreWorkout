@@ -19,6 +19,11 @@
         "data": {
           ".read": "auth.uid == $userId",
           ".write": "auth.uid == $userId"
+        },
+        "limits": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId",
+          ".validate": "newData.hasChildren(['date', 'count']) && newData.child('date').isString() && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('count').val() <= 10"
         }
       }
     }

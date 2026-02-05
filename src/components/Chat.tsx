@@ -22,6 +22,8 @@ import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import {
   clearUserMessages,
+  getRemainingMessages,
+  incrementDailyMessageCount,
   saveUserMessages,
   subscribeToUserMessages,
 } from '../firebase/database';
@@ -98,6 +100,18 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
+  const [remainingMessages, setRemainingMessages] = useState<number>(10);
+
+  const isLimitReached = remainingMessages <= 0;
+
+  // Load remaining daily message count
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    getRemainingMessages(user.uid).then(setRemainingMessages);
+  }, [user]);
 
   // Initialize with welcome message on first render
   useEffect(() => {
@@ -129,6 +143,10 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
   }, [user]);
 
   const handleSubmit = async () => {
+    if (!user || isLimitReached) {
+      return;
+    }
+
     const trimmedText = input.trim();
     const newUserMessage: Message = {
       role: CHAT_ROLES.USER,
@@ -260,6 +278,9 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       // Save to Firebase after streaming completes
       if (user && finalMessages.length > 1) {
         await saveUserMessages(user.uid, finalMessages);
+        await incrementDailyMessageCount(user.uid);
+        const remaining = await getRemainingMessages(user.uid);
+        setRemainingMessages(remaining);
       }
       scrollToBottom();
     }
@@ -460,6 +481,25 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
 
       {/* Input */}
       <div className={'shrink-0 px-4 pt-4 pb-6'}>
+        {user && (
+          <p
+            className={cn(
+              'mb-2 text-center text-xs',
+              isLimitReached
+                ? 'text-destructive'
+                : isPage
+                  ? 'text-muted-foreground'
+                  : 'text-sidebar-foreground/50',
+            )}
+          >
+            {isLimitReached
+              ? t('chat.limitReached')
+              : t('chat.remainingMessages', {
+                  count: remainingMessages,
+                })}
+          </p>
+        )}
+
         <div
           className={cn(
             'rounded-2xl border p-3 transition-colors',
@@ -469,8 +509,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
           )}
         >
           <Textarea
-            disabled={showSettingsAlert}
-            placeholder={t('chat.placeholder')}
+            disabled={showSettingsAlert || isLimitReached}
             rows={1}
             value={input}
             className={cn(
@@ -487,12 +526,16 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                 input.trim() &&
                 e.key === 'Enter' &&
                 !e.shiftKey &&
-                !isStreaming
+                !isStreaming &&
+                !isLimitReached
               ) {
                 e.preventDefault();
                 handleSubmit();
               }
             }}
+            placeholder={
+              isLimitReached ? t('chat.limitReached') : t('chat.placeholder')
+            }
           />
 
           <div className={'mt-2 flex items-center justify-between'}>
@@ -555,7 +598,6 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
             </div>
 
             <Button
-              disabled={!input.trim() || isStreaming || showSettingsAlert}
               onClick={handleSubmit}
               size={'sm'}
               className={cn(
@@ -564,6 +606,12 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90',
               )}
+              disabled={
+                !input.trim() ||
+                isStreaming ||
+                showSettingsAlert ||
+                isLimitReached
+              }
             >
               <Send className={'mr-1.5 h-3.5 w-3.5'} />
               {t('chat.send')}

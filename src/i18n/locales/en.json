@@ -94,6 +94,8 @@
     "attachDatasetTooltip": "Click to attach your diary data",
     "dataAttached": "Data attached",
     "errorGenerating": "Error generating response",
+    "limitReached": "Daily message limit reached. Try again tomorrow.",
+    "remainingMessages": "{{count}} messages remaining today",
     "welcomeMessage": "Hey there! 🔥\n\nReady to crush it today?\nWeight? Calories? Meals? Let's track & win! 💪",
     "settingsAlert": {
       "title": "Complete Your Profile",

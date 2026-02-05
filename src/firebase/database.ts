@@ -9,11 +9,17 @@ import { onValue } from 'firebase/database';
 
 import { app } from './config';
 
+export interface DailyMessageLimit {
+  date: string;
+  count: number;
+}
+
 export interface AllUserData {
   settings: UserSettings | null;
   preferences: UserPreferences | null;
   messages: Message[] | null;
   data: IRowData[] | null;
+  limits: DailyMessageLimit | null;
 }
 
 const database = getDatabase(app);
@@ -148,6 +154,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserPreferencesRef(userId)),
     remove(getUserMessagesRef(userId)),
     remove(getUserDataRef(userId)),
+    remove(getUserLimitsRef(userId)),
   ]);
 };
 
@@ -174,14 +181,28 @@ export const importAllUserData = async (
 };
 
 export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
-  const [settings, preferences, messages, data] = await Promise.all([
+  const [settings, preferences, messages, data, limits] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
     loadUserMessages(userId),
     loadUserData(userId),
+    loadDailyMessageLimit(userId),
   ]);
 
-  return { settings, preferences, messages, data };
+  return { settings, preferences, messages, data, limits };
+};
+
+const loadDailyMessageLimit = async (
+  userId: string,
+): Promise<DailyMessageLimit | null> => {
+  const limitsRef = getUserLimitsRef(userId);
+  const snapshot = await get(limitsRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as DailyMessageLimit;
+  }
+
+  return null;
 };
 
 export const loadUserMessages = async (
@@ -195,6 +216,51 @@ export const loadUserMessages = async (
   }
 
   return null;
+};
+
+// Daily message limits
+const DAILY_MESSAGE_LIMIT = 5;
+
+const getTodayDateString = (): string => new Date().toISOString().split('T')[0];
+
+export const getUserLimitsRef = (userId: string) =>
+  ref(database, `users/${userId}/limits`);
+
+export const getDailyMessageCount = async (userId: string): Promise<number> => {
+  const limitsRef = getUserLimitsRef(userId);
+  const snapshot = await get(limitsRef);
+
+  if (snapshot.exists()) {
+    const limits = snapshot.val() as DailyMessageLimit;
+    if (limits.date === getTodayDateString()) {
+      return limits.count;
+    }
+  }
+
+  return 0;
+};
+
+export const incrementDailyMessageCount = async (
+  userId: string,
+): Promise<void> => {
+  const today = getTodayDateString();
+  const current = await getDailyMessageCount(userId);
+  const limitsRef = getUserLimitsRef(userId);
+  await set(limitsRef, { date: today, count: current + 1 });
+};
+
+export const isMessageLimitReached = async (
+  userId: string,
+): Promise<boolean> => {
+  const count = await getDailyMessageCount(userId);
+
+  return count >= DAILY_MESSAGE_LIMIT;
+};
+
+export const getRemainingMessages = async (userId: string): Promise<number> => {
+  const count = await getDailyMessageCount(userId);
+
+  return Math.max(0, DAILY_MESSAGE_LIMIT - count);
 };
 
 export const subscribeToUserData = (
