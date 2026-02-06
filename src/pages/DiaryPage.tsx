@@ -12,7 +12,7 @@ export const DiaryPage = () => {
   const columns = useMemo(() => getColumns(t), [t]);
 
   return (
-    <div className={'mx-auto w-full max-w-4xl flex flex-1 flex-col gap-8 p-6'}>
+    <div className={'mx-auto w-full max-w-3xl flex flex-1 flex-col gap-8 p-6'}>
       <div className={'space-y-1'}>
         <h1 className={'text-3xl font-bold tracking-tight'}>
           {t('diary.title')}
