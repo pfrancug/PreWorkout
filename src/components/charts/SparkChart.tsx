@@ -21,20 +21,10 @@ import { useMemo } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
 interface Props {
-  color: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
   data: IRow[] | null;
   days?: number;
   value: 'kcal' | 'protein' | 'weight' | 'fat' | 'carbs';
 }
-
-const colorMap: Record<Props['color'], string> = {
-  primary: 'var(--chart-1)',
-  secondary: 'var(--chart-2)',
-  error: 'var(--destructive)',
-  warning: 'var(--chart-4)',
-  info: 'var(--chart-3)',
-  success: 'var(--chart-2)',
-};
 
 const textMap: Record<Props['value'], { title: string; unit: string }> = {
   carbs: { title: 'Carbs', unit: 'g' },
@@ -44,16 +34,16 @@ const textMap: Record<Props['value'], { title: string; unit: string }> = {
   weight: { title: 'Weight', unit: 'kg' },
 };
 
-export const SparkChart = ({ color, data, days = 14, value }: Props) => {
+export const SparkChart = ({ data, days = 14, value }: Props) => {
   const chartConfig = useMemo(
     () =>
       ({
         [value]: {
           label: textMap[value].title,
-          color: colorMap[color],
+          color: 'var(--chart)',
         },
       }) satisfies ChartConfig,
-    [color, value],
+    [value],
   );
 
   const sortedData = useMemo(() => {
@@ -153,9 +143,9 @@ export const SparkChart = ({ color, data, days = 14, value }: Props) => {
           {isWeight && valueDifference !== 0 && (
             <Badge variant={'outline'}>
               {valueDifference > 0 ? (
-                <TrendingUp className={'text-yellow-500'} />
+                <TrendingUp className={'text-amber-400'} />
               ) : (
-                <TrendingDown className={'text-green-500'} />
+                <TrendingDown className={'text-emerald-400'} />
               )}
               {valueDifference > 0 ? '+' : ''}
               {valueDifference.toFixed(1)} {text.unit}
@@ -165,16 +155,6 @@ export const SparkChart = ({ color, data, days = 14, value }: Props) => {
       </CardHeader>
 
       <CardFooter className={'flex-col items-start gap-1.5 text-sm'}>
-        {/* {isWeight && valueDifference !== 0 && (
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {valueDifference > 0 ? 'Weight increased' : 'Weight decreased'}
-            {valueDifference > 0 ? (
-              <TrendingUp className="size-4 text-yellow-500" />
-            ) : (
-              <TrendingDown className="size-4 text-green-500" />
-            )}
-          </div>
-        )} */}
         <div className={'text-muted-foreground'}>
           {isWeight
             ? `Change over last ${days} days`
@@ -199,13 +179,13 @@ export const SparkChart = ({ color, data, days = 14, value }: Props) => {
               >
                 <stop
                   offset={'0%'}
-                  stopColor={colorMap[color]}
+                  stopColor={'var(--chart)'}
                   stopOpacity={0.4}
                 />
 
                 <stop
                   offset={'100%'}
-                  stopColor={colorMap[color]}
+                  stopColor={'var(--chart)'}
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -223,7 +203,7 @@ export const SparkChart = ({ color, data, days = 14, value }: Props) => {
             <Area
               dataKey={value}
               fill={`url(#${gradientId})`}
-              stroke={colorMap[color]}
+              stroke={'var(--chart)'}
               strokeWidth={2}
               type={'monotone'}
             />

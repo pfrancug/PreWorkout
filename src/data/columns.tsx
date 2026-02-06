@@ -27,56 +27,91 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
     ),
     enableSorting: false,
     enableHiding: false,
-    size: 40,
-    minSize: 40,
-    maxSize: 40,
+    size: 36,
+    minSize: 36,
+    maxSize: 36,
   },
   {
     accessorKey: 'date',
     header: t('table.date'),
     cell: EditableCell,
-    size: 120,
-    minSize: 120,
-    maxSize: 120,
+    size: 110,
+    minSize: 100,
+    maxSize: 130,
   },
   {
     accessorKey: 'weight',
-    header: t('table.weight'),
+    header: () => (
+      <div>
+        <span>{'Weight'}</span>
+        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
+          {'kg'}
+        </span>
+      </div>
+    ),
     cell: EditableCell,
-    size: 100,
-    minSize: 100,
+    size: 80,
+    minSize: 70,
     maxSize: 100,
   },
   {
     accessorKey: 'kcal',
-    header: t('table.calories'),
+    header: () => (
+      <div>
+        <span>{'Calories'}</span>
+        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
+          {'kcal'}
+        </span>
+      </div>
+    ),
     cell: EditableCell,
     size: 90,
-    minSize: 90,
-    maxSize: 90,
+    minSize: 80,
+    maxSize: 110,
   },
   {
     accessorKey: 'protein',
-    header: t('table.protein'),
+    header: () => (
+      <div>
+        <span>{'Protein'}</span>
+        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
+          {'g'}
+        </span>
+      </div>
+    ),
     cell: EditableCell,
-    size: 100,
-    minSize: 100,
+    size: 80,
+    minSize: 70,
     maxSize: 100,
   },
   {
     accessorKey: 'fat',
-    header: t('table.fat'),
+    header: () => (
+      <div>
+        <span>{'Fat'}</span>
+        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
+          {'g'}
+        </span>
+      </div>
+    ),
     cell: EditableCell,
-    size: 80,
-    minSize: 80,
-    maxSize: 80,
+    size: 70,
+    minSize: 60,
+    maxSize: 90,
   },
   {
     accessorKey: 'carbs',
-    header: t('table.carbs'),
+    header: () => (
+      <div>
+        <span>{'Carbs'}</span>
+        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
+          {'g'}
+        </span>
+      </div>
+    ),
     cell: EditableCell,
-    size: 90,
-    minSize: 90,
+    size: 70,
+    minSize: 60,
     maxSize: 90,
   },
 ];

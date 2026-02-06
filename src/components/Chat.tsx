@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from '@components/ui/tooltip';
 import { cn } from '@lib/utils';
-import { Bot, Database, Send, Settings, Trash2 } from 'lucide-react';
+import { BicepsFlexed, Database, Send, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -333,9 +333,13 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
           className={'flex h-12 shrink-0 items-center justify-between px-4'}
         >
           <div className={'flex items-center gap-2'}>
-            <Bot className={'h-4 w-4 text-sidebar-foreground/70'} />
+            <BicepsFlexed className={'h-4 w-4 text-sidebar-foreground/70'} />
 
             <span className={'text-sm font-medium'}>{t('chat.title')}</span>
+
+            <BicepsFlexed
+              className={'h-4 w-4 -scale-x-100 text-sidebar-foreground/70'}
+            />
           </div>
 
           <div className={'flex items-center gap-2'}>
@@ -444,7 +448,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                       ) : (
                         <div
                           className={
-                            'prose prose-sm dark:prose-invert max-w-full break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_code]:break-all'
+                            'prose prose-sm dark:prose-invert max-w-full break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_code]:break-all [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto'
                           }
                         >
                           <Streamdown

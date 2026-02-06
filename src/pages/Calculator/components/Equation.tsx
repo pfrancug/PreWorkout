@@ -45,7 +45,7 @@ export const Equation = () => {
 
           <div className={'space-y-2 rounded-lg bg-muted/50 p-4'}>
             <p className={'text-sm font-mono'}>
-              <span className={'text-blue-500'}>
+              <span className={'text-sky-400'}>
                 {t('calculator.form.male')}
                 {':'}
               </span>{' '}
@@ -53,7 +53,7 @@ export const Equation = () => {
             </p>
 
             <p className={'text-sm font-mono'}>
-              <span className={'text-pink-500'}>
+              <span className={'text-pink-400'}>
                 {t('calculator.form.female')}
                 {':'}
               </span>{' '}

@@ -2,7 +2,6 @@ import type { IRow } from './types/types';
 
 import { Button } from '@components/ui/button';
 import { ScrollArea } from '@components/ui/scroll-area';
-import { Separator } from '@components/ui/separator';
 import {
   SidebarInset,
   SidebarProvider,
@@ -123,8 +122,6 @@ const AppRoutes = () => {
             className={'flex h-12 shrink-0 items-center gap-2 border-b px-4'}
           >
             <SidebarTrigger className={'-ml-1'} />
-
-            <Separator className={'mr-2 h-4'} orientation={'vertical'} />
 
             <span className={'text-sm font-medium'}>{pageTitle}</span>
 

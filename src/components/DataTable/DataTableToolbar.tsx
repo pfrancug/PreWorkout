@@ -77,26 +77,27 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
 
   return (
     <div className={'flex items-center justify-between'}>
-      <div className={'flex items-center gap-2 text-sm text-muted-foreground'}>
+      <div className={'flex items-center gap-2 text-xs text-muted-foreground'}>
         {selectedCount > 0 && (
           <span>
             {selectedCount}
-
-            {' row(s) selected'}
+            {' selected'}
           </span>
         )}
       </div>
 
-      <div className={'flex items-center gap-2'}>
+      <div className={'flex items-center gap-1.5'}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                className={'h-8 gap-1.5 text-xs'}
                 onClick={handleAddRow}
-                size={'icon-sm'}
+                size={'sm'}
                 variant={'outline'}
               >
-                <Plus className={'size-4'} />
+                <Plus className={'size-3.5'} />
+                {'Add'}
               </Button>
             </TooltipTrigger>
 
@@ -106,31 +107,39 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                className={'h-8 gap-1.5 text-xs'}
                 onClick={handleExport}
-                size={'icon-sm'}
+                size={'sm'}
                 variant={'outline'}
               >
-                <Download className={'size-4'} />
+                <Download className={'size-3.5'} />
+                {'Export'}
               </Button>
             </TooltipTrigger>
 
             <TooltipContent>{'Export as CSV'}</TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                disabled={selectedCount === 0}
-                onClick={handleDeleteSelected}
-                size={'icon-sm'}
-                variant={'outline'}
-              >
-                <Trash2 className={'size-4'} />
-              </Button>
-            </TooltipTrigger>
+          {selectedCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleDeleteSelected}
+                  size={'sm'}
+                  variant={'outline'}
+                  className={
+                    'h-8 gap-1.5 text-xs text-destructive hover:bg-destructive/10'
+                  }
+                >
+                  <Trash2 className={'size-3.5'} />
+                  {'Delete'}
+                  {` (${selectedCount})`}
+                </Button>
+              </TooltipTrigger>
 
-            <TooltipContent>{'Delete selected rows'}</TooltipContent>
-          </Tooltip>
+              <TooltipContent>{'Delete selected rows'}</TooltipContent>
+            </Tooltip>
+          )}
         </TooltipProvider>
       </div>
     </div>

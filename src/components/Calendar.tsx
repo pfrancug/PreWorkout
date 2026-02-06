@@ -33,26 +33,26 @@ const ACTIVITIES: {
   {
     type: 'training',
     icon: Dumbbell,
-    colorClass: 'text-orange-500',
-    activeClass: 'bg-orange-500/20 text-orange-500',
+    colorClass: 'text-orange-400',
+    activeClass: 'bg-orange-400/15 text-orange-400',
   },
   {
     type: 'personal',
     icon: UserCheck,
-    colorClass: 'text-blue-500',
-    activeClass: 'bg-blue-500/20 text-blue-500',
+    colorClass: 'text-sky-400',
+    activeClass: 'bg-sky-400/15 text-sky-400',
   },
   {
     type: 'run',
     icon: Footprints,
-    colorClass: 'text-green-500',
-    activeClass: 'bg-green-500/20 text-green-500',
+    colorClass: 'text-emerald-400',
+    activeClass: 'bg-emerald-400/15 text-emerald-400',
   },
   {
     type: 'another',
     icon: Layers2,
-    colorClass: 'text-white',
-    activeClass: 'bg-white/20 text-white',
+    colorClass: 'text-violet-400',
+    activeClass: 'bg-violet-400/15 text-violet-400',
   },
 ];
 

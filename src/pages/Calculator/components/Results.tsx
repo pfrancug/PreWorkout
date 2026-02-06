@@ -17,18 +17,18 @@ interface ResultRowProps {
 
 const colorMap = {
   emerald: {
-    border: 'border-l-emerald-500',
-    bg: 'bg-emerald-500/10',
+    border: 'border-l-emerald-400',
+    bg: 'bg-emerald-400/10',
     text: 'text-emerald-600 dark:text-emerald-400',
   },
   yellow: {
-    border: 'border-l-yellow-500',
-    bg: 'bg-yellow-500/10',
-    text: 'text-yellow-600 dark:text-yellow-400',
+    border: 'border-l-amber-400',
+    bg: 'bg-amber-400/10',
+    text: 'text-amber-600 dark:text-amber-400',
   },
   orange: {
-    border: 'border-l-orange-500',
-    bg: 'bg-orange-500/10',
+    border: 'border-l-orange-400',
+    bg: 'bg-orange-400/10',
     text: 'text-orange-600 dark:text-orange-400',
   },
   red: {
