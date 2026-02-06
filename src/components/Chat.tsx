@@ -1,4 +1,5 @@
 import type { IRow } from '../types/types';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@components/ui/alert';
 import { Button } from '@components/ui/button';
@@ -522,10 +523,10 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                 ? 'text-foreground placeholder:text-muted-foreground'
                 : 'text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50',
             )}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
               setInput(e.target.value)
             }
-            onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
               if (
                 input.trim() &&
                 e.key === 'Enter' &&

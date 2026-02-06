@@ -1,4 +1,5 @@
 import type { ICalculateResult } from '../utils/calculate';
+import type { ReactNode } from 'react';
 
 import { ArrowDown, Scale, TrendingDown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,7 @@ interface ResultRowProps {
   calories: number;
   deficit: number;
   color: 'emerald' | 'yellow' | 'orange' | 'red';
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const colorMap = {
@@ -63,7 +64,8 @@ const ResultRow = ({
           {deficit > 0 && (
             <p className={'text-xs text-muted-foreground'}>
               {'-'}
-              {deficit} {t('calculator.results.deficit')}
+              {deficit}
+              {t('calculator.results.deficit')}
             </p>
           )}
         </div>

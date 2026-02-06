@@ -1,13 +1,14 @@
+import type { ComponentProps } from 'react';
+
 import { cn } from '@lib/utils';
 import { Progress as ProgressPrimitive } from 'radix-ui';
-import * as React from 'react';
 
 const Progress = ({
   className,
   value,
   indicatorClassName,
   ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root> & {
+}: ComponentProps<typeof ProgressPrimitive.Root> & {
   indicatorClassName?: string;
 }) => {
   return (

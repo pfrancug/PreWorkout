@@ -1,4 +1,5 @@
 import type { UserPreferences, UserSettings } from './SettingsContext';
+import type { ReactNode } from 'react';
 
 import {
   startTransition,
@@ -54,11 +55,7 @@ type SettingsState =
       preferences: UserPreferences;
     };
 
-export const SettingsProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [state, setState] = useState<SettingsState>({ status: 'loading' });
   const prevUserId = useRef<string | null | undefined>(undefined);

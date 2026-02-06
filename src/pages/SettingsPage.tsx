@@ -1,4 +1,5 @@
 import type { UserSettings } from '../contexts/SettingsContext';
+import type { ChangeEvent } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Button } from '@components/ui/button';
@@ -61,7 +62,7 @@ export const SettingsPage = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!user || !e.target.files?.[0]) {
       return;
     }
@@ -134,7 +135,7 @@ export const SettingsPage = () => {
     }
   };
 
-  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportData = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!user || !e.target.files?.[0]) {
       return;
     }
@@ -291,9 +292,11 @@ export const SettingsPage = () => {
 
             <Input
               id={'name'}
-              onChange={(e) => handleChange('name', e.target.value)}
               placeholder={t('settings.fields.namePlaceholder')}
               value={formData.name}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                handleChange('name', e.target.value)
+              }
             />
           </div>
 
@@ -302,7 +305,7 @@ export const SettingsPage = () => {
 
             <RadioGroup
               className={'flex gap-4'}
-              onValueChange={(value) => handleChange('sex', value)}
+              onValueChange={(value: string) => handleChange('sex', value)}
               value={formData.sex}
             >
               <div className={'flex items-center space-x-2'}>
@@ -337,10 +340,12 @@ export const SettingsPage = () => {
                 id={'age'}
                 max={'150'}
                 min={'1'}
-                onChange={(e) => handleChange('age', e.target.value)}
                 placeholder={t('settings.fields.agePlaceholder')}
                 type={'number'}
                 value={formData.age}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  handleChange('age', e.target.value)
+                }
               />
             </div>
 
@@ -351,10 +356,12 @@ export const SettingsPage = () => {
                 id={'height'}
                 max={'300'}
                 min={'50'}
-                onChange={(e) => handleChange('height', e.target.value)}
                 placeholder={t('settings.fields.heightPlaceholder')}
                 type={'number'}
                 value={formData.height}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  handleChange('height', e.target.value)
+                }
               />
             </div>
           </div>

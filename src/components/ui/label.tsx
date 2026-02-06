@@ -1,7 +1,8 @@
-import { cn } from '@lib/utils';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
-const Label = ({ className, ...props }: React.ComponentProps<'label'>) => {
+import { cn } from '@lib/utils';
+
+const Label = ({ className, ...props }: ComponentProps<'label'>) => {
   return (
     <label
       data-slot={'label'}

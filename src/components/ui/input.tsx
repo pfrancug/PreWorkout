@@ -1,11 +1,8 @@
-import { cn } from '@lib/utils';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
-const Input = ({
-  className,
-  type,
-  ...props
-}: React.ComponentProps<'input'>) => {
+import { cn } from '@lib/utils';
+
+const Input = ({ className, type, ...props }: ComponentProps<'input'>) => {
   return (
     <input
       data-slot={'input'}

@@ -99,8 +99,10 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
     }
     const validValues = slicedData.filter((row) => row[value] !== null);
     const sum = validValues.reduce((acc, row) => acc + (row[value] ?? 0), 0);
+    const avg = validValues.length > 0 ? sum / validValues.length : 0;
+    const formatted = avg.toFixed(1);
 
-    return validValues.length > 0 ? (sum / validValues.length).toFixed(1) : '0';
+    return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted;
   }, [data, slicedData, value]);
 
   const valueDifference = useMemo(() => {
@@ -148,7 +150,8 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
                 <TrendingDown className={'text-emerald-400'} />
               )}
               {valueDifference > 0 ? '+' : ''}
-              {valueDifference.toFixed(1)} {text.unit}
+              {valueDifference.toFixed(1).replace(/\.0$/, '')}
+              {text.unit}
             </Badge>
           )}
         </CardAction>

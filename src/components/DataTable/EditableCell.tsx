@@ -1,7 +1,14 @@
 import type { IRow } from '../../types/types';
 import type { CellContext } from '@tanstack/react-table';
+import type { KeyboardEvent } from 'react';
 
+import { Calendar } from '@components/ui/calendar';
 import { Input } from '@components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@components/ui/popover';
 import { useEffect, useRef, useState } from 'react';
 
 interface TableMeta {
@@ -71,7 +78,7 @@ export const EditableCell = ({
     stopEditing();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter') {
       saveValue();
       stopEditing();
@@ -131,35 +138,70 @@ export const EditableCell = ({
 
   if (isEditing) {
     if (columnId === 'date') {
-      const dateValue =
+      const dateObj =
         value instanceof Date
-          ? value.toISOString().split('T')[0]
-          : typeof value === 'string'
-            ? value
-            : '';
+          ? value
+          : typeof value === 'string' && value
+            ? new Date(value)
+            : undefined;
 
       return (
-        <Input
-          className={'h-6 w-full min-w-0 px-1 py-0 text-sm'}
-          onBlur={onBlur}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          ref={inputRef}
-          type={'date'}
-          value={dateValue}
-        />
+        <Popover
+          defaultOpen
+          onOpenChange={(open) => {
+            if (!open) {
+              saveValue();
+              stopEditing();
+            }
+          }}
+        >
+          <PopoverTrigger asChild>
+            <div
+              className={
+                'flex h-6 cursor-pointer items-center rounded-sm border border-border/50 px-1 text-sm'
+              }
+            >
+              {dateObj
+                ? new Intl.DateTimeFormat(undefined, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                  }).format(dateObj)
+                : '-'}
+            </div>
+          </PopoverTrigger>
+
+          <PopoverContent align={'start'} className={'w-auto p-0'}>
+            <Calendar
+              defaultMonth={dateObj}
+              mode={'single'}
+              selected={dateObj}
+              onSelect={(day) => {
+                if (day) {
+                  setValue(day);
+                  if (meta?.updateData) {
+                    meta.updateData(row.index, columnId, day);
+                  }
+                  stopEditing();
+                }
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       );
     }
 
     return (
       <Input
-        className={'h-6 w-full min-w-0 px-1 py-0 text-sm'}
         onBlur={onBlur}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         ref={inputRef}
         type={'number'}
         value={value === null ? '' : String(value)}
+        className={
+          'h-6 w-full min-w-0 rounded-sm border-border/50 bg-transparent px-1 py-0 text-sm shadow-none focus-visible:ring-1'
+        }
       />
     );
   }

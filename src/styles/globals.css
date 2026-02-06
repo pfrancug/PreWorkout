@@ -137,3 +137,33 @@
   background-color: var(--border);
   border-radius: 3px;
 }
+
+/* Hide native number input spinners */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Style native date input */
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: var(--date-picker-filter, none);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+:root {
+  --date-picker-filter: none;
+}
+
+.dark {
+  --date-picker-filter: invert(1);
+}

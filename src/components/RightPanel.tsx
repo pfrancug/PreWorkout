@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
+import type { CSSProperties, ReactNode } from 'react';
+
 import { useSettings } from '@contexts/useSettings';
 import { cn } from '@lib/utils';
-import * as React from 'react';
 import { createContext, useCallback, useContext } from 'react';
 
 const PANEL_WIDTH = '28rem';
@@ -23,11 +24,7 @@ export const useRightPanel = () => {
   return context;
 };
 
-export const RightPanelProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const RightPanelProvider = ({ children }: { children: ReactNode }) => {
   const { preferences, updatePreference } = useSettings();
 
   // Use preferences directly as single source of truth
@@ -56,7 +53,7 @@ export const RightPanel = ({
   className,
   suppressed = false,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   suppressed?: boolean;
 }) => {
@@ -68,7 +65,7 @@ export const RightPanel = ({
       className={'group text-sidebar-foreground hidden md:block'}
       data-slot={'right-panel'}
       data-state={effectivelyOpen ? 'expanded' : 'collapsed'}
-      style={{ '--panel-width': PANEL_WIDTH } as React.CSSProperties}
+      style={{ '--panel-width': PANEL_WIDTH } as CSSProperties}
     >
       {/* Gap div - creates space for the panel */}
       <div
@@ -103,7 +100,7 @@ export const RightPanelTrigger = ({
   className,
   disabled,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   disabled?: boolean;
 }) => {

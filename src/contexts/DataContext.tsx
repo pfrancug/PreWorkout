@@ -1,7 +1,8 @@
+import type { IRowData } from '../firebase/database';
 import type { IRow } from '../types/types';
+import type { ReactNode } from 'react';
 
 import {
-  type ReactNode,
   startTransition,
   useCallback,
   useEffect,
@@ -9,11 +10,7 @@ import {
   useState,
 } from 'react';
 
-import {
-  type IRowData,
-  loadUserData,
-  saveUserData,
-} from '../firebase/database';
+import { loadUserData, saveUserData } from '../firebase/database';
 import { DataContext } from './DataContextDef';
 import { useAuth } from './useAuth';
 

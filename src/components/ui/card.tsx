@@ -1,7 +1,8 @@
-import { cn } from '@lib/utils';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
-const Card = ({ className, ...props }: React.ComponentProps<'div'>) => {
+import { cn } from '@lib/utils';
+
+const Card = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       data-slot={'card'}
@@ -14,7 +15,7 @@ const Card = ({ className, ...props }: React.ComponentProps<'div'>) => {
   );
 };
 
-const CardHeader = ({ className, ...props }: React.ComponentProps<'div'>) => {
+const CardHeader = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       data-slot={'card-header'}
@@ -27,7 +28,7 @@ const CardHeader = ({ className, ...props }: React.ComponentProps<'div'>) => {
   );
 };
 
-const CardTitle = ({ className, ...props }: React.ComponentProps<'div'>) => {
+const CardTitle = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       className={cn('leading-none font-semibold', className)}
@@ -37,10 +38,7 @@ const CardTitle = ({ className, ...props }: React.ComponentProps<'div'>) => {
   );
 };
 
-const CardDescription = ({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) => {
+const CardDescription = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       className={cn('text-muted-foreground text-sm', className)}
@@ -50,7 +48,7 @@ const CardDescription = ({
   );
 };
 
-const CardAction = ({ className, ...props }: React.ComponentProps<'div'>) => {
+const CardAction = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       data-slot={'card-action'}
@@ -63,7 +61,7 @@ const CardAction = ({ className, ...props }: React.ComponentProps<'div'>) => {
   );
 };
 
-const CardContent = ({ className, ...props }: React.ComponentProps<'div'>) => {
+const CardContent = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       className={cn('px-6', className)}
@@ -73,7 +71,7 @@ const CardContent = ({ className, ...props }: React.ComponentProps<'div'>) => {
   );
 };
 
-const CardFooter = ({ className, ...props }: React.ComponentProps<'div'>) => {
+const CardFooter = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
       className={cn('flex items-center px-6 [.border-t]:pt-6', className)}
