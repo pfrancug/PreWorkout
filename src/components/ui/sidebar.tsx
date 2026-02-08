@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from '@components/ui/tooltip';
 import { useIsMobile } from '@hooks/useMobile';
+import { useSwipeToOpenSidebar } from '@hooks/useSwipeToOpenSidebar';
 import { cn } from '@lib/utils';
 import { cva } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
@@ -74,6 +75,10 @@ const SidebarProvider = ({
   const toggleSidebar = useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
   }, [isMobile, setOpen, setOpenMobile]);
+
+  // Swipe from left edge to open sidebar on mobile
+  const openSidebar = useCallback(() => setOpenMobile(true), [setOpenMobile]);
+  useSwipeToOpenSidebar(openSidebar, isMobile && !openMobile);
 
   // Adds a keyboard shortcut to toggle the sidebar.
   useEffect(() => {
