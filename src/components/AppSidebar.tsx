@@ -90,7 +90,7 @@ const settingsItems = [
 export const AppSidebar = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { user } = useAuth();
   const { settings, changeLanguage } = useSettings();
 
@@ -156,7 +156,10 @@ export const AppSidebar = () => {
                     isActive={isActive(item.path)}
                     tooltip={t(item.titleKey)}
                   >
-                    <Link to={item.path}>
+                    <Link
+                      onClick={() => isMobile && setOpenMobile(false)}
+                      to={item.path}
+                    >
                       <item.icon />
 
                       <span>{t(item.titleKey)}</span>
@@ -180,7 +183,10 @@ export const AppSidebar = () => {
                     isActive={isSettingsActive(item.path)}
                     tooltip={t(item.titleKey)}
                   >
-                    <Link to={item.path}>
+                    <Link
+                      onClick={() => isMobile && setOpenMobile(false)}
+                      to={item.path}
+                    >
                       <item.icon />
 
                       <span>{t(item.titleKey)}</span>

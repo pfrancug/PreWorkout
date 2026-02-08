@@ -21,6 +21,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 
 import { AppSidebar } from './components/AppSidebar';
@@ -37,6 +38,7 @@ import { SettingsProvider } from './contexts/SettingsProvider';
 import { useAuth } from './contexts/useAuth';
 import { useSettings } from './contexts/useSettings';
 import { useDataSet } from './hooks/useDataSet';
+import { useIsMobile } from './hooks/useMobile';
 import { CalculatorPage } from './pages/Calculator';
 import { ChatPage } from './pages/ChatPage';
 import { DiaryPage } from './pages/DiaryPage';
@@ -66,7 +68,9 @@ const AppRoutes = () => {
   const { user, loading } = useAuth();
   const { preferences, updatePreference } = useSettings();
   const location = useLocation();
+  const navigate = useNavigate();
   const { dataSet } = useDataSet();
+  const isMobile = useIsMobile();
 
   const pageTitle = t(pageTitleKeys[location.pathname] || 'nav.dashboard');
 
@@ -134,16 +138,28 @@ const AppRoutes = () => {
             <span className={'text-sm font-medium'}>{pageTitle}</span>
 
             <div className={'ml-auto'}>
-              <RightPanelTrigger disabled={location.pathname === '/chat'}>
+              {isMobile ? (
                 <Button
                   className={'-mr-1 size-7'}
                   disabled={location.pathname === '/chat'}
+                  onClick={() => navigate('/chat')}
                   size={'icon'}
                   variant={'ghost'}
                 >
                   <MessageSquare className={'h-4 w-4'} />
                 </Button>
-              </RightPanelTrigger>
+              ) : (
+                <RightPanelTrigger disabled={location.pathname === '/chat'}>
+                  <Button
+                    className={'-mr-1 size-7'}
+                    disabled={location.pathname === '/chat'}
+                    size={'icon'}
+                    variant={'ghost'}
+                  >
+                    <MessageSquare className={'h-4 w-4'} />
+                  </Button>
+                </RightPanelTrigger>
+              )}
             </div>
           </header>
 
