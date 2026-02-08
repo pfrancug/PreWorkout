@@ -1,6 +1,15 @@
 {
   "dashboard": {
     "title": "Pulpit",
-    "description": "Przegląd postępów i aktywności."
+    "description": "Przegląd postępów i aktywności.",
+    "charts": {
+      "weight": "Waga",
+      "calories": "Kalorie",
+      "protein": "Białko",
+      "fat": "Tłuszcz",
+      "carbs": "Węglowodany",
+      "dayChange": "{{days}}d zmiana",
+      "dayAvg": "{{days}}d śr."
+    }
   }
 }

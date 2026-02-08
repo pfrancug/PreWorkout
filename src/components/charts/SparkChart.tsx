@@ -6,7 +6,6 @@ import {
   Card,
   CardAction,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@components/ui/card';
@@ -18,6 +17,7 @@ import {
 import { dateFormatter } from '@lib/utils';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
 interface Props {
@@ -26,15 +26,16 @@ interface Props {
   value: 'kcal' | 'protein' | 'weight' | 'fat' | 'carbs';
 }
 
-const textMap: Record<Props['value'], { title: string; unit: string }> = {
-  carbs: { title: 'Carbs', unit: 'g' },
-  fat: { title: 'Fat', unit: 'g' },
-  kcal: { title: 'Calories', unit: 'kcal' },
-  protein: { title: 'Protein', unit: 'g' },
-  weight: { title: 'Weight', unit: 'kg' },
+const textMap: Record<Props['value'], { titleKey: string; unit: string }> = {
+  carbs: { titleKey: 'dashboard.charts.carbs', unit: 'g' },
+  fat: { titleKey: 'dashboard.charts.fat', unit: 'g' },
+  kcal: { titleKey: 'dashboard.charts.calories', unit: 'kcal' },
+  protein: { titleKey: 'dashboard.charts.protein', unit: 'g' },
+  weight: { titleKey: 'dashboard.charts.weight', unit: 'kg' },
 };
 
 export const SparkChart = ({ data, days = 14, value }: Props) => {
+  const { t } = useTranslation();
   const chartConfig = useMemo(
     () =>
       ({
@@ -129,14 +130,17 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
 
   return (
     <Card className={'@container/card bg-card shadow-xs'}>
-      <CardHeader>
-        <CardDescription>{text.title}</CardDescription>
+      <CardHeader className={'pb-2'}>
+        <CardDescription>
+          {t(text.titleKey)}
+          <span className={'ml-1.5 text-[11px] text-muted-foreground/60'}>
+            {isWeight
+              ? t('dashboard.charts.dayChange', { days })
+              : t('dashboard.charts.dayAvg', { days })}
+          </span>
+        </CardDescription>
 
-        <CardTitle
-          className={
-            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'
-          }
-        >
+        <CardTitle className={'text-2xl font-semibold tabular-nums'}>
           {averageValue}{' '}
           <span className={'text-sm font-normal text-muted-foreground'}>
             {text.unit}
@@ -159,16 +163,8 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
         </CardAction>
       </CardHeader>
 
-      <CardFooter className={'flex-col items-start gap-1.5 text-sm'}>
-        <div className={'text-muted-foreground'}>
-          {isWeight
-            ? `Change over last ${days} days`
-            : `Average over last ${days} days`}
-        </div>
-      </CardFooter>
-
-      <div className={'px-6 pb-4'}>
-        <ChartContainer className={'h-[60px] w-full'} config={chartConfig}>
+      <div className={'px-4 pb-3'}>
+        <ChartContainer className={'h-[48px] w-full'} config={chartConfig}>
           <AreaChart
             accessibilityLayer
             data={chartData}

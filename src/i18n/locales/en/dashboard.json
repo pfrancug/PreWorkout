@@ -1,6 +1,15 @@
 {
   "dashboard": {
     "title": "Dashboard",
-    "description": "Overview of your progress and activity."
+    "description": "Overview of your progress and activity.",
+    "charts": {
+      "weight": "Weight",
+      "calories": "Calories",
+      "protein": "Protein",
+      "fat": "Fat",
+      "carbs": "Carbs",
+      "dayChange": "{{days}}d change",
+      "dayAvg": "{{days}}d avg"
+    }
   }
 }
