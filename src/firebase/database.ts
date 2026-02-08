@@ -14,7 +14,14 @@ export interface DailyMessageLimit {
   count: number;
 }
 
-export type CalendarActivity = 'training' | 'personal' | 'run' | 'another';
+export type CalendarActivity = string;
+
+export interface ActivityCategory {
+  id: string;
+  icon: string;
+  name: string;
+  color: string;
+}
 
 export interface CalendarData {
   [date: string]: CalendarActivity[];
@@ -32,6 +39,7 @@ export interface AllUserData {
   limits: DailyMessageLimit | null;
   calendar: CalendarData | null;
   calendarNotes: CalendarNotes | null;
+  activityCategories: ActivityCategory[] | null;
 }
 
 const database = getDatabase(app);
@@ -134,6 +142,7 @@ export interface IRowData {
   protein: number | null;
   fat: number | null;
   carbs: number | null;
+  completed?: boolean;
 }
 
 export const getUserDataRef = (userId: string) =>
@@ -143,8 +152,11 @@ export const saveUserData = async (
   userId: string,
   data: IRowData[],
 ): Promise<void> => {
+  const sorted = [...data].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
   const dataRef = getUserDataRef(userId);
-  await set(dataRef, data);
+  await set(dataRef, sorted);
 };
 
 export const loadUserData = async (
@@ -169,6 +181,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserLimitsRef(userId)),
     remove(getUserCalendarRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
+    remove(getActivityCategoriesRef(userId)),
   ]);
 };
 
@@ -190,6 +203,18 @@ export const importAllUserData = async (
   if (data.data) {
     promises.push(saveUserData(userId, data.data));
   }
+  if (data.limits) {
+    promises.push(set(getUserLimitsRef(userId), data.limits));
+  }
+  if (data.calendar) {
+    promises.push(set(getUserCalendarRef(userId), data.calendar));
+  }
+  if (data.calendarNotes) {
+    promises.push(set(getUserCalendarNotesRef(userId), data.calendarNotes));
+  }
+  if (data.activityCategories) {
+    promises.push(saveActivityCategories(userId, data.activityCategories));
+  }
 
   await Promise.all(promises);
 };
@@ -203,6 +228,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     limits,
     calendar,
     calendarNotes,
+    activityCategories,
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
@@ -211,6 +237,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     loadDailyMessageLimit(userId),
     loadCalendarData(userId),
     loadCalendarNotes(userId),
+    loadActivityCategories(userId),
   ]);
 
   return {
@@ -221,6 +248,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     limits,
     calendar,
     calendarNotes,
+    activityCategories,
   };
 };
 
@@ -400,6 +428,74 @@ export const subscribeToCalendarNotes = (
       callback(snapshot.val() as CalendarNotes);
     } else {
       callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+// Activity Categories
+export const getActivityCategoriesRef = (userId: string) =>
+  ref(database, `users/${userId}/activityCategories`);
+
+export const saveActivityCategories = async (
+  userId: string,
+  categories: ActivityCategory[],
+): Promise<void> => {
+  const categoriesRef = getActivityCategoriesRef(userId);
+  const data: Record<string, unknown> = {
+    _initialized: true,
+    items: categories.length > 0 ? categories : null,
+  };
+  await set(categoriesRef, data);
+};
+
+export const loadActivityCategories = async (
+  userId: string,
+): Promise<ActivityCategory[] | null> => {
+  const categoriesRef = getActivityCategoriesRef(userId);
+  const snapshot = await get(categoriesRef);
+
+  if (snapshot.exists()) {
+    const val = snapshot.val();
+    const items = val?.items;
+
+    if (!items) {
+      return [];
+    }
+
+    return Array.isArray(items) ? items : Object.values(items);
+  }
+
+  return null;
+};
+
+export const subscribeToActivityCategories = (
+  userId: string,
+  callback: (data: ActivityCategory[]) => void,
+  defaultCategories: ActivityCategory[],
+): (() => void) => {
+  const categoriesRef = getActivityCategoriesRef(userId);
+  let seeding = false;
+  const unsubscribe = onValue(categoriesRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const val = snapshot.val();
+      const items = val?.items;
+
+      if (!items) {
+        callback([]);
+      } else {
+        callback(Array.isArray(items) ? items : Object.values(items));
+      }
+    } else if (!seeding) {
+      seeding = true;
+      const data: Record<string, unknown> = {
+        _initialized: true,
+        items: defaultCategories.length > 0 ? defaultCategories : null,
+      };
+      set(categoriesRef, data).then(() => {
+        seeding = false;
+      });
     }
   });
 

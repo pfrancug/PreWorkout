@@ -1,0 +1,23 @@
+{
+  "chat": {
+    "title": "Gains Buddy",
+    "description": "Twój asystent AI do odżywiania i fitnessu.",
+    "clearChat": "Wyczyść czat",
+    "placeholder": "Wpisz wiadomość...",
+    "send": "Wyślij",
+    "attachDataset": "Dane",
+    "datasetAttached": "Dane zostały dołączone do wiadomości",
+    "attachDatasetTooltip": "Kliknij, aby dołączyć dane z dziennika",
+    "dataAttached": "Dane dołączone",
+    "errorGenerating": "Błąd generowania odpowiedzi",
+    "limitReached": "Dzienny limit wiadomości osiągnięty. Spróbuj ponownie jutro.",
+    "remainingMessages": "Pozostało {{count}} wiadomości na dziś",
+    "welcomeMessage": "Hej! 🔥\n\nGotowy na dzisiejszy trening?\nWaga? Kalorie? Posiłki? Śledźmy i wygrywajmy! 💪",
+    "settingsAlert": {
+      "title": "Uzupełnij swój profil",
+      "description": "Dodanie szczegółów pozwoli spersonalizować odpowiedzi i dać lepsze rekomendacje.",
+      "goToSettings": "Przejdź do ustawień",
+      "skip": "Pomiń"
+    }
+  }
+}

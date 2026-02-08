@@ -1,60 +1,48 @@
 import type {
+  ActivityCategory,
   CalendarActivity,
   CalendarData,
   CalendarNotes,
 } from '../firebase/database';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@components/ui/popover';
 import { cn } from '@lib/utils';
 import {
   ChevronLeft,
   ChevronRight,
-  Dumbbell,
-  Footprints,
-  Layers2,
-  UserCheck,
+  Plus,
+  Settings2,
+  StickyNote,
+  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
+import {
+  ACTIVITY_COLOR_MAP,
+  DEFAULT_CATEGORIES,
+} from '../constants/activities';
 import { useAuth } from '../contexts/useAuth';
 import {
   saveCalendarDay,
   saveCalendarNote,
+  subscribeToActivityCategories,
   subscribeToCalendarData,
   subscribeToCalendarNotes,
 } from '../firebase/database';
-
-const ACTIVITIES: {
-  type: CalendarActivity;
-  icon: typeof Dumbbell;
-  colorClass: string;
-  activeClass: string;
-}[] = [
-  {
-    type: 'training',
-    icon: Dumbbell,
-    colorClass: 'text-orange-400',
-    activeClass: 'bg-orange-400/15 text-orange-400',
-  },
-  {
-    type: 'personal',
-    icon: UserCheck,
-    colorClass: 'text-sky-400',
-    activeClass: 'bg-sky-400/15 text-sky-400',
-  },
-  {
-    type: 'run',
-    icon: Footprints,
-    colorClass: 'text-emerald-400',
-    activeClass: 'bg-emerald-400/15 text-emerald-400',
-  },
-  {
-    type: 'another',
-    icon: Layers2,
-    colorClass: 'text-violet-400',
-    activeClass: 'bg-violet-400/15 text-violet-400',
-  },
-];
+import { ActivityIcon } from './ActivityIcon';
 
 const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();
@@ -72,6 +60,7 @@ const formatDateKey = (year: number, month: number, day: number) =>
 export const Calendar = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -80,7 +69,10 @@ export const Calendar = () => {
   const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
     null,
   );
+  const [categories, setCategories] = useState<ActivityCategory[]>([]);
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
+  const [dropdownOpenDay, setDropdownOpenDay] = useState<string | null>(null);
+  const [notePopoverDay, setNotePopoverDay] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -89,10 +81,16 @@ export const Calendar = () => {
 
     const unsubActivities = subscribeToCalendarData(user.uid, setCalendarData);
     const unsubNotes = subscribeToCalendarNotes(user.uid, setCalendarNotes);
+    const unsubCategories = subscribeToActivityCategories(
+      user.uid,
+      setCategories,
+      DEFAULT_CATEGORIES,
+    );
 
     return () => {
       unsubActivities();
       unsubNotes();
+      unsubCategories();
     };
   }, [user]);
 
@@ -273,7 +271,6 @@ export const Calendar = () => {
             <div
               key={dateKey}
               onMouseEnter={() => isCurrentMonth && setHoveredDay(dateKey)}
-              onMouseLeave={() => setHoveredDay(null)}
               className={cn(
                 'group relative flex min-h-[100px] flex-col rounded-lg border p-2 transition-colors',
                 isCurrentMonth
@@ -281,9 +278,14 @@ export const Calendar = () => {
                   : 'border-border bg-card opacity-50',
                 isToday && 'ring-1 ring-primary/50',
               )}
+              onMouseLeave={() => {
+                if (dropdownOpenDay !== dateKey && notePopoverDay !== dateKey) {
+                  setHoveredDay(null);
+                }
+              }}
             >
-              {/* Day number */}
-              <div className={'flex items-center justify-between'}>
+              {/* Day number + note */}
+              <div className={'flex items-start justify-between gap-1'}>
                 <span
                   className={cn(
                     'text-sm font-medium',
@@ -294,84 +296,170 @@ export const Calendar = () => {
                   {day}
                 </span>
 
-                {note && !isHovered && (
+                {note && (
                   <span
-                    className={'truncate text-[12px] text-muted-foreground'}
+                    className={
+                      'max-w-[60%] truncate text-[11px] leading-tight text-muted-foreground'
+                    }
                   >
                     {note}
                   </span>
                 )}
               </div>
 
-              {/* Active activity icons */}
-              <div className={'mt-auto flex flex-wrap gap-1'}>
-                {activities.map((activity) => {
-                  const config = ACTIVITIES.find((a) => a.type === activity);
+              {/* Activity icons + action buttons */}
+              <div className={'mt-auto flex items-end justify-between'}>
+                {/* Activity icons - left side, hoverable to remove */}
+                <div className={'flex flex-wrap gap-1'}>
+                  {activities.map((activityId) => {
+                    const category = categories.find(
+                      (c) => c.id === activityId,
+                    );
 
-                  if (!config) {
-                    return null;
-                  }
-
-                  return (
-                    <div
-                      key={activity}
-                      className={cn(
-                        'flex h-6 w-6 items-center justify-center rounded',
-                        config.activeClass,
-                      )}
-                    >
-                      <config.icon className={'h-4 w-4'} />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Hover overlay with activity toggles and note */}
-              {isCurrentMonth && isHovered && (
-                <div
-                  className={
-                    'absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm'
-                  }
-                >
-                  <div className={'flex items-center gap-1.5'}>
-                    {ACTIVITIES.map(
-                      ({ type, icon: Icon, colorClass, activeClass }) => {
-                        const isActive = activities.includes(type);
-
-                        return (
-                          <button
-                            key={type}
-                            onClick={() => toggleActivity(dateKey, type)}
-                            title={t(`calendar.activities.${type}`)}
-                            type={'button'}
-                            className={cn(
-                              'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border transition-all hover:scale-110',
-                              isActive
-                                ? activeClass + ' border-transparent'
-                                : 'border-border bg-card ' +
-                                    colorClass +
-                                    ' opacity-50 hover:opacity-100',
-                            )}
-                          >
-                            <Icon className={'h-5 w-5'} />
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-
-                  {/* Note input */}
-                  <input
-                    defaultValue={note}
-                    onChange={(e) => handleNoteChange(dateKey, e.target.value)}
-                    placeholder={t('calendar.notePlaceholder')}
-                    type={'text'}
-                    className={
-                      'mx-2 w-[calc(100%-16px)] rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50'
+                    if (!category) {
+                      return null;
                     }
-                  />
+
+                    return (
+                      <button
+                        key={activityId}
+                        onClick={() => toggleActivity(dateKey, activityId)}
+                        title={category.name}
+                        type={'button'}
+                        className={
+                          'group/act flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors'
+                        }
+                        style={{
+                          backgroundColor: `${ACTIVITY_COLOR_MAP[category.color] ?? '#888'}26`,
+                          color: ACTIVITY_COLOR_MAP[category.color],
+                        }}
+                      >
+                        <ActivityIcon
+                          className={'block h-4 w-4 group-hover/act:hidden'}
+                          iconId={category.icon}
+                        />
+
+                        <X className={'hidden h-4 w-4 group-hover/act:block'} />
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+
+                {/* Action buttons - bottom right, visible on hover */}
+                {isCurrentMonth && isHovered && (
+                  <div className={'flex items-center gap-1'}>
+                    {/* Add activity dropdown */}
+                    <DropdownMenu
+                      onOpenChange={(open) => {
+                        if (open) {
+                          setDropdownOpenDay(dateKey);
+                        } else {
+                          setDropdownOpenDay(null);
+                          setHoveredDay(null);
+                        }
+                      }}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type={'button'}
+                          className={
+                            'flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+                          }
+                        >
+                          <Plus className={'h-4 w-4'} />
+                        </button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align={'end'} sideOffset={4}>
+                        {categories
+                          .filter((c) => !activities.includes(c.id))
+                          .map((category) => (
+                            <DropdownMenuItem
+                              key={category.id}
+                              onClick={() =>
+                                toggleActivity(dateKey, category.id)
+                              }
+                            >
+                              <ActivityIcon
+                                className={'h-4 w-4'}
+                                iconId={category.icon}
+                                style={{
+                                  color: ACTIVITY_COLOR_MAP[category.color],
+                                }}
+                              />
+
+                              <span>{category.name}</span>
+                            </DropdownMenuItem>
+                          ))}
+
+                        {categories.filter((c) => !activities.includes(c.id))
+                          .length > 0 && <DropdownMenuSeparator />}
+
+                        <DropdownMenuItem
+                          onClick={() => navigate('/settings/categories')}
+                        >
+                          <Settings2 className={'h-4 w-4'} />
+
+                          <span>{t('calendar.manageActivities')}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Note popover */}
+                    <Popover
+                      onOpenChange={(open) => {
+                        if (open) {
+                          setNotePopoverDay(dateKey);
+                        } else {
+                          setNotePopoverDay(null);
+                          setHoveredDay(null);
+                        }
+                      }}
+                    >
+                      <PopoverTrigger asChild>
+                        <button
+                          type={'button'}
+                          className={cn(
+                            'flex h-6 w-6 cursor-pointer items-center justify-center rounded border border-border bg-card transition-colors hover:bg-accent hover:text-foreground',
+                            note ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                        >
+                          <StickyNote className={'h-4 w-4'} />
+                        </button>
+                      </PopoverTrigger>
+
+                      <PopoverContent
+                        align={'end'}
+                        className={'w-56 p-3'}
+                        sideOffset={4}
+                      >
+                        <div className={'space-y-2'}>
+                          <label
+                            className={
+                              'text-xs font-medium text-muted-foreground'
+                            }
+                          >
+                            {t('calendar.note')}
+                          </label>
+
+                          <input
+                            autoFocus
+                            defaultValue={note}
+                            placeholder={t('calendar.notePlaceholder')}
+                            type={'text'}
+                            className={
+                              'w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50'
+                            }
+                            onChange={(e) =>
+                              handleNoteChange(dateKey, e.target.value)
+                            }
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}

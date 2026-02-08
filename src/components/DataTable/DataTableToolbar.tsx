@@ -19,9 +19,15 @@ interface Props {
 export const DataTableToolbar = ({ table, setDataSet }: Props) => {
   const handleAddRow = () => {
     setDataSet((prev) => {
-      const lastRow = prev?.[prev.length - 1];
-      const newDate = lastRow?.date
-        ? new Date(lastRow.date.getTime() + 86400000)
+      const maxDate = prev?.reduce<Date | null>(
+        (max, row) =>
+          row.date && (!max || row.date.getTime() > max.getTime())
+            ? row.date
+            : max,
+        null,
+      );
+      const newDate = maxDate
+        ? new Date(maxDate.getTime() + 86400000)
         : new Date();
 
       return [
@@ -34,6 +40,7 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
           protein: null,
           fat: null,
           carbs: null,
+          completed: false,
         },
       ];
     });
@@ -41,7 +48,15 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
 
   const handleExport = () => {
     const rows = table.getFilteredRowModel().rows;
-    const headers = ['date', 'weight', 'kcal', 'protein', 'fat', 'carbs'];
+    const headers = [
+      'date',
+      'weight',
+      'kcal',
+      'protein',
+      'fat',
+      'carbs',
+      'completed',
+    ];
     const csvContent = [
       headers.join(','),
       ...rows.map((row) => {
@@ -54,6 +69,7 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
           data.protein ?? '',
           data.fat ?? '',
           data.carbs ?? '',
+          data.completed ? 'yes' : 'no',
         ].join(',');
       }),
     ].join('\n');

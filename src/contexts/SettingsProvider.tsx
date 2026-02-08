@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Loader } from '../components/Loader';
 import {
@@ -57,6 +58,7 @@ type SettingsState =
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
+  const { i18n } = useTranslation();
   const [state, setState] = useState<SettingsState>({ status: 'loading' });
   const prevUserId = useRef<string | null | undefined>(undefined);
 
@@ -83,6 +85,15 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       fetchUserSettings(currentUserId),
       fetchUserPreferences(currentUserId),
     ]).then(([loadedSettings, loadedPreferences]) => {
+      // Apply saved language preference
+      if (
+        loadedPreferences.language &&
+        loadedPreferences.language !== i18n.language
+      ) {
+        i18n.changeLanguage(loadedPreferences.language);
+        localStorage.setItem('i18nextLng', loadedPreferences.language);
+      }
+
       startTransition(() => {
         setState({
           status: 'loaded',
@@ -91,10 +102,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         });
       });
     });
-  }, [user]);
+  }, [user, i18n]);
 
   const updatePreference = useCallback(
-    (field: keyof UserPreferences, value: boolean) => {
+    (field: keyof UserPreferences, value: boolean | string) => {
       setState((prev) => {
         if (prev.status !== 'loaded') {
           return prev;
@@ -109,6 +120,15 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       });
     },
     [user],
+  );
+
+  const changeLanguage = useCallback(
+    (lang: string) => {
+      i18n.changeLanguage(lang);
+      localStorage.setItem('i18nextLng', lang);
+      updatePreference('language', lang);
+    },
+    [i18n, updatePreference],
   );
 
   const saveSettings = useCallback(
@@ -139,6 +159,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         preferences: state.preferences,
         updatePreference,
         saveSettings,
+        changeLanguage,
       }}
     >
       {children}

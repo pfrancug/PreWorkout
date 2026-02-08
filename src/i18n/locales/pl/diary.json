@@ -1,0 +1,17 @@
+{
+  "diary": {
+    "title": "Dziennik żywienia",
+    "description": "Śledź codzienne odżywianie i wagę."
+  },
+  "table": {
+    "selectAll": "Zaznacz wszystko",
+    "selectRow": "Zaznacz wiersz",
+    "date": "Data",
+    "weight": "Waga (kg)",
+    "calories": "Kalorie (kcal)",
+    "protein": "Białko (g)",
+    "fat": "Tłuszcz (g)",
+    "carbs": "Węglowodany (g)",
+    "completed": "Gotowe"
+  }
+}

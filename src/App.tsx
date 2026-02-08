@@ -8,6 +8,10 @@ import {
   SidebarTrigger,
 } from '@components/ui/sidebar';
 import { Toaster } from '@components/ui/sonner';
+import { CategoriesSettingsPage } from '@pages/settings/CategoriesSettingsPage';
+import { DataSettingsPage } from '@pages/settings/DataSettingsPage';
+import { PreferencesSettingsPage } from '@pages/settings/PreferencesSettingsPage';
+import { ProfileSettingsPage } from '@pages/settings/ProfileSettingsPage';
 import { MessageSquare } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +43,6 @@ import { DiaryPage } from './pages/DiaryPage';
 import { LoginPage } from './pages/LoginPage';
 import { MainPage } from './pages/MainPage';
 import { PrivacyPage } from './pages/PrivacyPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { TermsPage } from './pages/TermsPage';
 
 const ChatPanel = ({ dataset }: { dataset: IRow[] | null }) => {
@@ -52,7 +55,10 @@ const pageTitleKeys: Record<string, string> = {
   '/diary': 'nav.diary',
   '/calculator': 'nav.calculator',
   '/chat': 'nav.chat',
-  '/settings': 'nav.settings',
+  '/settings/profile': 'nav.settingsProfile',
+  '/settings/categories': 'nav.settingsCategories',
+  '/settings/preferences': 'nav.settingsPreferences',
+  '/settings/data': 'nav.settingsData',
 };
 
 const AppRoutes = () => {
@@ -70,42 +76,44 @@ const AppRoutes = () => {
 
   if (!user) {
     return (
-      <Routes>
-        <Route
-          path={'/login'}
-          element={
-            <div
-              className={
-                'bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10'
-              }
-            >
-              <div className={'flex w-full max-w-sm flex-col gap-6'}>
-                <LoginPage />
+      <ScrollArea className={'h-dvh'}>
+        <Routes>
+          <Route
+            path={'/login'}
+            element={
+              <div
+                className={
+                  'bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10'
+                }
+              >
+                <div className={'flex w-full max-w-sm flex-col gap-6'}>
+                  <LoginPage />
+                </div>
               </div>
-            </div>
-          }
-        />
+            }
+          />
 
-        <Route
-          path={'/privacy'}
-          element={
-            <div className={'bg-muted min-h-svh'}>
-              <PrivacyPage />
-            </div>
-          }
-        />
+          <Route
+            path={'/privacy'}
+            element={
+              <div className={'bg-muted min-h-svh'}>
+                <PrivacyPage />
+              </div>
+            }
+          />
 
-        <Route
-          path={'/terms'}
-          element={
-            <div className={'bg-muted min-h-svh'}>
-              <TermsPage />
-            </div>
-          }
-        />
+          <Route
+            path={'/terms'}
+            element={
+              <div className={'bg-muted min-h-svh'}>
+                <TermsPage />
+              </div>
+            }
+          />
 
-        <Route element={<Navigate replace to={'/login'} />} path={'*'} />
-      </Routes>
+          <Route element={<Navigate replace to={'/login'} />} path={'*'} />
+        </Routes>
+      </ScrollArea>
     );
   }
 
@@ -156,7 +164,27 @@ const AppRoutes = () => {
 
                 <Route element={<CalculatorPage />} path={'/calculator'} />
 
-                <Route element={<SettingsPage />} path={'/settings'} />
+                <Route
+                  element={<Navigate replace to={'/settings/profile'} />}
+                  path={'/settings'}
+                />
+
+                <Route
+                  element={<ProfileSettingsPage />}
+                  path={'/settings/profile'}
+                />
+
+                <Route
+                  element={<CategoriesSettingsPage />}
+                  path={'/settings/categories'}
+                />
+
+                <Route
+                  element={<PreferencesSettingsPage />}
+                  path={'/settings/preferences'}
+                />
+
+                <Route element={<DataSettingsPage />} path={'/settings/data'} />
 
                 <Route element={<PrivacyPage />} path={'/privacy'} />
 

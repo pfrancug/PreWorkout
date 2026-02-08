@@ -1,0 +1,93 @@
+{
+  "settings": {
+    "title": "Ustawienia",
+    "description": "Zarządzaj danymi osobowymi i preferencjami.",
+    "profile": {
+      "pageTitle": "Profil",
+      "pageDescription": "Zarządzaj danymi osobowymi i zdjęciem profilowym."
+    },
+    "preferences": {
+      "pageTitle": "Preferencje",
+      "pageDescription": "Dostosuj wygląd i ustawienia wyświetlania.",
+      "language": {
+        "title": "Język",
+        "description": "Wybierz język interfejsu aplikacji.",
+        "label": "Język wyświetlania"
+      }
+    },
+    "data": {
+      "pageTitle": "Dane i konto",
+      "pageDescription": "Zarządzaj eksportem, importem danych i kontem."
+    },
+    "categories": {
+      "pageTitle": "Kategorie aktywności",
+      "pageDescription": "Twórz i zarządzaj typami aktywności w kalendarzu.",
+      "title": "Twoje kategorie",
+      "description": "Zdefiniuj własne typy aktywności z ikoną i nazwą. Pojawią się w kalendarzu.",
+      "pickIcon": "Wybierz ikonę",
+      "pickColor": "Wybierz kolor",
+      "namePlaceholder": "Nazwa kategorii",
+      "addSuccess": "Kategoria dodana!",
+      "editSuccess": "Kategoria zaktualizowana!",
+      "deleteSuccess": "Kategoria usunięta.",
+      "duplicateError": "Kategoria o tej nazwie już istnieje.",
+      "inUseError": "Ta kategoria jest używana w kalendarzu i nie może zostać usunięta.",
+      "inUseTooltip": "W użyciu — nie można usunąć",
+      "editTooltip": "Edytuj kategorię",
+      "deleteTooltip": "Usuń kategorię"
+    },
+    "personalInfo": {
+      "title": "Dane osobowe",
+      "description": "Podaj swoje dane do spersonalizowanego śledzenia i rekomendacji."
+    },
+    "fields": {
+      "name": "Imię",
+      "namePlaceholder": "Wpisz swoje imię",
+      "sex": "Płeć",
+      "male": "Mężczyzna",
+      "female": "Kobieta",
+      "age": "Wiek",
+      "agePlaceholder": "Wpisz swój wiek",
+      "height": "Wzrost (cm)",
+      "heightPlaceholder": "Wpisz swój wzrost"
+    },
+    "saveChanges": "Zapisz zmiany",
+    "savedSuccess": "Ustawienia zapisane!",
+    "avatar": {
+      "title": "Zdjęcie profilowe",
+      "description": "JPG, PNG lub GIF. Zostanie przycięte do kwadratu.",
+      "remove": "Usuń zdjęcie",
+      "uploadSuccess": "Zdjęcie profilowe zaktualizowane!",
+      "uploadError": "Nie udało się przesłać zdjęcia.",
+      "removeSuccess": "Zdjęcie profilowe usunięte.",
+      "removeError": "Nie udało się usunąć zdjęcia.",
+      "invalidType": "Proszę wybrać plik graficzny."
+    },
+    "dataAccount": {
+      "title": "Twoje dane",
+      "description": "Pobierz lub zaimportuj swoje dane.",
+      "downloadData": "Pobierz moje dane",
+      "downloadSuccess": "Dane zostały pobrane.",
+      "downloadError": "Nie udało się pobrać danych.",
+      "deleteData": "Usuń wszystkie dane",
+      "deleteDataConfirm": "Czy na pewno chcesz usunąć wszystkie dane? Obejmuje to dziennik, wiadomości i ustawienia. Tej operacji nie można cofnąć.",
+      "deleteDataSuccess": "Wszystkie dane zostały usunięte.",
+      "deleteDataError": "Nie udało się usunąć danych.",
+      "deleteAccount": "Usuń konto",
+      "deleteAccountDescription": "Trwale usuń konto i wszystkie powiązane dane. Spowoduje to odłączenie logowania Google i nie może zostać cofnięte.",
+      "deleteAccountConfirm": "Czy na pewno chcesz trwale usunąć swoje konto? Wszystkie dane zostaną utracone i tej operacji nie można cofnąć.",
+      "deleteAccountSuccess": "Twoje konto zostało usunięte.",
+      "deleteAccountError": "Nie udało się usunąć konta. Może być konieczne ponowne zalogowanie.",
+      "importData": "Importuj dane",
+      "importConfirm": "To nadpisze istniejące dane zaimportowanym plikiem. Czy na pewno?",
+      "importSuccess": "Dane zaimportowane pomyślnie.",
+      "importError": "Nie udało się zaimportować danych. Upewnij się, że plik jest prawidłowym eksportem PreWorkout."
+    },
+    "dangerZone": {
+      "title": "Strefa zagrożenia",
+      "description": "Nieodwracalne i destrukcyjne działania.",
+      "deleteDataDescription": "Usuń wszystkie wpisy dziennika, wiadomości i ustawienia.",
+      "deleteAccountDescription": "Trwale usuń konto i odłącz logowanie Google."
+    }
+  }
+}

@@ -32,6 +32,10 @@
         "calendarNotes": {
           ".read": "auth.uid == $userId",
           ".write": "auth.uid == $userId"
+        },
+        "activityCategories": {
+          ".read": "auth.uid == $userId",
+          ".write": "auth.uid == $userId"
         }
       }
     }

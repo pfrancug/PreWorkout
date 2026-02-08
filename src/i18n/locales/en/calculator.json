@@ -1,0 +1,47 @@
+{
+  "calculator": {
+    "title": "Calorie Calculator",
+    "description": "Calculate your daily caloric needs using the Mifflin-St Jeor equation.",
+    "form": {
+      "title": "Your Details",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "age": "Age",
+      "height": "Height (cm)",
+      "heightLabel": "Height",
+      "weight": "Weight (kg)",
+      "weightLabel": "Weight",
+      "years": "years",
+      "activity": "Activity Level",
+      "activityPlaceholder": "Select activity level",
+      "calculate": "Calculate"
+    },
+    "activity": {
+      "sedentary": "Sedentary (little or no exercise)",
+      "light": "Light (exercise 1-3 days/week)",
+      "moderate": "Moderate (exercise 3-5 days/week)",
+      "active": "Active (exercise 6-7 days/week)",
+      "veryActive": "Very Active (hard exercise daily)",
+      "extraActive": "Extra Active (very hard exercise)"
+    },
+    "equation": {
+      "title": "Mifflin-St Jeor Equation",
+      "description": "The Mifflin-St Jeor equation is considered the most accurate for calculating basal metabolic rate (BMR).",
+      "note": "TDEE = BMR × Activity Factor",
+      "howItWorks": "How is this calculated?"
+    },
+    "results": {
+      "title": "Your Results",
+      "tdee": "Your Daily Energy Expenditure",
+      "bmr": "Basal Metabolic Rate",
+      "plans": "Calorie Plans",
+      "deficit": "kcal deficit",
+      "perDay": "kcal / day",
+      "maintain": "Maintain Weight",
+      "midLoss": "Mild Weight Loss",
+      "loss": "Weight Loss",
+      "extreme": "Extreme Weight Loss"
+    }
+  }
+}

@@ -133,6 +133,9 @@ export const EditableCell = ({
   };
 
   const startEditing = () => {
+    if (row.original.completed) {
+      return;
+    }
     meta?.setEditingCell?.({ rowId: row.id, columnId });
   };
 
@@ -228,7 +231,9 @@ export const EditableCell = ({
     <div
       onClick={startEditing}
       className={
-        'flex h-6 cursor-pointer items-center rounded px-1 hover:bg-muted'
+        row.original.completed
+          ? 'flex h-6 items-center px-1 text-muted-foreground'
+          : 'flex h-6 cursor-pointer items-center rounded px-1 hover:bg-muted'
       }
     >
       {displayValue}

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import { useAuth } from '../contexts/useAuth';
 
@@ -13,6 +13,7 @@ const formatBold = (text: string): ReactNode[] =>
 
 export const PrivacyPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   return (
@@ -84,13 +85,21 @@ export const PrivacyPage = () => {
           </section>
 
           <div className={'border-t pt-4'}>
-            <Link
-              className={'text-primary hover:underline'}
-              to={user ? '/settings' : '/login'}
-            >
-              {'← '}
-              {user ? t('legal.backToSettings') : t('legal.backToLogin')}
-            </Link>
+            {user ? (
+              <button
+                className={'text-primary hover:underline cursor-pointer'}
+                onClick={() => navigate(-1)}
+                type={'button'}
+              >
+                {'← '}
+                {t('legal.backToSettings')}
+              </button>
+            ) : (
+              <Link className={'text-primary hover:underline'} to={'/login'}>
+                {'← '}
+                {t('legal.backToLogin')}
+              </Link>
+            )}
           </div>
         </CardContent>
       </Card>

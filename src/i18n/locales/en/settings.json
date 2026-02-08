@@ -1,0 +1,93 @@
+{
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your personal information and preferences.",
+    "profile": {
+      "pageTitle": "Profile",
+      "pageDescription": "Manage your personal information and profile photo."
+    },
+    "preferences": {
+      "pageTitle": "Preferences",
+      "pageDescription": "Customize your experience and display settings.",
+      "language": {
+        "title": "Language",
+        "description": "Choose the language for the application interface.",
+        "label": "Display Language"
+      }
+    },
+    "data": {
+      "pageTitle": "Data & Account",
+      "pageDescription": "Manage your data exports, imports, and account."
+    },
+    "categories": {
+      "pageTitle": "Activity Categories",
+      "pageDescription": "Create and manage your activity types for the calendar.",
+      "title": "Your Categories",
+      "description": "Define custom activity types with an icon and name. These appear on your calendar.",
+      "pickIcon": "Choose an icon",
+      "pickColor": "Choose a color",
+      "namePlaceholder": "Category name",
+      "addSuccess": "Category added!",
+      "editSuccess": "Category updated!",
+      "deleteSuccess": "Category removed.",
+      "duplicateError": "A category with this name already exists.",
+      "inUseError": "This category is in use on your calendar and cannot be deleted.",
+      "inUseTooltip": "In use - cannot delete",
+      "editTooltip": "Edit category",
+      "deleteTooltip": "Delete category"
+    },
+    "personalInfo": {
+      "title": "Personal Information",
+      "description": "Enter your details for personalized tracking and recommendations."
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "Enter your name",
+      "sex": "Sex",
+      "male": "Male",
+      "female": "Female",
+      "age": "Age",
+      "agePlaceholder": "Enter your age",
+      "height": "Height (cm)",
+      "heightPlaceholder": "Enter your height"
+    },
+    "saveChanges": "Save Changes",
+    "savedSuccess": "Settings saved successfully!",
+    "avatar": {
+      "title": "Profile Photo",
+      "description": "JPG, PNG or GIF. Will be cropped to square.",
+      "remove": "Remove photo",
+      "uploadSuccess": "Profile photo updated!",
+      "uploadError": "Failed to upload photo.",
+      "removeSuccess": "Profile photo removed.",
+      "removeError": "Failed to remove photo.",
+      "invalidType": "Please select an image file."
+    },
+    "dataAccount": {
+      "title": "Your Data",
+      "description": "Download or import your data.",
+      "downloadData": "Download My Data",
+      "downloadSuccess": "Your data has been downloaded.",
+      "downloadError": "Failed to download data.",
+      "deleteData": "Delete All Data",
+      "deleteDataConfirm": "Are you sure you want to delete all your data? This includes your diary, messages, and settings. This action cannot be undone.",
+      "deleteDataSuccess": "All your data has been deleted.",
+      "deleteDataError": "Failed to delete data.",
+      "deleteAccount": "Delete Account",
+      "deleteAccountDescription": "Permanently delete your account and all associated data. This will remove your Google sign-in connection and cannot be undone.",
+      "deleteAccountConfirm": "Are you sure you want to permanently delete your account? All your data will be lost and this action cannot be undone.",
+      "deleteAccountSuccess": "Your account has been deleted.",
+      "deleteAccountError": "Failed to delete account. You may need to sign in again before deleting.",
+      "importData": "Import Data",
+      "importConfirm": "This will overwrite your existing data with the imported file. Are you sure?",
+      "importSuccess": "Data imported successfully.",
+      "importError": "Failed to import data. Make sure the file is a valid PreWorkout export."
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Irreversible and destructive actions.",
+      "deleteDataDescription": "Remove all diary entries, messages, and settings.",
+      "deleteAccountDescription": "Permanently delete your account and disconnect Google sign-in."
+    }
+  }
+}

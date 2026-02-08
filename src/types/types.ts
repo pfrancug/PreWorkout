@@ -6,4 +6,5 @@ export interface IRow {
   protein: number | null;
   fat: number | null;
   carbs: number | null;
+  completed: boolean;
 }

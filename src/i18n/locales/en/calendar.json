@@ -1,0 +1,24 @@
+{
+  "calendar": {
+    "title": "Activity Calendar",
+    "weekDays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "activities": {
+      "training": "Training",
+      "personal": "Personal Training",
+      "run": "Run",
+      "another": "Another"
+    },
+    "note": "Note",
+    "notePlaceholder": "Add a note...",
+    "addActivity": "Add activity",
+    "manageActivities": "Manage activities"
+  }
+}

@@ -26,6 +26,7 @@ const fromFirebaseFormat = (data: IRowData[]): IRow[] =>
   data.map((row) => ({
     ...row,
     date: new Date(row.date),
+    completed: row.completed ?? false,
   }));
 
 // Wrapper type to track loading state without separate setState

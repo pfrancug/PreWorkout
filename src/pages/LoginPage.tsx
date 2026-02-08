@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@components/ui/card';
 import { cn } from '@lib/utils';
-import { Flame, X } from 'lucide-react';
+import { Flame, Globe, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -16,8 +16,14 @@ import { Link } from 'react-router';
 import { signInWithGoogle } from '../firebase/auth';
 
 export const LoginPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const toggleLanguage = () => {
+    const next = i18n.language === 'pl' ? 'en' : 'pl';
+    i18n.changeLanguage(next);
+    localStorage.setItem('i18nextLng', next);
+  };
 
   return (
     <div className={cn('flex flex-col gap-6')}>
@@ -95,6 +101,20 @@ export const LoginPage = () => {
         >
           {t('legal.termsOfService')}
         </Link>
+      </div>
+
+      <div className={'flex justify-center'}>
+        <button
+          onClick={toggleLanguage}
+          type={'button'}
+          className={
+            'flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground'
+          }
+        >
+          <Globe className={'h-3.5 w-3.5'} />
+
+          <span>{i18n.language === 'pl' ? 'English' : 'Polski'}</span>
+        </button>
       </div>
     </div>
   );

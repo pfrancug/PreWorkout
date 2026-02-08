@@ -24,14 +24,18 @@ import {
   BookOpen,
   Calculator,
   ChevronsUpDown,
+  Database,
   Dumbbell,
+  Globe,
   Home,
   LogOut,
   MessageSquare,
-  Settings,
+  SlidersHorizontal,
+  Tags,
+  User,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
@@ -60,13 +64,35 @@ const menuItems = [
   },
 ];
 
+const settingsItems = [
+  {
+    titleKey: 'nav.settingsProfile',
+    icon: User,
+    path: '/settings/profile',
+  },
+  {
+    titleKey: 'nav.settingsCategories',
+    icon: Tags,
+    path: '/settings/categories',
+  },
+  {
+    titleKey: 'nav.settingsPreferences',
+    icon: SlidersHorizontal,
+    path: '/settings/preferences',
+  },
+  {
+    titleKey: 'nav.settingsData',
+    icon: Database,
+    path: '/settings/data',
+  },
+];
+
 export const AppSidebar = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate();
   const { isMobile } = useSidebar();
   const { user } = useAuth();
-  const { settings } = useSettings();
+  const { settings, changeLanguage } = useSettings();
 
   const displayName = settings.name || t('nav.anonymous');
   const email = user?.email || '';
@@ -84,6 +110,8 @@ export const AppSidebar = () => {
 
     return location.pathname === path;
   };
+
+  const isSettingsActive = (path: string) => location.pathname === path;
 
   return (
     <Sidebar collapsible={'icon'} variant={'inset'}>
@@ -117,7 +145,7 @@ export const AppSidebar = () => {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t('nav.menu')}</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('nav.tracking')}</SidebarGroupLabel>
 
           <SidebarGroupContent>
             <SidebarMenu>
@@ -139,10 +167,47 @@ export const AppSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>{t('nav.settings')}</SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingsItems.map((item) => (
+                <SidebarMenuItem key={item.titleKey}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isSettingsActive(item.path)}
+                    tooltip={t(item.titleKey)}
+                  >
+                    <Link to={item.path}>
+                      <item.icon />
+
+                      <span>{t(item.titleKey)}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={i18n.language === 'pl' ? 'English' : 'Polski'}
+              onClick={() => {
+                changeLanguage(i18n.language === 'pl' ? 'en' : 'pl');
+              }}
+            >
+              <Globe />
+
+              <span>{i18n.language === 'pl' ? 'English' : 'Polski'}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -213,14 +278,6 @@ export const AppSidebar = () => {
                     </div>
                   </div>
                 </DropdownMenuLabel>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings />
-
-                  {t('nav.settings')}
-                </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
 

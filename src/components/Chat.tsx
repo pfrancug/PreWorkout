@@ -395,7 +395,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                 <Button
                   size={'sm'}
                   onClick={() => {
-                    navigate('/settings');
+                    navigate('/settings/profile');
                   }}
                 >
                   {t('chat.settingsAlert.goToSettings')}

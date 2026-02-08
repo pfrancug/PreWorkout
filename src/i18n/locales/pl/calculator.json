@@ -1,0 +1,47 @@
+{
+  "calculator": {
+    "title": "Kalkulator kalorii",
+    "description": "Oblicz dzienne zapotrzebowanie kaloryczne za pomocą równania Mifflin-St Jeor.",
+    "form": {
+      "title": "Twoje dane",
+      "gender": "Płeć",
+      "male": "Mężczyzna",
+      "female": "Kobieta",
+      "age": "Wiek",
+      "height": "Wzrost (cm)",
+      "heightLabel": "Wzrost",
+      "weight": "Waga (kg)",
+      "weightLabel": "Waga",
+      "years": "lat",
+      "activity": "Poziom aktywności",
+      "activityPlaceholder": "Wybierz poziom aktywności",
+      "calculate": "Oblicz"
+    },
+    "activity": {
+      "sedentary": "Siedzący (mało lub brak ćwiczeń)",
+      "light": "Lekki (ćwiczenia 1–3 dni/tydzień)",
+      "moderate": "Umiarkowany (ćwiczenia 3–5 dni/tydzień)",
+      "active": "Aktywny (ćwiczenia 6–7 dni/tydzień)",
+      "veryActive": "Bardzo aktywny (ciężkie ćwiczenia codziennie)",
+      "extraActive": "Ekstremalnie aktywny (bardzo ciężkie ćwiczenia)"
+    },
+    "equation": {
+      "title": "Równanie Mifflin-St Jeor",
+      "description": "Równanie Mifflin-St Jeor jest uważane za najdokładniejsze do obliczania podstawowej przemiany materii (BMR).",
+      "note": "TDEE = BMR × Współczynnik aktywności",
+      "howItWorks": "Jak to jest obliczane?"
+    },
+    "results": {
+      "title": "Twoje wyniki",
+      "tdee": "Twoje dzienne zapotrzebowanie energetyczne",
+      "bmr": "Podstawowa przemiana materii",
+      "plans": "Plany kaloryczne",
+      "deficit": "kcal deficyt",
+      "perDay": "kcal / dzień",
+      "maintain": "Utrzymanie wagi",
+      "midLoss": "Łagodna utrata wagi",
+      "loss": "Utrata wagi",
+      "extreme": "Ekstremalna utrata wagi"
+    }
+  }
+}

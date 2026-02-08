@@ -1,0 +1,29 @@
+{
+  "common": {
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "success": "Sukces"
+  },
+  "app": {
+    "name": "PreWorkout",
+    "tagline": "Fuel Your Gains"
+  },
+  "nav": {
+    "tracking": "Śledzenie",
+    "dashboard": "Pulpit",
+    "diary": "Dziennik",
+    "calculator": "Kalkulator",
+    "chat": "Czat",
+    "settings": "Ustawienia",
+    "settingsProfile": "Profil",
+    "settingsCategories": "Aktywności",
+    "settingsPreferences": "Preferencje",
+    "settingsData": "Dane i konto",
+    "logout": "Wyloguj się",
+    "anonymous": "Anonim"
+  }
+}

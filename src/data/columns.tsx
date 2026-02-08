@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next';
 
 import { EditableCell } from '@components/DataTable/EditableCell';
 import { Checkbox } from '@components/ui/checkbox';
+import { Switch } from '@components/ui/switch';
 
 export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
   {
@@ -113,5 +114,32 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
     size: 70,
     minSize: 60,
     maxSize: 90,
+  },
+  {
+    accessorKey: 'completed',
+    header: t('table.completed'),
+    cell: ({ row, table: tbl }) => {
+      const meta = tbl.options.meta as {
+        updateData: (
+          rowIndex: number,
+          columnId: string,
+          value: unknown,
+        ) => void;
+      };
+
+      return (
+        <Switch
+          checked={row.original.completed}
+          size={'sm'}
+          onCheckedChange={(checked) => {
+            meta.updateData(row.index, 'completed', checked);
+          }}
+        />
+      );
+    },
+    enableSorting: false,
+    size: 60,
+    minSize: 50,
+    maxSize: 70,
   },
 ];

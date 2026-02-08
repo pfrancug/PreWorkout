@@ -1,0 +1,70 @@
+{
+  "legal": {
+    "privacyPolicy": "Polityka prywatności",
+    "termsOfService": "Regulamin",
+    "lastUpdated": "Ostatnia aktualizacja",
+    "backToLogin": "Powrót do logowania",
+    "backToSettings": "Powrót do ustawień",
+    "privacy": {
+      "title": "Polityka prywatności",
+      "description": "Niniejsza polityka prywatności wyjaśnia, w jaki sposób zbieramy, wykorzystujemy i chronimy Twoje dane osobowe.",
+      "sections": {
+        "dataCollection": {
+          "title": "Jakie informacje zbieramy",
+          "content": "Zbieramy następujące informacje podczas korzystania z PreWorkout:\n\n• **Dane konta**: Adres email i imię przy logowaniu przez Google.\n• **Dane zdrowotne**: Waga, wiek, wzrost, płeć i informacje dietetyczne, które dobrowolnie wprowadzasz.\n• **Dane użytkowania**: Wpisy w dzienniku żywienia, obliczenia kaloryczne i rozmowy z asystentem AI."
+        },
+        "dataUsage": {
+          "title": "Jak wykorzystujemy Twoje informacje",
+          "content": "Wykorzystujemy Twoje informacje, aby:\n\n• Zapewnić spersonalizowane śledzenie odżywiania i rekomendacje.\n• Wyświetlać postępy i dane historyczne.\n• Ulepszać odpowiedzi asystenta AI na podstawie Twojego profilu.\n• Wysyłać ważne aktualizacje usługi (jeśli dotyczy)."
+        },
+        "dataStorage": {
+          "title": "Przechowywanie i bezpieczeństwo danych",
+          "content": "Twoje dane są bezpiecznie przechowywane w Firebase (Google Cloud Platform) z następującymi zabezpieczeniami:\n\n• Wszystkie dane są szyfrowane podczas przesyłania za pomocą HTTPS.\n• Reguły bezpieczeństwa Firebase zapewniają, że tylko Ty masz dostęp do swoich danych.\n• Nie sprzedajemy, nie udostępniamy ani nie wynajmujemy Twoich danych osobowych stronom trzecim."
+        },
+        "thirdParties": {
+          "title": "Usługi stron trzecich",
+          "content": "Korzystamy z następujących usług stron trzecich:\n\n• **Firebase Authentication**: Do bezpiecznego logowania (Google).\n• **Firebase Realtime Database**: Do przechowywania Twoich danych.\n• **Google Gemini / xAI Grok**: Usługi AI do funkcji czatu. Twoje wiadomości mogą być przetwarzane przez tych dostawców zgodnie z ich politykami prywatności."
+        },
+        "yourRights": {
+          "title": "Twoje prawa",
+          "content": "Masz prawo do:\n\n• **Dostępu**: Przeglądania wszystkich danych, które o Tobie posiadamy.\n• **Usunięcia**: Żądania usunięcia konta i wszystkich powiązanych danych.\n• **Eksportu**: Pobrania danych w przenośnym formacie.\n\nAby skorzystać z tych praw, skontaktuj się z nami lub użyj strony ustawień, aby usunąć konto."
+        },
+        "contact": {
+          "title": "Kontakt",
+          "content": "Jeśli masz pytania dotyczące tej polityki prywatności, otwórz zgłoszenie w naszym repozytorium GitHub."
+        }
+      }
+    },
+    "terms": {
+      "title": "Regulamin",
+      "description": "Proszę uważnie przeczytać ten regulamin przed korzystaniem z PreWorkout.",
+      "sections": {
+        "acceptance": {
+          "title": "Akceptacja regulaminu",
+          "content": "Korzystając z PreWorkout, akceptujesz i zgadzasz się na przestrzeganie niniejszego Regulaminu. Jeśli nie zgadzasz się z tymi warunkami, proszę nie korzystać z aplikacji."
+        },
+        "healthDisclaimer": {
+          "title": "Zastrzeżenie zdrowotne",
+          "warning": "Ważne: To nie jest porada medyczna",
+          "content": "PreWorkout to narzędzie do śledzenia fitnessu i odżywiania wyłącznie w celach informacyjnych. NIE zastępuje profesjonalnej porady medycznej, diagnozy ani leczenia.\n\n• Zawsze skonsultuj się z lekarzem przed rozpoczęciem diety lub programu ćwiczeń.\n• Obliczenia kaloryczne i rekomendacje AI są szacunkowe i mogą nie odpowiadać Twoim indywidualnym potrzebom.\n• Jeśli masz jakiekolwiek schorzenia, skonsultuj się z lekarzem."
+        },
+        "userResponsibilities": {
+          "title": "Obowiązki użytkownika",
+          "content": "Korzystając z PreWorkout, zgadzasz się:\n\n• Podawać prawdziwe informacje o sobie.\n• Korzystać z usługi wyłącznie do celów osobistych, niekomercyjnych.\n• Nie próbować uzyskiwać dostępu do danych innych użytkowników ani naruszać bezpieczeństwa aplikacji.\n• Nie używać czatu AI do szkodliwych, nielegalnych lub niewłaściwych celów."
+        },
+        "intellectualProperty": {
+          "title": "Własność intelektualna",
+          "content": "PreWorkout jest oprogramowaniem open-source na licencji MIT. Możesz używać, modyfikować i rozpowszechniać kod zgodnie z warunkami licencji. Jednak nazwa i logo PreWorkout pozostają własnością opiekunów projektu."
+        },
+        "limitation": {
+          "title": "Ograniczenie odpowiedzialności",
+          "content": "PreWorkout jest dostarczany „tak jak jest\" bez żadnych gwarancji. Nie ponosimy odpowiedzialności za:\n\n• Problemy zdrowotne wynikające ze stosowania się do rekomendacji.\n• Utratę danych lub przerwy w działaniu usługi.\n• Niedokładności w obliczeniach lub odpowiedziach AI.\n\nKorzystasz z aplikacji na własne ryzyko."
+        },
+        "changes": {
+          "title": "Zmiany regulaminu",
+          "content": "Możemy od czasu do czasu aktualizować niniejszy regulamin. Dalsze korzystanie z PreWorkout po zmianach oznacza akceptację nowych warunków."
+        }
+      }
+    }
+  }
+}

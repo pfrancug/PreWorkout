@@ -1,0 +1,24 @@
+{
+  "calendar": {
+    "title": "Kalendarz aktywności",
+    "weekDays": {
+      "mon": "Pon",
+      "tue": "Wt",
+      "wed": "Śr",
+      "thu": "Czw",
+      "fri": "Pt",
+      "sat": "Sob",
+      "sun": "Ndz"
+    },
+    "activities": {
+      "training": "Trening",
+      "personal": "Trening personalny",
+      "run": "Bieg",
+      "another": "Inne"
+    },
+    "note": "Notatka",
+    "notePlaceholder": "Dodaj notatkę...",
+    "addActivity": "Dodaj aktywność",
+    "manageActivities": "Zarządzaj aktywnościami"
+  }
+}

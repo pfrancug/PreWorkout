@@ -11,13 +11,18 @@ export interface UserSettings {
 export interface UserPreferences {
   sidebarOpen: boolean;
   chatPanelOpen: boolean;
+  language: string;
 }
 
 export interface SettingsContextValue {
   settings: UserSettings;
   preferences: UserPreferences;
-  updatePreference: (field: keyof UserPreferences, value: boolean) => void;
+  updatePreference: (
+    field: keyof UserPreferences,
+    value: boolean | string,
+  ) => void;
   saveSettings: (newSettings: UserSettings) => Promise<void>;
+  changeLanguage: (lang: string) => void;
 }
 
 export const defaultSettings: UserSettings = {
@@ -30,6 +35,7 @@ export const defaultSettings: UserSettings = {
 export const defaultPreferences: UserPreferences = {
   sidebarOpen: true,
   chatPanelOpen: false,
+  language: localStorage.getItem('i18nextLng') || 'en',
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

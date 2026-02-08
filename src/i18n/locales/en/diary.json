@@ -1,0 +1,17 @@
+{
+  "diary": {
+    "title": "Food Diary",
+    "description": "Track your daily nutrition and weight."
+  },
+  "table": {
+    "selectAll": "Select all",
+    "selectRow": "Select row",
+    "date": "Date",
+    "weight": "Weight (kg)",
+    "calories": "Calories (kcal)",
+    "protein": "Protein (g)",
+    "fat": "Fat (g)",
+    "carbs": "Carbs (g)",
+    "completed": "Done"
+  }
+}
