@@ -131,7 +131,7 @@ export const AppSidebar = () => {
                     'flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-red-500 text-white'
                   }
                 >
-                  <Dumbbell className={'size-5'} />
+                  <Dumbbell className={'size-6'} />
                 </div>
 
                 <div className={'grid flex-1 text-left text-sm leading-tight'}>
