@@ -72,6 +72,7 @@ export const signInWithGoogle = async ({ onError }: ErrorHandlerProps) => {
 };
 
 export const logoutUser = async () => {
+  localStorage.clear();
   await signOut(auth);
 };
 
