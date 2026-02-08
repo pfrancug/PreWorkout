@@ -98,11 +98,15 @@ export const CategoriesSettingsPage = () => {
       },
     ];
 
-    await saveActivityCategories(user.uid, updated);
-    setNewName('');
-    setNewIcon('dumbbell');
-    setNewColor(ACTIVITY_COLORS[0].id);
-    toast.success(t('settings.categories.addSuccess'));
+    try {
+      await saveActivityCategories(user.uid, updated);
+      setNewName('');
+      setNewIcon('dumbbell');
+      setNewColor(ACTIVITY_COLORS[0].id);
+      toast.success(t('settings.categories.addSuccess'));
+    } catch {
+      toast.error(t('common.saveError'));
+    }
   };
 
   const handleDelete = async (categoryId: string) => {
@@ -117,8 +121,12 @@ export const CategoriesSettingsPage = () => {
     }
 
     const updated = categories.filter((c) => c.id !== categoryId);
-    await saveActivityCategories(user.uid, updated);
-    toast.success(t('settings.categories.deleteSuccess'));
+    try {
+      await saveActivityCategories(user.uid, updated);
+      toast.success(t('settings.categories.deleteSuccess'));
+    } catch {
+      toast.error(t('common.saveError'));
+    }
   };
 
   const startEdit = (category: ActivityCategory) => {
@@ -144,10 +152,14 @@ export const CategoriesSettingsPage = () => {
         : c,
     );
 
-    await saveActivityCategories(user.uid, updated);
-    setEditingId(null);
-    setEditPickerOpen(false);
-    toast.success(t('settings.categories.editSuccess'));
+    try {
+      await saveActivityCategories(user.uid, updated);
+      setEditingId(null);
+      setEditPickerOpen(false);
+      toast.success(t('settings.categories.editSuccess'));
+    } catch {
+      toast.error(t('common.saveError'));
+    }
   };
 
   return (

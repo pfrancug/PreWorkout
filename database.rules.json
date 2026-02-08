@@ -1,41 +1,98 @@
 {
   "rules": {
+    ".read": false,
+    ".write": false,
+
     "users": {
       "$userId": {
+        ".read": false,
+        ".write": false,
+
         "settings": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId",
-          ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('age').isString() && newData.child('height').isString() && newData.child('sex').isString() && (!newData.hasChild('avatarUrl') || newData.child('avatarUrl').isString())"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('age').isString() && newData.child('age').val().length <= 3 && newData.child('height').isString() && newData.child('height').val().length <= 3 && newData.child('sex').isString() && (newData.child('sex').val() === '' || newData.child('sex').val() === 'male' || newData.child('sex').val() === 'female') && (!newData.hasChild('avatarUrl') || (newData.child('avatarUrl').isString() && newData.child('avatarUrl').val().length <= 200000))"
         },
+
         "preferences": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId",
-          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean()"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen', 'language', 'defaultCalendarView']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean() && newData.child('language').isString() && (newData.child('language').val() === 'en' || newData.child('language').val() === 'pl') && newData.child('defaultCalendarView').isString() && (newData.child('defaultCalendarView').val() === 'month' || newData.child('defaultCalendarView').val() === 'week')"
         },
+
         "messages": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          "$messageIndex": {
+            ".validate": "newData.hasChildren(['role', 'parts']) && newData.child('role').isString() && (newData.child('role').val() === 'user' || newData.child('role').val() === 'model')",
+            "role": {
+              ".validate": "newData.isString()"
+            },
+            "parts": {
+              "$partIndex": {
+                ".validate": "newData.hasChildren(['text']) && newData.child('text').isString() && newData.child('text').val().length <= 50000"
+              }
+            },
+            "attachedDataset": {
+              ".validate": true
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
         },
+
         "data": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          "$entryIndex": {
+            ".validate": "newData.hasChildren(['id', 'date']) && newData.child('id').isNumber() && newData.child('date').isString() && newData.child('date').val().length <= 30 && (!newData.hasChild('weight') || newData.child('weight').val() == null || newData.child('weight').isNumber()) && (!newData.hasChild('kcal') || newData.child('kcal').val() == null || newData.child('kcal').isNumber()) && (!newData.hasChild('protein') || newData.child('protein').val() == null || newData.child('protein').isNumber()) && (!newData.hasChild('fat') || newData.child('fat').val() == null || newData.child('fat').isNumber()) && (!newData.hasChild('carbs') || newData.child('carbs').val() == null || newData.child('carbs').isNumber()) && (!newData.hasChild('completed') || newData.child('completed').isBoolean())"
+          }
         },
+
         "limits": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId",
-          ".validate": "newData.hasChildren(['date', 'count']) && newData.child('date').isString() && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('count').val() <= 10"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          ".validate": "newData.hasChildren(['date', 'count']) && newData.child('date').isString() && newData.child('date').val().length == 10 && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('count').val() <= 50"
         },
+
         "calendar": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          "$date": {
+            ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/)",
+            "$activityIndex": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            }
+          }
         },
+
         "calendarNotes": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          "$date": {
+            ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.isString() && newData.val().length <= 2000"
+          }
         },
+
         "activityCategories": {
-          ".read": "auth.uid == $userId",
-          ".write": "auth.uid == $userId"
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          "_initialized": {
+            ".validate": "newData.isBoolean()"
+          },
+          "items": {
+            "$categoryIndex": {
+              ".validate": "newData.hasChildren(['id', 'icon', 'name', 'color']) && newData.child('id').isString() && newData.child('id').val().length <= 50 && newData.child('icon').isString() && newData.child('icon').val().length <= 50 && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('color').isString() && newData.child('color').val().length <= 20"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+
+        "$other": {
+          ".validate": false
         }
       }
     }

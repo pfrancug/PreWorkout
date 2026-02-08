@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from 'sonner';
 
 import { loadUserData, saveUserData } from '../firebase/database';
 import { DataContext } from './DataContextDef';
@@ -99,7 +100,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         saveTimeoutRef.current = setTimeout(() => {
           const dataToSave = pendingSaveRef.current;
           if (dataToSave) {
-            saveUserData(user.uid, toFirebaseFormat(dataToSave));
+            saveUserData(user.uid, toFirebaseFormat(dataToSave)).catch(() => {
+              toast.error('Failed to save data.');
+            });
           }
         }, 500);
       }

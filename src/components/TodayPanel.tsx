@@ -22,6 +22,7 @@ import { Plus, Settings2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import {
   ACTIVITY_COLOR_MAP,
@@ -96,9 +97,13 @@ export const TodayPanel = () => {
         ? current.filter((a) => a !== activity)
         : [...current, activity];
 
-      await saveCalendarDay(user.uid, todayKey, updated);
+      try {
+        await saveCalendarDay(user.uid, todayKey, updated);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
     },
-    [user, calendarData, todayKey],
+    [user, calendarData, todayKey, t],
   );
 
   const handleNoteChange = useCallback(
@@ -107,9 +112,13 @@ export const TodayPanel = () => {
         return;
       }
 
-      await saveCalendarNote(user.uid, todayKey, value);
+      try {
+        await saveCalendarNote(user.uid, todayKey, value);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
     },
-    [user, todayKey],
+    [user, todayKey, t],
   );
 
   // Diary data for today

@@ -12,6 +12,7 @@ export interface UserPreferences {
   sidebarOpen: boolean;
   chatPanelOpen: boolean;
   language: string;
+  defaultCalendarView: 'month' | 'week';
 }
 
 export interface SettingsContextValue {
@@ -36,6 +37,7 @@ export const defaultPreferences: UserPreferences = {
   sidebarOpen: true,
   chatPanelOpen: false,
   language: localStorage.getItem('i18nextLng') || 'en',
+  defaultCalendarView: 'month',
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

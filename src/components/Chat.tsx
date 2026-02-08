@@ -16,6 +16,7 @@ import { BicepsFlexed, Database, Send, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Streamdown } from 'streamdown';
 
 import { CHAT_ROLES } from '../constants/storage';
@@ -278,10 +279,14 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       setIsStreaming(false);
       // Save to Firebase after streaming completes
       if (user && finalMessages.length > 1) {
-        await saveUserMessages(user.uid, finalMessages);
-        await incrementDailyMessageCount(user.uid);
-        const remaining = await getRemainingMessages(user.uid);
-        setRemainingMessages(remaining);
+        try {
+          await saveUserMessages(user.uid, finalMessages);
+          await incrementDailyMessageCount(user.uid);
+          const remaining = await getRemainingMessages(user.uid);
+          setRemainingMessages(remaining);
+        } catch {
+          toast.error(t('common.saveError'));
+        }
       }
       scrollToBottom();
     }
@@ -590,7 +595,9 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
                       onClick={() => {
                         setMessages((prev) => [prev[0]]);
                         if (user) {
-                          clearUserMessages(user.uid);
+                          clearUserMessages(user.uid).catch(() => {
+                            toast.error(t('common.saveError'));
+                          });
                         }
                       }}
                     >

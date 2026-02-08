@@ -69,7 +69,7 @@ const pageTitleKeys: Record<string, string> = {
 const AppRoutes = () => {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
-  const { preferences, updatePreference } = useSettings();
+  const { preferences } = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const { dataSet } = useDataSet();
@@ -126,10 +126,7 @@ const AppRoutes = () => {
 
   return (
     <RightPanelProvider>
-      <SidebarProvider
-        onOpenChange={(open) => updatePreference('sidebarOpen', open)}
-        open={preferences.sidebarOpen}
-      >
+      <SidebarProvider defaultOpen={preferences.sidebarOpen}>
         <AppSidebar />
 
         <SidebarInset>

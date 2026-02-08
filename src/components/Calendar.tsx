@@ -31,12 +31,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import {
   ACTIVITY_COLOR_MAP,
   DEFAULT_CATEGORIES,
 } from '../constants/activities';
 import { useAuth } from '../contexts/useAuth';
+import { useSettings } from '../contexts/useSettings';
 import {
   saveCalendarDay,
   saveCalendarNote,
@@ -63,6 +65,7 @@ const formatDateKey = (year: number, month: number, day: number) =>
 export const Calendar = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { preferences } = useSettings();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -76,7 +79,9 @@ export const Calendar = () => {
   const [categories, setCategories] = useState<ActivityCategory[]>([]);
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [dropdownOpenDay, setDropdownOpenDay] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [viewMode, setViewMode] = useState<'month' | 'week'>(
+    preferences.defaultCalendarView,
+  );
 
   // Week view state
   const [weekStart, setWeekStart] = useState<Date>(() => {
@@ -218,9 +223,13 @@ export const Calendar = () => {
         ? current.filter((a) => a !== activity)
         : [...current, activity];
 
-      await saveCalendarDay(user.uid, dateKey, updated);
+      try {
+        await saveCalendarDay(user.uid, dateKey, updated);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
     },
-    [user, calendarData],
+    [user, calendarData, t],
   );
 
   const handleNoteChange = useCallback(
@@ -229,9 +238,13 @@ export const Calendar = () => {
         return;
       }
 
-      await saveCalendarNote(user.uid, dateKey, value);
+      try {
+        await saveCalendarNote(user.uid, dateKey, value);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
     },
-    [user],
+    [user, t],
   );
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);

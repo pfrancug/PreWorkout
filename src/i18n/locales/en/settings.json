@@ -13,6 +13,19 @@
         "title": "Language",
         "description": "Choose the language for the application interface.",
         "label": "Display Language"
+      },
+      "layout": {
+        "title": "Desktop Layout",
+        "description": "Configure the default state of panels on desktop.",
+        "sidebar": "Sidebar expanded",
+        "sidebarDescription": "Show the navigation sidebar expanded by default.",
+        "chatPanel": "Chat panel expanded",
+        "chatPanelDescription": "Show the AI chat panel expanded by default."
+      },
+      "calendarView": {
+        "title": "Calendar",
+        "description": "Choose the default view when opening the calendar.",
+        "label": "Default View"
       }
     },
     "data": {

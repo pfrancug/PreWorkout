@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { useSettings } from '@contexts/useSettings';
 import { cn } from '@lib/utils';
-import { createContext, useCallback, useContext } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 
 const PANEL_WIDTH = '28rem';
 
@@ -25,21 +25,12 @@ export const useRightPanel = () => {
 };
 
 export const RightPanelProvider = ({ children }: { children: ReactNode }) => {
-  const { preferences, updatePreference } = useSettings();
-
-  // Use preferences directly as single source of truth
-  const isOpen = preferences.chatPanelOpen;
-
-  const setIsOpen = useCallback(
-    (open: boolean) => {
-      updatePreference('chatPanelOpen', open);
-    },
-    [updatePreference],
-  );
+  const { preferences } = useSettings();
+  const [isOpen, setIsOpen] = useState(preferences.chatPanelOpen);
 
   const toggle = useCallback(() => {
-    updatePreference('chatPanelOpen', !preferences.chatPanelOpen);
-  }, [updatePreference, preferences.chatPanelOpen]);
+    setIsOpen((prev) => !prev);
+  }, []);
 
   return (
     <RightPanelContext.Provider value={{ isOpen, setIsOpen, toggle }}>

@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 import { Loader } from '../components/Loader';
 import {
@@ -113,7 +114,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
 
         const updated = { ...prev.preferences, [field]: value };
         if (user) {
-          saveUserPreferences(user.uid, updated);
+          saveUserPreferences(user.uid, updated).catch(() => {
+            toast.error('Failed to save preferences.');
+          });
         }
 
         return { ...prev, preferences: updated };
@@ -134,14 +137,19 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const saveSettings = useCallback(
     async (newSettings: UserSettings) => {
       if (user) {
-        await saveUserSettings(user.uid, newSettings);
-        setState((prev) => {
-          if (prev.status !== 'loaded') {
-            return prev;
-          }
+        try {
+          await saveUserSettings(user.uid, newSettings);
+          setState((prev) => {
+            if (prev.status !== 'loaded') {
+              return prev;
+            }
 
-          return { ...prev, settings: newSettings };
-        });
+            return { ...prev, settings: newSettings };
+          });
+        } catch {
+          toast.error('Failed to save settings.');
+          throw new Error('Save failed');
+        }
       }
     },
     [user],

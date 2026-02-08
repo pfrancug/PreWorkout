@@ -13,6 +13,19 @@
         "title": "Język",
         "description": "Wybierz język interfejsu aplikacji.",
         "label": "Język wyświetlania"
+      },
+      "layout": {
+        "title": "Układ desktopowy",
+        "description": "Skonfiguruj domyślny stan paneli na desktopie.",
+        "sidebar": "Panel boczny rozwinięty",
+        "sidebarDescription": "Domyślnie pokazuj panel nawigacji rozwinięty.",
+        "chatPanel": "Panel czatu rozwinięty",
+        "chatPanelDescription": "Domyślnie pokazuj panel czatu AI rozwinięty."
+      },
+      "calendarView": {
+        "title": "Kalendarz",
+        "description": "Wybierz domyślny widok po otwarciu kalendarza.",
+        "label": "Domyślny widok"
       }
     },
     "data": {

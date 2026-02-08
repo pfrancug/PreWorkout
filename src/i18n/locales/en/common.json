@@ -6,6 +6,7 @@
     "edit": "Edit",
     "loading": "Loading...",
     "error": "Error",
+    "saveError": "Failed to save changes. Please try again.",
     "success": "Success"
   },
   "app": {
