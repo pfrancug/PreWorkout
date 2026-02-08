@@ -51,7 +51,9 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
       return [];
     }
 
-    return [...data].sort((a, b) => a.date.getTime() - b.date.getTime());
+    return [...data]
+      .filter((row) => row.completed)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [data]);
 
   const chartData = useMemo(() => {
