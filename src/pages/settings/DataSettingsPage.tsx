@@ -26,7 +26,7 @@ import {
 
 export const DataSettingsPage = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,21 +156,25 @@ export const DataSettingsPage = () => {
               {t('settings.dataAccount.downloadData')}
             </Button>
 
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              variant={'outline'}
-            >
-              <Upload className={'mr-2 h-4 w-4'} />
-              {t('settings.dataAccount.importData')}
-            </Button>
+            {isAdmin && (
+              <>
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant={'outline'}
+                >
+                  <Upload className={'mr-2 h-4 w-4'} />
+                  {t('settings.dataAccount.importData')}
+                </Button>
 
-            <input
-              accept={'.json'}
-              className={'hidden'}
-              onChange={handleImportData}
-              ref={fileInputRef}
-              type={'file'}
-            />
+                <input
+                  accept={'.json'}
+                  className={'hidden'}
+                  onChange={handleImportData}
+                  ref={fileInputRef}
+                  type={'file'}
+                />
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -187,27 +191,31 @@ export const DataSettingsPage = () => {
         </CardHeader>
 
         <CardContent className={'space-y-4'}>
-          <div className={'flex items-center justify-between'}>
-            <div>
-              <p className={'text-sm font-medium'}>
-                {t('settings.dataAccount.deleteData')}
-              </p>
-              <p className={'text-sm text-muted-foreground'}>
-                {t('settings.dangerZone.deleteDataDescription')}
-              </p>
-            </div>
+          {isAdmin && (
+            <>
+              <div className={'flex items-center justify-between'}>
+                <div>
+                  <p className={'text-sm font-medium'}>
+                    {t('settings.dataAccount.deleteData')}
+                  </p>
+                  <p className={'text-sm text-muted-foreground'}>
+                    {t('settings.dangerZone.deleteDataDescription')}
+                  </p>
+                </div>
 
-            <Button
-              className={'ml-4 shrink-0'}
-              onClick={handleDeleteData}
-              variant={'outline'}
-            >
-              <Trash2 className={'mr-2 h-4 w-4'} />
-              {t('settings.dataAccount.deleteData')}
-            </Button>
-          </div>
+                <Button
+                  className={'ml-4 shrink-0'}
+                  onClick={handleDeleteData}
+                  variant={'outline'}
+                >
+                  <Trash2 className={'mr-2 h-4 w-4'} />
+                  {t('settings.dataAccount.deleteData')}
+                </Button>
+              </div>
 
-          <Separator />
+              <Separator />
+            </>
+          )}
 
           <div className={'flex items-center justify-between'}>
             <div>

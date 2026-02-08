@@ -31,6 +31,7 @@ import {
   Home,
   LogOut,
   MessageSquare,
+  ShieldCheck,
   SlidersHorizontal,
   Tags,
   User,
@@ -97,7 +98,7 @@ export const AppSidebar = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { settings, changeLanguage } = useSettings();
 
   const displayName = settings.name || t('nav.anonymous');
@@ -203,6 +204,32 @@ export const AppSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('nav.administration')}</SidebarGroupLabel>
+
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === '/admin'}
+                    tooltip={t('nav.admin')}
+                  >
+                    <Link
+                      onClick={() => isMobile && setOpenMobile(false)}
+                      to={'/admin'}
+                    >
+                      <ShieldCheck />
+
+                      <span>{t('nav.admin')}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

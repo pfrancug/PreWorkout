@@ -105,6 +105,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
   const [remainingMessages, setRemainingMessages] = useState<number>(10);
 
   const isLimitReached = remainingMessages <= 0;
+  const isUnlimited = remainingMessages === Infinity;
 
   // Load remaining daily message count
   useEffect(() => {
@@ -491,7 +492,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
 
       {/* Input */}
       <div className={'shrink-0 px-4 pt-4 pb-6'}>
-        {user && (
+        {user && !isUnlimited && (
           <p
             className={cn(
               'mb-2 text-center text-xs',

@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 import { auth } from '../firebase/auth';
+import { updateUserDirectory } from '../firebase/database';
 import { AuthContext } from './AuthContext';
 
 interface Props {
@@ -14,10 +15,26 @@ interface Props {
 export const AuthProvider = ({ children }: Props) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      if (firebaseUser) {
+        const token = await firebaseUser.getIdTokenResult();
+        setIsAdmin(token.claims.admin === true);
+
+        // Populate user directory entry
+        updateUserDirectory(
+          firebaseUser.uid,
+          firebaseUser.email ?? '',
+          firebaseUser.displayName ?? '',
+        ).catch(() => {
+          // Silently fail — non-critical
+        });
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
@@ -25,7 +42,7 @@ export const AuthProvider = ({ children }: Props) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

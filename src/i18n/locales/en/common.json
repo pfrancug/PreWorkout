@@ -25,8 +25,25 @@
     "settingsCategories": "Activities",
     "settingsPreferences": "Preferences",
     "settingsData": "Data & Account",
+    "admin": "Admin Panel",
+    "administration": "Administration",
     "logout": "Logout",
     "anonymous": "Anonymous"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "description": "Manage user accounts and limits.",
+    "users": {
+      "title": "Users",
+      "description": "{{count}} registered users",
+      "empty": "No users found.",
+      "email": "Email",
+      "name": "Name",
+      "lastLogin": "Last Login",
+      "dailyMessages": "Daily Messages"
+    },
+    "invalidLimit": "Limit must be a number between 0 and 50.",
+    "limitSaved": "Limit saved successfully."
   },
   "pwa": {
     "title": "Install PreWorkout",

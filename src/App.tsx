@@ -40,6 +40,7 @@ import { useAuth } from './contexts/useAuth';
 import { useSettings } from './contexts/useSettings';
 import { useDataSet } from './hooks/useDataSet';
 import { useIsMobile } from './hooks/useMobile';
+import { AdminPage } from './pages/AdminPage';
 import { CalculatorPage } from './pages/Calculator';
 import { CalendarPage } from './pages/CalendarPage';
 import { ChatPage } from './pages/ChatPage';
@@ -64,6 +65,7 @@ const pageTitleKeys: Record<string, string> = {
   '/settings/categories': 'nav.settingsCategories',
   '/settings/preferences': 'nav.settingsPreferences',
   '/settings/data': 'nav.settingsData',
+  '/admin': 'nav.admin',
 };
 
 const AppRoutes = () => {
@@ -203,6 +205,8 @@ const AppRoutes = () => {
                 />
 
                 <Route element={<DataSettingsPage />} path={'/settings/data'} />
+
+                <Route element={<AdminPage />} path={'/admin'} />
 
                 <Route element={<PrivacyPage />} path={'/privacy'} />
 
