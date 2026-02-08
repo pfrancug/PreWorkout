@@ -40,7 +40,7 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
     () =>
       ({
         [value]: {
-          label: textMap[value].title,
+          label: textMap[value].titleKey,
           color: 'var(--chart)',
         },
       }) satisfies ChartConfig,

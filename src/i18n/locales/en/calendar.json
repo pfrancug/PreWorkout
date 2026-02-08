@@ -1,6 +1,7 @@
 {
   "calendar": {
     "title": "Activity Calendar",
+    "today": "Today",
     "weekDays": {
       "mon": "Mon",
       "tue": "Tue",

@@ -1,6 +1,7 @@
 {
   "calendar": {
     "title": "Kalendarz aktywności",
+    "today": "Dziś",
     "weekDays": {
       "mon": "Pon",
       "tue": "Wt",
