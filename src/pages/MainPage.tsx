@@ -22,7 +22,7 @@ export const MainPage = () => {
       </div>
 
       {/* Spark charts */}
-      <div className={'grid grid-cols-2 gap-4'}>
+      <div className={'grid grid-cols-2 gap-4 lg:gap-8'}>
         <SparkChart data={dataSet} value={'weight'} />
 
         <SparkChart data={dataSet} value={'kcal'} />
