@@ -4,7 +4,6 @@ import type { ChartConfig } from '@components/ui/chart';
 import { Badge } from '@components/ui/badge';
 import {
   Card,
-  CardAction,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -16,7 +15,7 @@ import {
 } from '@components/ui/chart';
 import { dateFormatter } from '@lib/utils';
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
@@ -34,17 +33,21 @@ const textMap: Record<Props['value'], { titleKey: string; unit: string }> = {
   weight: { titleKey: 'dashboard.charts.weight', unit: 'kg' },
 };
 
-export const SparkChart = ({ data, days = 14, value }: Props) => {
+export const SparkChart = memo(function SparkChart({
+  data,
+  days = 14,
+  value,
+}: Props) {
   const { t } = useTranslation();
   const chartConfig = useMemo(
     () =>
       ({
         [value]: {
-          label: textMap[value].titleKey,
+          label: t(textMap[value].titleKey),
           color: 'var(--chart)',
         },
       }) satisfies ChartConfig,
-    [value],
+    [value, t],
   );
 
   const sortedData = useMemo(() => {
@@ -96,7 +99,9 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
     };
   }, [slicedData, value]);
 
-  const averageValue = useMemo(() => {
+  const isWeight = value === 'weight';
+
+  const displayValue = useMemo(() => {
     if (!data) {
       return '0.0';
     }
@@ -107,6 +112,26 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
 
     return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted;
   }, [data, slicedData, value]);
+
+  const weightRange = useMemo(() => {
+    if (!isWeight) {
+      return null;
+    }
+    const firstValid = slicedData.find((row) => row.weight !== null)?.weight;
+    const lastValid = [...slicedData]
+      .reverse()
+      .find((row) => row.weight !== null)?.weight;
+    const fmt = (v: number) => {
+      const s = v.toFixed(1);
+
+      return s.endsWith('.0') ? s.slice(0, -2) : s;
+    };
+
+    return {
+      first: firstValid != null ? fmt(firstValid) : '0',
+      last: lastValid != null ? fmt(lastValid) : '0',
+    };
+  }, [slicedData, isWeight]);
 
   const valueDifference = useMemo(() => {
     if (slicedData.length === 0) {
@@ -126,30 +151,26 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
 
   const text = textMap[value];
   const gradientId = `fill-${value}`;
-  const isWeight = value === 'weight';
 
   return (
-    <Card className={'@container/card bg-card shadow-xs'}>
-      <CardHeader className={'pb-2'}>
-        <CardDescription>
-          {t(text.titleKey)}
-          <span className={'ml-1.5 text-[11px] text-muted-foreground/60'}>
-            {isWeight
-              ? t('dashboard.charts.dayChange', { days })
-              : t('dashboard.charts.dayAvg', { days })}
-          </span>
-        </CardDescription>
+    <Card
+      className={
+        '@container/card bg-card overflow-hidden py-3 shadow-xs lg:py-6'
+      }
+    >
+      <CardHeader className={'gap-1 px-3 pb-2 lg:px-6'}>
+        <div className={'flex w-full items-start gap-2'}>
+          <CardDescription className={'flex flex-1 flex-col'}>
+            <span>{t(text.titleKey)}</span>
+            <span className={'text-[11px] text-muted-foreground/60'}>
+              {isWeight
+                ? t('dashboard.charts.dayChange', { days })
+                : t('dashboard.charts.dayAvg', { days })}
+            </span>
+          </CardDescription>
 
-        <CardTitle className={'text-2xl font-semibold tabular-nums'}>
-          {averageValue}{' '}
-          <span className={'text-sm font-normal text-muted-foreground'}>
-            {text.unit}
-          </span>
-        </CardTitle>
-
-        <CardAction>
           {isWeight && valueDifference !== 0 && (
-            <Badge variant={'outline'}>
+            <Badge className={'whitespace-nowrap text-xs'} variant={'outline'}>
               {valueDifference > 0 ? (
                 <TrendingUp className={'text-amber-400'} />
               ) : (
@@ -160,10 +181,26 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
               {text.unit}
             </Badge>
           )}
-        </CardAction>
+        </div>
+
+        <CardTitle className={'text-2xl font-semibold tabular-nums'}>
+          {isWeight && weightRange ? (
+            <>
+              <span className={'text-muted-foreground'}>
+                {`${weightRange.first} - `}
+              </span>
+              {`${weightRange.last} `}
+            </>
+          ) : (
+            displayValue
+          )}
+          <span className={'text-sm font-normal text-muted-foreground'}>
+            {text.unit}
+          </span>
+        </CardTitle>
       </CardHeader>
 
-      <div className={'px-4 pb-3'}>
+      <div className={'px-2 pb-2 lg:px-4 lg:pb-3'}>
         <ChartContainer className={'h-[48px] w-full'} config={chartConfig}>
           <AreaChart
             accessibilityLayer
@@ -213,4 +250,4 @@ export const SparkChart = ({ data, days = 14, value }: Props) => {
       </div>
     </Card>
   );
-};
+});

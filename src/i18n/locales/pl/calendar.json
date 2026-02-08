@@ -1,6 +1,7 @@
 {
   "calendar": {
     "title": "Kalendarz aktywności",
+    "description": "Śledź swoje treningi i aktywności.",
     "today": "Dziś",
     "weekDays": {
       "mon": "Pon",
@@ -20,6 +21,8 @@
     "note": "Notatka",
     "notePlaceholder": "Dodaj notatkę...",
     "addActivity": "Dodaj aktywność",
-    "manageActivities": "Zarządzaj aktywnościami"
+    "manageActivities": "Zarządzaj aktywnościami",
+    "monthView": "Miesiąc",
+    "weekView": "Tydzień"
   }
 }

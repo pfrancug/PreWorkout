@@ -40,6 +40,7 @@ import { useSettings } from './contexts/useSettings';
 import { useDataSet } from './hooks/useDataSet';
 import { useIsMobile } from './hooks/useMobile';
 import { CalculatorPage } from './pages/Calculator';
+import { CalendarPage } from './pages/CalendarPage';
 import { ChatPage } from './pages/ChatPage';
 import { DiaryPage } from './pages/DiaryPage';
 import { LoginPage } from './pages/LoginPage';
@@ -55,6 +56,7 @@ const pageTitleKeys: Record<string, string> = {
   '/': 'nav.dashboard',
   '/dashboard': 'nav.dashboard',
   '/diary': 'nav.diary',
+  '/calendar': 'nav.calendar',
   '/calculator': 'nav.calculator',
   '/chat': 'nav.chat',
   '/settings/profile': 'nav.settingsProfile',
@@ -177,6 +179,8 @@ const AppRoutes = () => {
                 <Route element={<MainPage />} path={'/dashboard'} />
 
                 <Route element={<DiaryPage />} path={'/diary'} />
+
+                <Route element={<CalendarPage />} path={'/calendar'} />
 
                 <Route element={<CalculatorPage />} path={'/calculator'} />
 

@@ -1,5 +1,5 @@
-import { Calendar } from '@components/Calendar';
 import { SparkChart } from '@components/charts/SparkChart';
+import { TodayPanel } from '@components/TodayPanel';
 import { useTranslation } from 'react-i18next';
 
 import { useDataSet } from '../hooks/useDataSet';
@@ -9,7 +9,9 @@ export const MainPage = () => {
   const { dataSet } = useDataSet();
 
   return (
-    <div className={'mx-auto w-full max-w-screen-2xl space-y-8 p-6'}>
+    <div
+      className={'mx-auto w-full max-w-3xl space-y-4 p-4 lg:space-y-8 lg:p-6'}
+    >
       {/* Page header */}
       <div className={'space-y-1'}>
         <h1 className={'text-3xl font-bold tracking-tight'}>
@@ -20,16 +22,14 @@ export const MainPage = () => {
       </div>
 
       {/* Spark charts */}
-      <div className={'grid gap-4 md:grid-cols-3'}>
+      <div className={'grid grid-cols-2 gap-4'}>
         <SparkChart data={dataSet} value={'weight'} />
 
         <SparkChart data={dataSet} value={'kcal'} />
-
-        <SparkChart data={dataSet} value={'protein'} />
       </div>
 
-      {/* Calendar */}
-      <Calendar />
+      {/* Today */}
+      <TodayPanel />
     </div>
   );
 };

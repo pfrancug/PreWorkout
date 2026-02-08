@@ -23,6 +23,7 @@ import { useSidebar } from '@components/ui/sidebar-context';
 import {
   BookOpen,
   Calculator,
+  CalendarDays,
   ChevronsUpDown,
   Database,
   Dumbbell,
@@ -51,6 +52,11 @@ const menuItems = [
     titleKey: 'nav.diary',
     icon: BookOpen,
     path: '/diary',
+  },
+  {
+    titleKey: 'nav.calendar',
+    icon: CalendarDays,
+    path: '/calendar',
   },
   {
     titleKey: 'nav.calculator',

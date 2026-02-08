@@ -11,5 +11,15 @@
       "dayChange": "{{days}}d change",
       "dayAvg": "{{days}}d avg"
     }
+  },
+  "today": {
+    "title": "Today",
+    "weight": "Weight",
+    "calories": "Calories",
+    "protein": "Protein",
+    "fat": "Fat",
+    "carbs": "Carbs",
+    "activities": "Activities",
+    "noActivities": "No activities"
   }
 }

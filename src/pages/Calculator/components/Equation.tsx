@@ -1,8 +1,8 @@
 import { ChevronDown } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export const Equation = () => {
+export const Equation = memo(function Equation() {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -68,4 +68,4 @@ export const Equation = () => {
       )}
     </div>
   );
-};
+});

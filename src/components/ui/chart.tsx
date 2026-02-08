@@ -4,7 +4,14 @@ import type {
   CSSProperties,
   ReactNode,
 } from 'react';
-import type { LegendProps } from 'recharts';
+import type {
+  LegendPayload,
+  TooltipContentProps as RechartsTooltipContentProps,
+} from 'recharts';
+import type {
+  NameType,
+  ValueType,
+} from 'recharts/types/component/DefaultTooltipContent';
 
 import { cn } from '@lib/utils';
 import { createContext, useContext, useId, useMemo } from 'react';
@@ -121,13 +128,14 @@ const ChartTooltipContent = ({
   color,
   nameKey,
   labelKey,
-}: ComponentProps<typeof Tooltip> &
+}: Partial<RechartsTooltipContentProps<ValueType, NameType>> &
   ComponentProps<'div'> & {
     hideLabel?: boolean;
     hideIndicator?: boolean;
     indicator?: 'line' | 'dot' | 'dashed';
     nameKey?: string;
     labelKey?: string;
+    color?: string;
   }) => {
   const { config } = useChart();
 
@@ -269,11 +277,12 @@ const ChartLegendContent = ({
   payload,
   verticalAlign = 'bottom',
   nameKey,
-}: ComponentProps<'div'> &
-  Pick<LegendProps, 'payload' | 'verticalAlign'> & {
-    hideIcon?: boolean;
-    nameKey?: string;
-  }) => {
+}: ComponentProps<'div'> & {
+  hideIcon?: boolean;
+  nameKey?: string;
+  payload?: LegendPayload[];
+  verticalAlign?: 'top' | 'bottom' | 'middle';
+}) => {
   const { config } = useChart();
 
   if (!payload?.length) {

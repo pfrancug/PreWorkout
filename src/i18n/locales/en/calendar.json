@@ -1,6 +1,7 @@
 {
   "calendar": {
     "title": "Activity Calendar",
+    "description": "Track your workouts and activities.",
     "today": "Today",
     "weekDays": {
       "mon": "Mon",
@@ -20,6 +21,8 @@
     "note": "Note",
     "notePlaceholder": "Add a note...",
     "addActivity": "Add activity",
-    "manageActivities": "Manage activities"
+    "manageActivities": "Manage activities",
+    "monthView": "Month",
+    "weekView": "Week"
   }
 }

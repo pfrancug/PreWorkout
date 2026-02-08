@@ -10,7 +10,7 @@ export const TermsPage = () => {
   const { user } = useAuth();
 
   return (
-    <div className={'mx-auto w-full max-w-3xl p-6'}>
+    <div className={'mx-auto w-full max-w-3xl p-4 lg:p-6'}>
       <Card>
         <CardHeader>
           <CardTitle className={'text-2xl'}>{t('legal.terms.title')}</CardTitle>

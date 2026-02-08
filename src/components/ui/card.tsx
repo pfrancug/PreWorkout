@@ -20,7 +20,7 @@ const CardHeader = ({ className, ...props }: ComponentProps<'div'>) => {
     <div
       data-slot={'card-header'}
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6',
+        '@container/card-header flex flex-wrap items-start gap-2 px-6 [.border-b]:pb-6',
         className,
       )}
       {...props}
@@ -51,11 +51,8 @@ const CardDescription = ({ className, ...props }: ComponentProps<'div'>) => {
 const CardAction = ({ className, ...props }: ComponentProps<'div'>) => {
   return (
     <div
+      className={cn('ml-auto self-start', className)}
       data-slot={'card-action'}
-      className={cn(
-        'col-start-2 row-span-2 row-start-1 self-start justify-self-end',
-        className,
-      )}
       {...props}
     />
   );

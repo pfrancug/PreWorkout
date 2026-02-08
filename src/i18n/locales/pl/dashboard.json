@@ -11,5 +11,15 @@
       "dayChange": "{{days}}d zmiana",
       "dayAvg": "{{days}}d śr."
     }
+  },
+  "today": {
+    "title": "Dzisiaj",
+    "weight": "Waga",
+    "calories": "Kalorie",
+    "protein": "Białko",
+    "fat": "Tłuszcz",
+    "carbs": "Węglowodany",
+    "activities": "Aktywności",
+    "noActivities": "Brak aktywności"
   }
 }

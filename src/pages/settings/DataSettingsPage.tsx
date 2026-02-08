@@ -125,7 +125,11 @@ export const DataSettingsPage = () => {
   };
 
   return (
-    <div className={'mx-auto w-full max-w-3xl flex flex-1 flex-col gap-8 p-6'}>
+    <div
+      className={
+        'mx-auto w-full max-w-3xl flex flex-1 flex-col gap-4 p-4 lg:gap-8 lg:p-6'
+      }
+    >
       <div className={'space-y-1'}>
         <h1 className={'text-3xl font-bold tracking-tight'}>
           {t('settings.data.pageTitle')}
