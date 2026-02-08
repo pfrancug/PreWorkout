@@ -125,7 +125,7 @@ export const AppSidebar = () => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size={'lg'}>
-              <Link to={'/'}>
+              <Link onClick={() => isMobile && setOpenMobile(false)} to={'/'}>
                 <div
                   className={
                     'flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-red-500 text-white'
