@@ -167,3 +167,23 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
 .dark {
   --date-picker-filter: invert(1);
 }
+
+@keyframes ios-slide-in {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(4%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-ios-slide-in {
+  animation: ios-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
