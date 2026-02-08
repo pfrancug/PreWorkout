@@ -26,5 +26,9 @@
     "settingsData": "Dane i konto",
     "logout": "Wyloguj się",
     "anonymous": "Anonim"
+  },
+  "pwa": {
+    "title": "Zainstaluj PreWorkout",
+    "description": "Kliknij przycisk Udostępnij, a następnie \"Dodaj do ekranu początkowego\"."
   }
 }

@@ -26,6 +26,7 @@ import {
 
 import { AppSidebar } from './components/AppSidebar';
 import { Chat } from './components/Chat';
+import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { Loader } from './components/Loader';
 import {
   RightPanel,
@@ -247,6 +248,7 @@ export const App = () => {
         <SettingsProvider>
           <DataProvider>
             <AppRoutes />
+            <IOSInstallPrompt />
             <Toaster />
           </DataProvider>
         </SettingsProvider>

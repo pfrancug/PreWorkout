@@ -1,0 +1,13 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Solid black background (Uber style) -->
+  <rect width="1024" height="1024" rx="180" fill="#000000"/>
+  
+  <!-- PWR Text - Uber style -->
+  <text x="512" y="620"
+        font-family="Roboto, Arial, sans-serif"
+        font-size="340"
+        font-weight="900"
+        fill="#FFFFFF"
+        text-anchor="middle"
+        letter-spacing="-5">PWR</text>
+</svg>
