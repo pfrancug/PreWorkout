@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@components/ui/card';
 import { cn } from '@lib/utils';
-import { Flame, Globe, X } from 'lucide-react';
+import { Dumbbell, Globe, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -32,10 +32,10 @@ export const LoginPage = () => {
           <div className={'mb-2 flex justify-center'}>
             <div
               className={
-                'flex size-10 items-center justify-center rounded-lg bg-orange-500 text-white'
+                'flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-red-500 text-white'
               }
             >
-              <Flame className={'size-5'} />
+              <Dumbbell className={'size-7'} />
             </div>
           </div>
 
