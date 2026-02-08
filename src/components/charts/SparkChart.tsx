@@ -15,7 +15,7 @@ import {
 } from '@components/ui/chart';
 import { dateFormatter } from '@lib/utils';
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
 
@@ -39,6 +39,7 @@ export const SparkChart = memo(function SparkChart({
   value,
 }: Props) {
   const { t } = useTranslation();
+  const [showTooltip, setShowTooltip] = useState(false);
   const chartConfig = useMemo(
     () =>
       ({
@@ -200,7 +201,11 @@ export const SparkChart = memo(function SparkChart({
         </CardTitle>
       </CardHeader>
 
-      <div className={'px-2 pb-2 lg:px-4 lg:pb-3'}>
+      <div
+        className={'px-2 pb-2 lg:px-4 lg:pb-3'}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
         <ChartContainer className={'h-[48px] w-full'} config={chartConfig}>
           <AreaChart
             accessibilityLayer
@@ -234,6 +239,7 @@ export const SparkChart = memo(function SparkChart({
             <YAxis hide domain={[minValue, maxValue]} />
 
             <ChartTooltip
+              active={showTooltip ? undefined : false}
               content={<ChartTooltipContent indicator={'line'} />}
               cursor={false}
             />
