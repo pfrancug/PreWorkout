@@ -7,7 +7,31 @@
       ".read": "auth != null && auth.token.admin === true",
       "$userId": {
         ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-        ".validate": "newData.hasChildren(['email', 'lastLogin']) && newData.child('email').isString() && newData.child('email').val().length <= 200 && newData.child('lastLogin').isString() && (!newData.hasChild('displayName') || newData.child('displayName').isString())"
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "lastLogin": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "usageHistory": {
+          "$yearMonth": {
+            ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
+            "$day": {
+              ".validate": "$day.matches(/^\\d{2}$/) && newData.hasChildren(['count', 'max']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('max').isNumber() && newData.child('max').val() >= 0"
+            }
+          }
+        },
+        "messageSends": {
+          "$yearMonth": {
+            ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
+            "$day": {
+              ".validate": "$day.matches(/^\\d{2}$/) && newData.isNumber() && newData.val() >= 0"
+            }
+          }
+        }
       }
     },
 
@@ -61,18 +85,7 @@
         "limits": {
           ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
           ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".validate": "newData.hasChildren(['date', 'count']) && newData.child('date').isString() && newData.child('date').val().length == 10 && newData.child('count').isNumber() && newData.child('count').val() >= 0 && (!newData.hasChild('max') || (newData.child('max').isNumber() && newData.child('max').val() >= -1)) && (!newData.hasChild('lastUpdated') || newData.child('lastUpdated').isNumber())"
-        },
-
-        "usageHistory": {
-          ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".write": "auth != null && auth.uid == $userId",
-          "$yearMonth": {
-            ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
-            "$day": {
-              ".validate": "$day.matches(/^\\d{2}$/) && newData.hasChildren(['count', 'max']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('max').isNumber() && newData.child('max').val() >= 0"
-            }
-          }
+          ".validate": "newData.hasChildren(['count', 'lastUpdated']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('lastUpdated').isNumber() && (!newData.hasChild('max') || (newData.child('max').isNumber() && newData.child('max').val() >= -1))"
         },
 
         "calendar": {

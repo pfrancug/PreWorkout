@@ -1,3 +1,4 @@
+import admin from './admin.json';
 import auth from './auth.json';
 import calculator from './calculator.json';
 import calendar from './calendar.json';
@@ -10,6 +11,7 @@ import settings from './settings.json';
 
 export const en = {
   ...common,
+  ...admin,
   ...auth,
   ...dashboard,
   ...diary,

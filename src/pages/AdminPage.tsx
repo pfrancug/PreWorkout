@@ -44,10 +44,11 @@ import {
 
 interface UserWithLimits {
   uid: string;
-  email: string;
-  displayName: string;
-  lastLogin: string;
+  email: string | null;
+  displayName: string | null;
+  lastLogin: string | null;
   limits: DailyMessageLimit | null;
+  deleted?: boolean;
   stats?: {
     totalMessages: number;
     averageDaily: number;
@@ -81,6 +82,7 @@ export const AdminPage = () => {
 
         const entries = await Promise.all(
           Object.entries(directory).map(async ([uid, entry]) => {
+            const isDeleted = !entry.email && !entry.lastLogin;
             const [limits, stats] = await Promise.all([
               getUserLimitsForAdmin(uid),
               getUserUsageStats(uid),
@@ -88,9 +90,10 @@ export const AdminPage = () => {
 
             return {
               uid,
-              email: entry.email,
-              displayName: entry.displayName,
-              lastLogin: entry.lastLogin,
+              email: entry.email || null,
+              displayName: entry.displayName || null,
+              lastLogin: entry.lastLogin || null,
+              deleted: isDeleted,
               limits,
               stats: stats
                 ? {
@@ -103,10 +106,22 @@ export const AdminPage = () => {
           }),
         );
 
-        entries.sort(
-          (a, b) =>
-            new Date(b.lastLogin).getTime() - new Date(a.lastLogin).getTime(),
-        );
+        entries.sort((a, b) => {
+          // Deleted users (no lastLogin) go to the bottom
+          if (!a.lastLogin && !b.lastLogin) {
+            return 0;
+          }
+          if (!a.lastLogin) {
+            return 1;
+          }
+          if (!b.lastLogin) {
+            return -1;
+          }
+
+          return (
+            new Date(b.lastLogin).getTime() - new Date(a.lastLogin).getTime()
+          );
+        });
 
         setUsers(entries);
         setLoading(false);
@@ -132,15 +147,14 @@ export const AdminPage = () => {
 
       setSavingUser(uid);
       try {
-        const today = new Date().toISOString().split('T')[0];
         const user = users.find((u) => u.uid === uid);
-        const currentCount = user?.limits?.count ?? 0;
-        const currentDate = user?.limits?.date ?? today;
-        // Keep existing date if it's today, otherwise use today (handles new day)
-        const date = currentDate === today ? currentDate : today;
+        const today = new Date().toISOString().split('T')[0];
+        const limitsDate = user?.limits
+          ? new Date(user.limits.lastUpdated).toISOString().split('T')[0]
+          : null;
+        const isToday = limitsDate === today;
         await setUserLimitsForAdmin(uid, {
-          date,
-          count: currentDate === today ? currentCount : 0,
+          count: isToday ? (user?.limits?.count ?? 0) : 0,
           max,
         });
         setUsers((prev) =>
@@ -149,9 +163,9 @@ export const AdminPage = () => {
               ? {
                   ...u,
                   limits: {
-                    date,
-                    count: currentDate === today ? currentCount : 0,
+                    count: isToday ? (user?.limits?.count ?? 0) : 0,
                     max,
+                    lastUpdated: Date.now(),
                   },
                 }
               : u,
@@ -200,7 +214,7 @@ export const AdminPage = () => {
           <CardHeader>
             <CardTitle className={'flex items-center gap-2'}>
               <TrendingUp className={'h-5 w-5'} />
-              {'Usage Analytics (Last 30 Days)\r'}
+              {t('admin.analytics.title')}
             </CardTitle>
           </CardHeader>
 
@@ -208,7 +222,7 @@ export const AdminPage = () => {
             <div className={'grid gap-4 sm:grid-cols-2 lg:grid-cols-5'}>
               <div className={'space-y-1'}>
                 <p className={'text-sm text-muted-foreground'}>
-                  {'All Time Total\r'}
+                  {t('admin.analytics.allTimeTotal')}
                 </p>
 
                 <p className={'text-2xl font-bold'}>
@@ -221,7 +235,7 @@ export const AdminPage = () => {
 
               <div className={'space-y-1'}>
                 <p className={'text-sm text-muted-foreground'}>
-                  {'Last 30 Days\r'}
+                  {t('admin.analytics.last30Days')}
                 </p>
 
                 <p className={'text-2xl font-bold'}>
@@ -234,7 +248,7 @@ export const AdminPage = () => {
 
               <div className={'space-y-1'}>
                 <p className={'text-sm text-muted-foreground'}>
-                  {'Active Users\r'}
+                  {t('admin.analytics.active30d')}
                 </p>
 
                 <p className={'text-2xl font-bold'}>
@@ -242,12 +256,15 @@ export const AdminPage = () => {
                     users.filter((u) => (u.stats?.totalMessages ?? 0) > 0)
                       .length
                   }
+                  <span className={'text-sm font-normal text-muted-foreground'}>
+                    {` / ${users.filter((u) => !u.deleted).length}`}
+                  </span>
                 </p>
               </div>
 
               <div className={'space-y-1'}>
                 <p className={'text-sm text-muted-foreground'}>
-                  {'Avg Per User\r'}
+                  {t('admin.analytics.avgPerUser')}
                 </p>
 
                 <p className={'text-2xl font-bold'}>
@@ -264,7 +281,7 @@ export const AdminPage = () => {
 
               <div className={'space-y-1'}>
                 <p className={'text-sm text-muted-foreground'}>
-                  {'Avg Daily/User\r'}
+                  {t('admin.analytics.avgDailyUser')}
                 </p>
 
                 <p className={'text-2xl font-bold'}>
@@ -320,20 +337,20 @@ export const AdminPage = () => {
                     <TableHead>
                       <div className={'flex items-center gap-1'}>
                         <Activity className={'h-3.5 w-3.5'} />
-                        <span>{'All Time'}</span>
+                        <span>{t('admin.analytics.allTimeTotal')}</span>
                       </div>
                     </TableHead>
 
                     <TableHead>
                       <div className={'flex items-center gap-1'}>
                         <Activity className={'h-3.5 w-3.5'} />
-                        <span>{'30d Total'}</span>
+                        <span>{t('admin.analytics.last30d')}</span>
                       </div>
                     </TableHead>
 
-                    <TableHead>{'Today'}</TableHead>
+                    <TableHead>{t('admin.analytics.today')}</TableHead>
 
-                    <TableHead>{'Max Limit'}</TableHead>
+                    <TableHead>{t('admin.analytics.maxLimit')}</TableHead>
 
                     <TableHead className={'w-[100px]'} />
                   </TableRow>
@@ -348,7 +365,11 @@ export const AdminPage = () => {
                     return (
                       <TableRow key={user.uid}>
                         <TableCell className={'font-mono text-sm'}>
-                          {user.email}
+                          {user.email ?? (
+                            <span className={'text-muted-foreground italic'}>
+                              {t('admin.users.deleted')}
+                            </span>
+                          )}
                         </TableCell>
 
                         <TableCell>
@@ -360,7 +381,13 @@ export const AdminPage = () => {
                         </TableCell>
 
                         <TableCell className={'text-sm'}>
-                          {new Date(user.lastLogin).toLocaleDateString()}
+                          {user.lastLogin ? (
+                            new Date(user.lastLogin).toLocaleDateString()
+                          ) : (
+                            <span className={'text-muted-foreground'}>
+                              {'-'}
+                            </span>
+                          )}
                         </TableCell>
 
                         <TableCell className={'text-sm font-medium'}>
@@ -392,7 +419,7 @@ export const AdminPage = () => {
                             className={'sr-only'}
                             htmlFor={`limit-${user.uid}`}
                           >
-                            {'Max Limit\r'}
+                            {t('admin.analytics.maxLimit')}
                           </Label>
 
                           <Input

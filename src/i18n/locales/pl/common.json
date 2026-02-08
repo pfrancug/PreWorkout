@@ -30,21 +30,6 @@
     "logout": "Wyloguj się",
     "anonymous": "Anonim"
   },
-  "admin": {
-    "title": "Panel admina",
-    "description": "Zarządzaj kontami użytkowników i limitami.",
-    "users": {
-      "title": "Użytkownicy",
-      "description": "{{count}} zarejestrowanych użytkowników",
-      "empty": "Nie znaleziono użytkowników.",
-      "email": "Email",
-      "name": "Imię",
-      "lastLogin": "Ostatnie logowanie",
-      "dailyMessages": "Wiadomości dziennie"
-    },
-    "invalidLimit": "Limit musi być liczbą od 0 do 50.",
-    "limitSaved": "Limit zapisany pomyślnie."
-  },
   "pwa": {
     "title": "Zainstaluj PreWorkout",
     "description": "Kliknij przycisk Udostępnij, a następnie \"Dodaj do ekranu początkowego\"."

@@ -1,0 +1,29 @@
+{
+  "admin": {
+    "title": "Admin Panel",
+    "description": "Manage user accounts and limits.",
+    "users": {
+      "title": "Users",
+      "description": "{{count}} registered users",
+      "empty": "No users found.",
+      "deleted": "Deleted account",
+      "email": "Email",
+      "name": "Name",
+      "lastLogin": "Last Login",
+      "dailyMessages": "Daily Messages"
+    },
+    "invalidLimit": "Limit must be a number between 0 and 50.",
+    "limitSaved": "Limit saved successfully.",
+    "analytics": {
+      "title": "Usage Analytics (Last 30 Days)",
+      "allTimeTotal": "All Time Total",
+      "last30Days": "Last 30 Days",
+      "last30d": "Last 30d",
+      "active30d": "Active (30d)",
+      "avgPerUser": "Avg Per User",
+      "avgDailyUser": "Avg Daily/User",
+      "today": "Today",
+      "maxLimit": "Max Limit"
+    }
+  }
+}

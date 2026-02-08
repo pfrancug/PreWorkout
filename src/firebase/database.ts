@@ -10,10 +10,9 @@ import { onValue } from 'firebase/database';
 import { app } from './config';
 
 export interface DailyMessageLimit {
-  date: string;
   count: number;
   max?: number;
-  lastUpdated?: number; // Unix timestamp
+  lastUpdated: number; // Unix timestamp, used to determine the current day
 }
 
 export interface MessageUsageHistory {
@@ -180,6 +179,17 @@ export const loadUserData = async (
   return null;
 };
 
+/**
+ * Deletes all user data from the database.
+ *
+ * GDPR Compliance Note:
+ * - Deletes all personal identifiable information (PII)
+ * - Removes PII fields from userDirectory (email, displayName, lastLogin)
+ * - Retains userDirectory/{uid}/messageSends for anonymized analytics (GDPR Article 89)
+ * - Retains userDirectory/{uid}/usageHistory for anonymized analytics
+ * - Once Firebase Auth account is deleted, userId becomes a pseudonymous
+ *   identifier that cannot be linked back to the individual
+ */
 export const deleteAllUserData = async (userId: string): Promise<void> => {
   await Promise.all([
     remove(getUserSettingsRef(userId)),
@@ -190,6 +200,10 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserCalendarRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
+    // Remove only PII fields from userDirectory, keep analytics (messageSends, usageHistory)
+    remove(ref(database, `userDirectory/${userId}/email`)),
+    remove(ref(database, `userDirectory/${userId}/displayName`)),
+    remove(ref(database, `userDirectory/${userId}/lastLogin`)),
   ]);
 };
 
@@ -291,11 +305,14 @@ const DAILY_MESSAGE_LIMIT = 5;
 
 const getTodayDateString = (): string => new Date().toISOString().split('T')[0];
 
+const getDateStringFromTimestamp = (timestamp: number): string =>
+  new Date(timestamp).toISOString().split('T')[0];
+
 export const getUserLimitsRef = (userId: string) =>
   ref(database, `users/${userId}/limits`);
 
 const getUserUsageHistoryRef = (userId: string, yearMonth: string) =>
-  ref(database, `users/${userId}/usageHistory/${yearMonth}`);
+  ref(database, `userDirectory/${userId}/usageHistory/${yearMonth}`);
 
 // Archive user's daily usage for analytics
 const archiveUserUsage = async (
@@ -305,12 +322,12 @@ const archiveUserUsage = async (
   max: number,
 ): Promise<void> => {
   try {
-    // Store in format: users/{userId}/usageHistory/2026-02/08
+    // Store in format: userDirectory/{userId}/usageHistory/2026-02/08
     const yearMonth = date.substring(0, 7); // "2026-02"
     const day = date.substring(8); // "08"
     const historyRef = ref(
       database,
-      `users/${userId}/usageHistory/${yearMonth}/${day}`,
+      `userDirectory/${userId}/usageHistory/${yearMonth}/${day}`,
     );
     await set(historyRef, { count, max });
   } catch (error) {
@@ -329,21 +346,48 @@ const getUserLimits = async (
   if (snapshot.exists()) {
     const limits = snapshot.val() as DailyMessageLimit;
     const today = getTodayDateString();
+    const limitsDate = getDateStringFromTimestamp(limits.lastUpdated);
 
     // Reset if it's a new day (and archive old data)
-    if (limits.date !== today) {
-      // Archive yesterday's data
+    if (limitsDate !== today) {
+      const lastDate = new Date(limitsDate);
+      const currentDate = new Date(today);
+
+      // Archive the last active day if it had activity
       if (limits.count > 0) {
         await archiveUserUsage(
           userId,
-          limits.date,
+          limitsDate,
           limits.count,
           limits.max ?? DAILY_MESSAGE_LIMIT,
         );
       }
 
+      // Fill gaps with zero-count days for continuous analytics
+      const daysDiff = Math.floor(
+        (currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (daysDiff > 1) {
+        // Archive intermediate days with zero count
+        const archivePromises: Promise<void>[] = [];
+        for (let i = 1; i < daysDiff; i++) {
+          const gapDate = new Date(lastDate);
+          gapDate.setDate(gapDate.getDate() + i);
+          const gapDateStr = gapDate.toISOString().split('T')[0];
+          archivePromises.push(
+            archiveUserUsage(
+              userId,
+              gapDateStr,
+              0,
+              limits.max ?? DAILY_MESSAGE_LIMIT,
+            ),
+          );
+        }
+        await Promise.all(archivePromises);
+      }
+
       return {
-        date: today,
         count: 0,
         max: limits.max ?? DAILY_MESSAGE_LIMIT,
         lastUpdated: Date.now(),
@@ -367,12 +411,28 @@ export const incrementDailyMessageCount = async (
 ): Promise<void> => {
   const limits = await getUserLimits(userId);
   const limitsRef = getUserLimitsRef(userId);
+  const timestamp = Date.now();
+  const today = getTodayDateString();
+
+  // Update daily limit counter
   await set(limitsRef, {
-    date: getTodayDateString(),
     count: (limits?.count ?? 0) + 1,
     max: limits?.max ?? DAILY_MESSAGE_LIMIT,
-    lastUpdated: Date.now(),
+    lastUpdated: timestamp,
   });
+
+  // Log message send for real-time analytics (independent of daily archiving)
+  const yearMonth = today.substring(0, 7); // "2026-02"
+  const day = today.substring(8); // "09"
+  const logRef = ref(
+    database,
+    `userDirectory/${userId}/messageSends/${yearMonth}/${day}`,
+  );
+
+  // Increment counter for this day in real-time
+  const logSnapshot = await get(logRef);
+  const currentCount = logSnapshot.exists() ? (logSnapshot.val() as number) : 0;
+  await set(logRef, currentCount + 1);
 };
 
 export const isMessageLimitReached = async (
@@ -583,10 +643,11 @@ export const subscribeToActivityCategories = (
 };
 
 // User Directory (populated on login, admin-readable)
+// Fields are optional because PII is removed on account deletion while analytics are retained
 export interface UserDirectoryEntry {
-  email: string;
-  displayName: string;
-  lastLogin: string;
+  email?: string;
+  displayName?: string;
+  lastLogin?: string;
 }
 
 export const updateUserDirectory = async (
@@ -633,7 +694,7 @@ export const getUserLimitsForAdmin = async (
 
 export const setUserLimitsForAdmin = async (
   userId: string,
-  limits: DailyMessageLimit,
+  limits: Pick<DailyMessageLimit, 'count' | 'max'>,
 ): Promise<void> => {
   const limitsRef = getUserLimitsRef(userId);
   await set(limitsRef, { ...limits, lastUpdated: Date.now() });
@@ -668,35 +729,25 @@ export const getUserUsageHistory = async (
 
 export const getAllTimeUserUsage = async (userId: string): Promise<number> => {
   try {
-    const [historySnapshot, currentLimits] = await Promise.all([
-      get(ref(database, `users/${userId}/usageHistory`)),
-      getUserLimitsForAdmin(userId),
-    ]);
+    // Read from real-time message sends log (independent of user login)
+    const sendsSnapshot = await get(
+      ref(database, `userDirectory/${userId}/messageSends`),
+    );
+
+    if (!sendsSnapshot.exists()) {
+      return 0;
+    }
 
     let total = 0;
+    const data = sendsSnapshot.val();
 
-    // Add archived historical data
-    if (historySnapshot.exists()) {
-      const data = historySnapshot.val();
-
-      // Iterate through all year-months
-      Object.values(data).forEach((monthData) => {
-        // Iterate through all days in each month
-        Object.values(monthData as Record<string, { count: number }>).forEach(
-          (dayData) => {
-            total += dayData.count;
-          },
-        );
+    // Iterate through all year-months
+    Object.values(data).forEach((monthData) => {
+      // Iterate through all days in each month
+      Object.values(monthData as Record<string, number>).forEach((count) => {
+        total += count;
       });
-    }
-
-    // Add today's count (not yet archived)
-    if (currentLimits) {
-      const today = getTodayDateString();
-      if (currentLimits.date === today) {
-        total += currentLimits.count;
-      }
-    }
+    });
 
     return total;
   } catch (error) {
@@ -717,46 +768,56 @@ export const getUserUsageStats = async (
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Get current and previous month
+  // Get current and previous month from messageSends (real-time logs)
   const currentMonth = today.toISOString().substring(0, 7);
   const previousMonth = thirtyDaysAgo.toISOString().substring(0, 7);
 
-  const [currentData, previousData, allTimeTotal, currentLimits] =
+  const [allTimeTotal, currentSends, previousSends, currentLimits] =
     await Promise.all([
-      getUserUsageHistory(userId, currentMonth),
-      currentMonth !== previousMonth
-        ? getUserUsageHistory(userId, previousMonth)
-        : Promise.resolve(null),
       getAllTimeUserUsage(userId),
+      get(
+        ref(database, `userDirectory/${userId}/messageSends/${currentMonth}`),
+      ),
+      currentMonth !== previousMonth
+        ? get(
+            ref(
+              database,
+              `userDirectory/${userId}/messageSends/${previousMonth}`,
+            ),
+          )
+        : Promise.resolve(null),
       getUserLimitsForAdmin(userId),
     ]);
 
-  const allData = { ...previousData, ...currentData };
+  // Convert messageSends to MessageUsageHistory format
+  const allData: Record<string, MessageUsageHistory> = {};
 
-  // Add today's count (not yet archived) to the data
-  const todayStr = getTodayDateString();
-  let todayCount = 0;
-  if (currentLimits && currentLimits.date === todayStr) {
-    todayCount = currentLimits.count;
-    // Add today's entry to allData if it's not already archived
-    if (!allData[todayStr]) {
-      allData[todayStr] = {
-        date: todayStr,
-        count: todayCount,
-        max: currentLimits.max ?? DAILY_MESSAGE_LIMIT,
+  if (currentSends?.exists()) {
+    const monthData = currentSends.val() as Record<string, number>;
+    Object.entries(monthData).forEach(([day, count]) => {
+      const date = `${currentMonth}-${day}`;
+      allData[date] = {
+        date,
+        count,
+        max: currentLimits?.max ?? DAILY_MESSAGE_LIMIT,
       };
-    }
+    });
   }
 
-  if (!allData || Object.keys(allData).length === 0) {
-    return allTimeTotal > 0
-      ? {
-          last30Days: [],
-          totalMessages: todayCount,
-          averageDaily: 0,
-          allTimeTotal,
-        }
-      : null;
+  if (previousSends?.exists()) {
+    const monthData = previousSends.val() as Record<string, number>;
+    Object.entries(monthData).forEach(([day, count]) => {
+      const date = `${previousMonth}-${day}`;
+      allData[date] = {
+        date,
+        count,
+        max: currentLimits?.max ?? DAILY_MESSAGE_LIMIT,
+      };
+    });
+  }
+
+  if (Object.keys(allData).length === 0 && allTimeTotal === 0) {
+    return null;
   }
 
   // Filter to last 30 days

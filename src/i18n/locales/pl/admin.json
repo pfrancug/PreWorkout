@@ -1,0 +1,29 @@
+{
+  "admin": {
+    "title": "Panel admina",
+    "description": "Zarządzaj kontami użytkowników i limitami.",
+    "users": {
+      "title": "Użytkownicy",
+      "description": "{{count}} zarejestrowanych użytkowników",
+      "empty": "Nie znaleziono użytkowników.",
+      "deleted": "Usunięte konto",
+      "email": "Email",
+      "name": "Imię",
+      "lastLogin": "Ostatnie logowanie",
+      "dailyMessages": "Wiadomości dziennie"
+    },
+    "invalidLimit": "Limit musi być liczbą od 0 do 50.",
+    "limitSaved": "Limit zapisany pomyślnie.",
+    "analytics": {
+      "title": "Analityka użycia (ostatnie 30 dni)",
+      "allTimeTotal": "Łącznie",
+      "last30Days": "Ostatnie 30 dni",
+      "last30d": "Ostatnie 30d",
+      "active30d": "Aktywni (30d)",
+      "avgPerUser": "Śr. na użytk.",
+      "avgDailyUser": "Śr. dziennie/użytk.",
+      "today": "Dziś",
+      "maxLimit": "Limit maks."
+    }
+  }
+}
