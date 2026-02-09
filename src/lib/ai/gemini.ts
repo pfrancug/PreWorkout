@@ -62,7 +62,11 @@ const streamProd = async (
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error || `Gemini API error: ${res.status}`);
+    throw new Error(
+      err.error
+        ? `${err.error} (${res.status})`
+        : `Gemini API error: ${res.status}`,
+    );
   }
 
   const reader = res.body?.getReader();
