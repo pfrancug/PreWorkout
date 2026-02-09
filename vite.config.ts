@@ -19,6 +19,19 @@ const aliases = {
 };
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/database'],
+          charts: ['recharts'],
+          ui: ['radix-ui', 'lucide-react', 'class-variance-authority'],
+          i18n: ['i18next', 'react-i18next'],
+        },
+      },
+    },
+  },
   plugins: [react(), tailwindcss()],
   resolve: { alias: aliases },
 });

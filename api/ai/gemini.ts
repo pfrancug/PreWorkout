@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 import { GoogleGenAI } from '@google/genai';
 
-import { verifyAuthToken } from '../lib/auth';
+import { verifyAuthToken } from '../lib/auth.js';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
