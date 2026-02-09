@@ -32,14 +32,24 @@ const toFirebaseFormat = (rows: IRow[]): IRowData[] =>
   }));
 
 // Convert IRowData from Firebase to IRow
-// Parse YYYY-MM-DD as local date (noon to avoid any DST edge cases)
+// Handles both legacy ISO strings and new YYYY-MM-DD format
 const fromFirebaseFormat = (data: IRowData[]): IRow[] =>
   data.map((row) => {
-    const [y, m, d] = row.date.split('-').map(Number);
+    let date: Date;
+
+    if (row.date.includes('T')) {
+      // Legacy ISO string — extract YYYY-MM-DD part and parse as local date
+      const [y, m, d] = row.date.split('T')[0].split('-').map(Number);
+      date = new Date(y, m - 1, d);
+    } else {
+      // New YYYY-MM-DD format — parse as local date
+      const [y, m, d] = row.date.split('-').map(Number);
+      date = new Date(y, m - 1, d);
+    }
 
     return {
       ...row,
-      date: new Date(y, m - 1, d),
+      date,
       completed: row.completed ?? false,
     };
   });
