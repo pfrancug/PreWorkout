@@ -72,6 +72,7 @@ const streamProd = async (
 
   const decoder = new TextDecoder();
   let fullText = '';
+  let buffer = '';
 
   while (true) {
     const { done, value } = await reader.read();
@@ -79,12 +80,19 @@ const streamProd = async (
       break;
     }
 
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    // Keep the last incomplete line in the buffer
+    buffer = lines.pop() ?? '';
 
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
+      const trimmed = line.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      if (trimmed.startsWith('data: ')) {
+        const data = trimmed.slice(6);
         if (data === '[DONE]') {
           continue;
         }
@@ -116,9 +124,15 @@ const streamProd = async (
 export const streamFromGemini = import.meta.env.DEV ? streamDev : streamProd;
 
 export const isRateLimitError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const msg = error.message.toLowerCase();
+
   return (
-    error instanceof Error &&
-    (error.message.includes('429') ||
-      error.message.includes('Too Many Requests'))
+    msg.includes('429') ||
+    msg.includes('too many requests') ||
+    (msg.includes('resource') && msg.includes('exhausted')) ||
+    msg.includes('rate limit')
   );
 };

@@ -16,14 +16,6 @@
         "lastLogin": {
           ".validate": "newData.isString() && newData.val().length <= 30"
         },
-        "usageHistory": {
-          "$yearMonth": {
-            ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
-            "$day": {
-              ".validate": "$day.matches(/^\\d{2}$/) && newData.hasChildren(['count', 'max']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('max').isNumber() && newData.child('max').val() >= 0"
-            }
-          }
-        },
         "messageSends": {
           "$yearMonth": {
             ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
@@ -87,7 +79,7 @@
           ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
           ".validate": "newData.hasChildren(['count', 'lastUpdated']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('lastUpdated').isNumber() && (!newData.hasChild('max') || (newData.child('max').isNumber() && newData.child('max').val() >= -1))",
           "max": {
-            ".write": "auth != null && auth.token.admin === true"
+            ".validate": "!data.exists() || newData.val() === data.val() || auth.token.admin === true"
           }
         },
 

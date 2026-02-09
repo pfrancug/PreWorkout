@@ -6,11 +6,14 @@ const getAdminApp = () => {
   }
 
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const databaseURL = process.env.VITE_FIREBASE_DATABASE_URL;
+
   if (serviceAccount) {
     try {
       const parsed = JSON.parse(serviceAccount);
       return admin.initializeApp({
         credential: admin.credential.cert(parsed),
+        databaseURL,
       });
     } catch (e) {
       console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e);
@@ -20,6 +23,7 @@ const getAdminApp = () => {
   // Fallback: use project ID with Application Default Credentials
   return admin.initializeApp({
     projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    databaseURL,
   });
 };
 

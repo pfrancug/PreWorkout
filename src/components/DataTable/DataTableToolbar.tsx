@@ -33,7 +33,7 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
       return [
         ...(prev ?? []),
         {
-          id: (prev?.length ?? 0) + 1,
+          id: Date.now(),
           date: newDate,
           weight: null,
           kcal: null,

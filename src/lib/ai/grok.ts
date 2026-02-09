@@ -47,6 +47,7 @@ const streamDev = async (
 
   const decoder = new TextDecoder();
   let fullText = '';
+  let buffer = '';
 
   while (true) {
     const { done, value } = await reader.read();
@@ -54,12 +55,18 @@ const streamDev = async (
       break;
     }
 
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
 
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
+      const trimmed = line.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      if (trimmed.startsWith('data: ')) {
+        const data = trimmed.slice(6);
         if (data === '[DONE]') {
           continue;
         }
@@ -112,6 +119,7 @@ const streamProd = async (
 
   const decoder = new TextDecoder();
   let fullText = '';
+  let buffer = '';
 
   while (true) {
     const { done, value } = await reader.read();
@@ -119,12 +127,18 @@ const streamProd = async (
       break;
     }
 
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
 
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
+      const trimmed = line.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      if (trimmed.startsWith('data: ')) {
+        const data = trimmed.slice(6);
         if (data === '[DONE]') {
           continue;
         }

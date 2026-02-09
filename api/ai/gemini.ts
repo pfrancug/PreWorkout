@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 import { verifyAuthToken } from '../lib/auth.js';
+import { checkRateLimit } from '../lib/rate-limit.js';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -29,6 +30,13 @@ const handler = async (
     return;
   }
 
+  // Check rate limit
+  const rateLimit = await checkRateLimit(uid);
+  if (!rateLimit.allowed) {
+    res.status(429).json({ error: 'Daily message limit reached' });
+    return;
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     res.status(500).json({ error: 'Gemini API key not configured' });
@@ -52,11 +60,6 @@ const handler = async (
     },
   ];
 
-  // Set up SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
   try {
     const upstream = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
@@ -73,13 +76,17 @@ const handler = async (
     );
 
     if (!upstream.ok) {
-      const err = await upstream.json();
+      const err = await upstream.json().catch(() => ({}));
       const message =
         err.error?.message || `Gemini API error: ${upstream.status}`;
-      res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
-      res.end();
+      res.status(upstream.status).json({ error: message });
       return;
     }
+
+    // Set up SSE headers only after confirming upstream is OK
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
     const reader = upstream.body?.getReader();
     if (!reader) {

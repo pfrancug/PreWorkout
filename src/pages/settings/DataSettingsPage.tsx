@@ -16,7 +16,7 @@ import { Link } from 'react-router';
 import { toast } from 'sonner';
 
 import { useAuth } from '../../contexts/useAuth';
-import { deleteAccount } from '../../firebase/auth';
+import { deleteAccount, reauthenticate } from '../../firebase/auth';
 import {
   deleteAllUserData,
   importAllUserData,
@@ -96,6 +96,7 @@ export const DataSettingsPage = () => {
     try {
       await deleteAllUserData(user.uid);
       toast.success(t('settings.dataAccount.deleteDataSuccess'));
+      window.location.reload();
     } catch {
       toast.error(t('settings.dataAccount.deleteDataError'));
     }
@@ -115,7 +116,11 @@ export const DataSettingsPage = () => {
 
     setIsDeleting(true);
     try {
+      // Re-auth first — if user cancels popup, no data is lost
+      await reauthenticate();
+      // Delete data while user still has valid auth token
       await deleteAllUserData(user.uid);
+      // Finally delete the auth account
       await deleteAccount();
       toast.success(t('settings.dataAccount.deleteAccountSuccess'));
     } catch {

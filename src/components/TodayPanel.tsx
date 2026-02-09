@@ -19,7 +19,7 @@ import { Label } from '@components/ui/label';
 import { Switch } from '@components/ui/switch';
 import { Textarea } from '@components/ui/textarea';
 import { Plus, Settings2, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -47,7 +47,7 @@ export const TodayPanel = () => {
   const navigate = useNavigate();
   const { dataSet, setDataSet } = useDataSet();
 
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
   const todayKey = formatDateKey(today);
 
   const todayLabel = today.toLocaleDateString(i18n.language, {
@@ -106,17 +106,33 @@ export const TodayPanel = () => {
     [user, calendarData, todayKey, t],
   );
 
+  const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (noteTimerRef.current) {
+        clearTimeout(noteTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleNoteChange = useCallback(
-    async (value: string) => {
+    (value: string) => {
       if (!user) {
         return;
       }
 
-      try {
-        await saveCalendarNote(user.uid, todayKey, value);
-      } catch {
-        toast.error(t('common.saveError'));
+      if (noteTimerRef.current) {
+        clearTimeout(noteTimerRef.current);
       }
+      noteTimerRef.current = setTimeout(async () => {
+        try {
+          await saveCalendarNote(user.uid, todayKey, value);
+        } catch {
+          toast.error(t('common.saveError'));
+        }
+      }, 500);
     },
     [user, todayKey, t],
   );

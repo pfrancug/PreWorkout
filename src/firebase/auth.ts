@@ -34,11 +34,23 @@ export const logoutUser = async () => {
   localStorage.clear();
 };
 
+/**
+ * Re-authenticate the current user via Google popup.
+ * Call before sensitive operations (e.g., account deletion).
+ * Throws if user cancels or re-auth fails.
+ */
+export const reauthenticate = async (): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('No authenticated user');
+  }
+  const provider = new GoogleAuthProvider();
+  await reauthenticateWithPopup(user, provider);
+};
+
 export const deleteAccount = async (): Promise<void> => {
   const user = auth.currentUser;
   if (user) {
-    const provider = new GoogleAuthProvider();
-    await reauthenticateWithPopup(user, provider);
     await deleteUser(user);
   }
 };

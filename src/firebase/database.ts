@@ -194,7 +194,6 @@ export const loadUserData = async (
  * - Deletes all personal identifiable information (PII)
  * - Removes PII fields from userDirectory (email, displayName, lastLogin)
  * - Retains userDirectory/{uid}/messageSends for anonymized analytics (GDPR Article 89)
- * - Retains userDirectory/{uid}/usageHistory for anonymized analytics
  * - Once Firebase Auth account is deleted, userId becomes a pseudonymous
  *   identifier that cannot be linked back to the individual
  */
@@ -208,7 +207,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserCalendarRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
-    // Remove only PII fields from userDirectory, keep analytics (messageSends, usageHistory)
+    // Remove only PII fields from userDirectory, keep analytics (messageSends)
     remove(ref(database, `userDirectory/${userId}/email`)),
     remove(ref(database, `userDirectory/${userId}/displayName`)),
     remove(ref(database, `userDirectory/${userId}/lastLogin`)),
@@ -319,31 +318,6 @@ const getDateStringFromTimestamp = (timestamp: number): string =>
 export const getUserLimitsRef = (userId: string) =>
   ref(database, `users/${userId}/limits`);
 
-const getUserUsageHistoryRef = (userId: string, yearMonth: string) =>
-  ref(database, `userDirectory/${userId}/usageHistory/${yearMonth}`);
-
-// Archive user's daily usage for analytics
-const archiveUserUsage = async (
-  userId: string,
-  date: string,
-  count: number,
-  max: number,
-): Promise<void> => {
-  try {
-    // Store in format: userDirectory/{userId}/usageHistory/2026-02/08
-    const yearMonth = date.substring(0, 7); // "2026-02"
-    const day = date.substring(8); // "08"
-    const historyRef = ref(
-      database,
-      `userDirectory/${userId}/usageHistory/${yearMonth}/${day}`,
-    );
-    await set(historyRef, { count, max });
-  } catch (error) {
-    // Silently fail - archiving is non-critical
-    console.error('Failed to archive usage:', error);
-  }
-};
-
 // Helper to get full limits data with validation
 const getUserLimits = async (
   userId: string,
@@ -356,45 +330,8 @@ const getUserLimits = async (
     const today = getTodayDateString();
     const limitsDate = getDateStringFromTimestamp(limits.lastUpdated);
 
-    // Reset if it's a new day (and archive old data)
+    // Reset if it's a new day
     if (limitsDate !== today) {
-      const lastDate = new Date(limitsDate);
-      const currentDate = new Date(today);
-
-      // Archive the last active day if it had activity
-      if (limits.count > 0) {
-        await archiveUserUsage(
-          userId,
-          limitsDate,
-          limits.count,
-          limits.max ?? DAILY_MESSAGE_LIMIT,
-        );
-      }
-
-      // Fill gaps with zero-count days for continuous analytics
-      const daysDiff = Math.floor(
-        (currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
-      );
-
-      if (daysDiff > 1) {
-        // Archive intermediate days with zero count
-        const archivePromises: Promise<void>[] = [];
-        for (let i = 1; i < daysDiff; i++) {
-          const gapDate = new Date(lastDate);
-          gapDate.setDate(gapDate.getDate() + i);
-          const gapDateStr = gapDate.toISOString().split('T')[0];
-          archivePromises.push(
-            archiveUserUsage(
-              userId,
-              gapDateStr,
-              0,
-              limits.max ?? DAILY_MESSAGE_LIMIT,
-            ),
-          );
-        }
-        await Promise.all(archivePromises);
-      }
-
       // Atomically reset the counter for the new day
       const resetData: DailyMessageLimit = {
         count: 0,
@@ -732,32 +669,6 @@ export const setUserLimitsForAdmin = async (
 };
 
 // Analytics functions
-export const getUserUsageHistory = async (
-  userId: string,
-  yearMonth: string, // Format: "2026-02"
-): Promise<Record<string, MessageUsageHistory> | null> => {
-  const historyRef = getUserUsageHistoryRef(userId, yearMonth);
-  const snapshot = await get(historyRef);
-
-  if (snapshot.exists()) {
-    const data = snapshot.val();
-    // Convert to array format with full dates
-    const result: Record<string, MessageUsageHistory> = {};
-    Object.entries(data).forEach(([day, value]) => {
-      const dayData = value as { count: number; max: number };
-      result[`${yearMonth}-${day}`] = {
-        date: `${yearMonth}-${day}`,
-        count: dayData.count,
-        max: dayData.max,
-      };
-    });
-
-    return result;
-  }
-
-  return null;
-};
-
 export const getAllTimeUserUsage = async (userId: string): Promise<number> => {
   try {
     // Read from real-time message sends log (independent of user login)
