@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import { GoogleGenAI } from '@google/genai';
-
 import { verifyAuthToken } from '../lib/auth.js';
 
 interface ChatMessage {
@@ -43,8 +41,6 @@ const handler = async (
     return;
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-
   const contents = [
     ...config.messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : m.role,
@@ -62,18 +58,59 @@ const handler = async (
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    const stream = await ai.models.generateContentStream({
-      model: 'gemini-2.5-flash',
-      config: {
-        systemInstruction: config.systemInstruction,
+    const upstream = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: config.systemInstruction }],
+          },
+          contents,
+        }),
       },
-      contents,
-    });
+    );
 
-    for await (const chunk of stream) {
-      const text = chunk.text ?? '';
-      if (text) {
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+    if (!upstream.ok) {
+      const err = await upstream.json();
+      const message =
+        err.error?.message || `Gemini API error: ${upstream.status}`;
+      res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
+      res.end();
+      return;
+    }
+
+    const reader = upstream.body?.getReader();
+    if (!reader) {
+      res.write(`data: ${JSON.stringify({ error: 'No response body' })}\n\n`);
+      res.end();
+      return;
+    }
+
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+
+          try {
+            const parsed = JSON.parse(data);
+            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              res.write(`data: ${JSON.stringify({ text })}\n\n`);
+            }
+          } catch {
+            // Skip invalid JSON chunks
+          }
+        }
       }
     }
 
@@ -83,7 +120,6 @@ const handler = async (
     const message =
       error instanceof Error ? error.message : 'Unknown error occurred';
 
-    // If headers already sent, send error as SSE event
     if (res.headersSent) {
       res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
       res.end();

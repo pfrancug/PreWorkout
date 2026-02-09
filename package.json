@@ -14,7 +14,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
-    "@google/genai": "1.40.0",
     "firebase-admin": "13.6.1",
     "@tanstack/react-table": "8.21.3",
     "class-variance-authority": "0.7.1",
@@ -37,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.2",
+    "@google/genai": "1.40.0",
     "@tailwindcss/vite": "4.1.18",
     "@types/node": "24.10.12",
     "@types/react": "19.2.13",
