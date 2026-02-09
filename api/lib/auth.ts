@@ -1,31 +1,29 @@
-import {
-  type ServiceAccount,
-  cert,
-  getApps,
-  initializeApp,
-} from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import admin from 'firebase-admin';
 
 const getAdminApp = () => {
-  if (getApps().length > 0) {
-    return getApps()[0];
+  if (admin.apps.length > 0) {
+    return admin.apps[0]!;
   }
 
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (serviceAccount) {
-    return initializeApp({
-      credential: cert(JSON.parse(serviceAccount) as ServiceAccount),
-    });
+    try {
+      const parsed = JSON.parse(serviceAccount);
+      return admin.initializeApp({
+        credential: admin.credential.cert(parsed),
+      });
+    } catch (e) {
+      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e);
+    }
   }
 
   // Fallback: use project ID with Application Default Credentials
-  return initializeApp({
+  return admin.initializeApp({
     projectId: process.env.VITE_FIREBASE_PROJECT_ID,
   });
 };
 
 const adminApp = getAdminApp();
-const adminAuth = getAuth(adminApp);
 
 /**
  * Verifies a Firebase ID token from the Authorization header.
@@ -41,7 +39,7 @@ export const verifyAuthToken = async (
   const idToken = authHeader.slice(7);
 
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await admin.auth(adminApp).verifyIdToken(idToken);
     return decoded.uid;
   } catch {
     return null;
