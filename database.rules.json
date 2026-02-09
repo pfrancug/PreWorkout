@@ -85,7 +85,10 @@
         "limits": {
           ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
           ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".validate": "newData.hasChildren(['count', 'lastUpdated']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('lastUpdated').isNumber() && (!newData.hasChild('max') || (newData.child('max').isNumber() && newData.child('max').val() >= -1))"
+          ".validate": "newData.hasChildren(['count', 'lastUpdated']) && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('lastUpdated').isNumber() && (!newData.hasChild('max') || (newData.child('max').isNumber() && newData.child('max').val() >= -1))",
+          "max": {
+            ".write": "auth != null && auth.token.admin === true"
+          }
         },
 
         "calendar": {

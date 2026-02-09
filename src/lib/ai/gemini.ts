@@ -46,10 +46,18 @@ const streamProd = async (
   config: AIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
+  const { authToken, ...body } = config;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
   const res = await fetch('/api/ai/gemini', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
+    headers,
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 import { GoogleGenAI } from '@google/genai';
 
+import { verifyAuthToken } from '../lib/auth';
+
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -19,6 +21,13 @@ const handler = async (
 ): Promise<void> => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  // Verify Firebase auth token
+  const uid = await verifyAuthToken(req.headers.authorization);
+  if (!uid) {
+    res.status(401).json({ error: 'Unauthorized' });
     return;
   }
 

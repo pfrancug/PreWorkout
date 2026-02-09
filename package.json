@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@google/genai": "1.40.0",
+    "firebase-admin": "13.6.1",
     "@tanstack/react-table": "8.21.3",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -47,7 +48,6 @@
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint-plugin-react-refresh": "0.5.0",
     "eslint-plugin-simple-import-sort": "12.1.1",
-    "firebase-admin": "13.6.1",
     "globals": "17.3.0",
     "husky": "9.1.7",
     "lint-staged": "16.2.7",

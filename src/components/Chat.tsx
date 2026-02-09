@@ -213,6 +213,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       systemInstruction,
       messages: aiMessages,
       userMessage: userMessageContent,
+      authToken: await user.getIdToken(),
     };
 
     const callbacks = {

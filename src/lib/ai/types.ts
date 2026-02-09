@@ -13,4 +13,5 @@ export interface AIConfig {
   systemInstruction: string;
   messages: ChatMessage[];
   userMessage: string;
+  authToken?: string;
 }
