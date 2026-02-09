@@ -16,19 +16,33 @@ import { DataContext } from './DataContextDef';
 import { useAuth } from './useAuth';
 
 // Convert IRow to IRowData for Firebase storage
+// Format date as YYYY-MM-DD in local timezone to avoid UTC shift
+const toLocalDateString = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+
+  return `${y}-${m}-${d}`;
+};
+
 const toFirebaseFormat = (rows: IRow[]): IRowData[] =>
   rows.map((row) => ({
     ...row,
-    date: row.date.toISOString(),
+    date: toLocalDateString(row.date),
   }));
 
 // Convert IRowData from Firebase to IRow
+// Parse YYYY-MM-DD as local date (noon to avoid any DST edge cases)
 const fromFirebaseFormat = (data: IRowData[]): IRow[] =>
-  data.map((row) => ({
-    ...row,
-    date: new Date(row.date),
-    completed: row.completed ?? false,
-  }));
+  data.map((row) => {
+    const [y, m, d] = row.date.split('-').map(Number);
+
+    return {
+      ...row,
+      date: new Date(y, m - 1, d),
+      completed: row.completed ?? false,
+    };
+  });
 
 // Wrapper type to track loading state without separate setState
 type DataState =

@@ -32,7 +32,7 @@ interface Props {
 const EMPTY_ARRAY: IRow[] = [];
 
 export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
-  const { t } = useTranslation('diary');
+  const { t } = useTranslation();
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'date', desc: true },
   ]);

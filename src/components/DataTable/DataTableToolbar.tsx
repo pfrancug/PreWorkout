@@ -18,7 +18,7 @@ interface Props {
 }
 
 export const DataTableToolbar = ({ table, setDataSet }: Props) => {
-  const { t } = useTranslation('diary');
+  const { t } = useTranslation();
   const handleAddRow = () => {
     setDataSet((prev) => {
       const maxDate = prev?.reduce<Date | null>(
@@ -65,7 +65,9 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
         const data = row.original;
 
         return [
-          data.date?.toISOString().split('T')[0] ?? '',
+          data.date
+            ? `${data.date.getFullYear()}-${String(data.date.getMonth() + 1).padStart(2, '0')}-${String(data.date.getDate()).padStart(2, '0')}`
+            : '',
           data.weight ?? '',
           data.kcal ?? '',
           data.protein ?? '',
@@ -147,7 +149,7 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
                   }
                 >
                   <Trash2 className={'size-3.5'} />
-                  {t('common:common.delete')}
+                  {t('common.delete')}
                   {` (${selectedCount})`}
                 </Button>
               </TooltipTrigger>

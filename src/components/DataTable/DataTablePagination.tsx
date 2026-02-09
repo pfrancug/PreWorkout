@@ -14,7 +14,7 @@ interface Props<TData> {
 }
 
 export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
-  const { t } = useTranslation('diary');
+  const { t } = useTranslation();
 
   return (
     <div className={'flex items-center justify-end gap-2'}>

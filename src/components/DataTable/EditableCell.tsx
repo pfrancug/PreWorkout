@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@components/ui/popover';
-import { memo, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface TableMeta {
   updateData?: (rowIndex: number, columnId: string, value: unknown) => void;
@@ -25,12 +25,12 @@ interface EditableCellProps {
   table: CellContext<IRow, unknown>['table'];
 }
 
-export const EditableCell = memo(function EditableCell({
+export const EditableCell = ({
   getValue,
   row,
   column,
   table,
-}: EditableCellProps) {
+}: EditableCellProps) => {
   const initialValue = getValue();
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -239,4 +239,4 @@ export const EditableCell = memo(function EditableCell({
       {displayValue}
     </div>
   );
-});
+};
