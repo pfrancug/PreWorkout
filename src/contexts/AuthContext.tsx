@@ -8,8 +8,4 @@ export type IAuthContext = {
   isAdmin: boolean;
 };
 
-export const AuthContext = createContext<IAuthContext>({
-  user: null,
-  loading: true,
-  isAdmin: false,
-});
+export const AuthContext = createContext<IAuthContext | null>(null);

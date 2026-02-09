@@ -49,6 +49,12 @@ const handler = async (
     return;
   }
 
+  const payloadSize = JSON.stringify(config).length;
+  if (payloadSize > 100_000) {
+    res.status(413).json({ error: 'Payload too large' });
+    return;
+  }
+
   const messages = [
     { role: 'system' as const, content: config.systemInstruction },
     ...config.messages,

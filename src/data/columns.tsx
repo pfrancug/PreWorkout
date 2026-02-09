@@ -42,14 +42,7 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
   },
   {
     accessorKey: 'weight',
-    header: () => (
-      <div>
-        <span>{'Weight'}</span>
-        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
-          {'kg'}
-        </span>
-      </div>
-    ),
+    header: t('table.weight'),
     cell: EditableCell,
     size: 80,
     minSize: 70,
@@ -57,14 +50,7 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
   },
   {
     accessorKey: 'kcal',
-    header: () => (
-      <div>
-        <span>{'Calories'}</span>
-        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
-          {'kcal'}
-        </span>
-      </div>
-    ),
+    header: t('table.calories'),
     cell: EditableCell,
     size: 90,
     minSize: 80,
@@ -72,14 +58,7 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
   },
   {
     accessorKey: 'protein',
-    header: () => (
-      <div>
-        <span>{'Protein'}</span>
-        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
-          {'g'}
-        </span>
-      </div>
-    ),
+    header: t('table.protein'),
     cell: EditableCell,
     size: 80,
     minSize: 70,
@@ -87,14 +66,7 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
   },
   {
     accessorKey: 'fat',
-    header: () => (
-      <div>
-        <span>{'Fat'}</span>
-        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
-          {'g'}
-        </span>
-      </div>
-    ),
+    header: t('table.fat'),
     cell: EditableCell,
     size: 70,
     minSize: 60,
@@ -102,14 +74,7 @@ export const getColumns = (t: TFunction): ColumnDef<IRow>[] => [
   },
   {
     accessorKey: 'carbs',
-    header: () => (
-      <div>
-        <span>{'Carbs'}</span>
-        <span className={'ml-1 text-[10px] font-normal text-muted-foreground'}>
-          {'g'}
-        </span>
-      </div>
-    ),
+    header: t('table.carbs'),
     cell: EditableCell,
     size: 70,
     minSize: 60,

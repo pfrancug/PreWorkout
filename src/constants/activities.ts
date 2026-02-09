@@ -8,6 +8,7 @@ import {
   Footprints,
   HeartPulse,
   Mountain,
+  MoveHorizontal,
   PersonStanding,
   Rocket,
   SkipForward,
@@ -41,7 +42,7 @@ export const AVAILABLE_ICONS = [
   { id: 'snowflake', icon: Snowflake, label: 'Cold Exposure' },
   { id: 'rocket', icon: Rocket, label: 'Sprint' },
   { id: 'skip', icon: SkipForward, label: 'Rest Day' },
-  { id: 'stretch', icon: Wind, label: 'Stretching' },
+  { id: 'stretch', icon: MoveHorizontal, label: 'Stretching' },
   { id: 'other', icon: CircleEllipsis, label: 'Other' },
 ] as const;
 

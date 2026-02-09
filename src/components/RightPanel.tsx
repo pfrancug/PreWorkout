@@ -101,6 +101,7 @@ export const RightPanelTrigger = ({
     <button
       disabled={disabled}
       onClick={disabled ? undefined : toggle}
+      type={'button'}
       className={cn(
         'cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
         className,

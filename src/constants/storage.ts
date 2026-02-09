@@ -1,8 +1,3 @@
-export const STORAGE_KEYS = {
-  CHAT_MESSAGES: 'chatMessages',
-  USER_SETTINGS: 'userSettings',
-} as const;
-
 export const CALCULATOR_DEFAULTS = {
   AGE: 30,
   HEIGHT: 175,

@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@components/ui/tooltip';
 import { Download, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   table: Table<IRow>;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export const DataTableToolbar = ({ table, setDataSet }: Props) => {
+  const { t } = useTranslation('diary');
   const handleAddRow = () => {
     setDataSet((prev) => {
       const maxDate = prev?.reduce<Date | null>(
@@ -95,10 +97,7 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
     <div className={'flex items-center justify-between'}>
       <div className={'flex items-center gap-2 text-xs text-muted-foreground'}>
         {selectedCount > 0 && (
-          <span>
-            {selectedCount}
-            {' selected'}
-          </span>
+          <span>{t('table.selected', { count: selectedCount })}</span>
         )}
       </div>
 
@@ -113,11 +112,11 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
                 variant={'outline'}
               >
                 <Plus className={'size-3.5'} />
-                {'Add'}
+                {t('table.add')}
               </Button>
             </TooltipTrigger>
 
-            <TooltipContent>{'Add new row'}</TooltipContent>
+            <TooltipContent>{t('table.addNewRow')}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -129,11 +128,11 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
                 variant={'outline'}
               >
                 <Download className={'size-3.5'} />
-                {'Export'}
+                {t('table.export')}
               </Button>
             </TooltipTrigger>
 
-            <TooltipContent>{'Export as CSV'}</TooltipContent>
+            <TooltipContent>{t('table.exportCsv')}</TooltipContent>
           </Tooltip>
 
           {selectedCount > 0 && (
@@ -148,12 +147,12 @@ export const DataTableToolbar = ({ table, setDataSet }: Props) => {
                   }
                 >
                   <Trash2 className={'size-3.5'} />
-                  {'Delete'}
+                  {t('common:common.delete')}
                   {` (${selectedCount})`}
                 </Button>
               </TooltipTrigger>
 
-              <TooltipContent>{'Delete selected rows'}</TooltipContent>
+              <TooltipContent>{t('table.deleteSelected')}</TooltipContent>
             </Tooltip>
           )}
         </TooltipProvider>

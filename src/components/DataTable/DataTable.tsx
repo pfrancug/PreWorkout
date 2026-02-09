@@ -18,6 +18,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { DataTablePagination } from './DataTablePagination';
 import { DataTableToolbar } from './DataTableToolbar';
@@ -31,6 +32,7 @@ interface Props {
 const EMPTY_ARRAY: IRow[] = [];
 
 export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
+  const { t } = useTranslation('diary');
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'date', desc: true },
   ]);
@@ -153,7 +155,7 @@ export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
                   colSpan={columns.length}
                 >
                   <span className={'text-muted-foreground'}>
-                    {'No results.'}
+                    {t('table.noResults')}
                   </span>
                 </TableCell>
               </TableRow>

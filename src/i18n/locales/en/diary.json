@@ -12,6 +12,18 @@
     "protein": "Protein (g)",
     "fat": "Fat (g)",
     "carbs": "Carbs (g)",
-    "completed": "Done"
+    "completed": "Done",
+    "noResults": "No results.",
+    "add": "Add",
+    "addNewRow": "Add new row",
+    "export": "Export",
+    "exportCsv": "Export as CSV",
+    "deleteSelected": "Delete selected rows",
+    "selected": "{{count}} selected",
+    "page": "Page {{current}} of {{total}}",
+    "goFirstPage": "Go to first page",
+    "goPreviousPage": "Go to previous page",
+    "goNextPage": "Go to next page",
+    "goLastPage": "Go to last page"
   }
 }

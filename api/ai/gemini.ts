@@ -49,6 +49,12 @@ const handler = async (
     return;
   }
 
+  const payloadSize = JSON.stringify(config).length;
+  if (payloadSize > 100_000) {
+    res.status(413).json({ error: 'Payload too large' });
+    return;
+  }
+
   const contents = [
     ...config.messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : m.role,

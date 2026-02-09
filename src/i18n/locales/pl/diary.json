@@ -12,6 +12,18 @@
     "protein": "Białko (g)",
     "fat": "Tłuszcz (g)",
     "carbs": "Węglowodany (g)",
-    "completed": "Gotowe"
+    "completed": "Gotowe",
+    "noResults": "Brak wyników.",
+    "add": "Dodaj",
+    "addNewRow": "Dodaj nowy wiersz",
+    "export": "Eksport",
+    "exportCsv": "Eksportuj jako CSV",
+    "deleteSelected": "Usuń zaznaczone wiersze",
+    "selected": "{{count}} zaznaczono",
+    "page": "Strona {{current}} z {{total}}",
+    "goFirstPage": "Idź do pierwszej strony",
+    "goPreviousPage": "Idź do poprzedniej strony",
+    "goNextPage": "Idź do następnej strony",
+    "goLastPage": "Idź do ostatniej strony"
   }
 }

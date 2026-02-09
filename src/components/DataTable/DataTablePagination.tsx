@@ -7,19 +7,22 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props<TData> {
   table: Table<TData>;
 }
 
 export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
+  const { t } = useTranslation('diary');
+
   return (
     <div className={'flex items-center justify-end gap-2'}>
       <span className={'mr-auto text-xs text-muted-foreground'}>
-        {'Page '}
-        {table.getState().pagination.pageIndex + 1}
-        {' of '}
-        {table.getPageCount()}
+        {t('table.page', {
+          current: table.getState().pagination.pageIndex + 1,
+          total: table.getPageCount(),
+        })}
       </span>
 
       <Button
@@ -28,7 +31,7 @@ export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
         size={'icon-sm'}
         variant={'outline'}
       >
-        <span className={'sr-only'}>{'Go to first page'}</span>
+        <span className={'sr-only'}>{t('table.goFirstPage')}</span>
 
         <ChevronsLeft className={'size-4'} />
       </Button>
@@ -39,7 +42,7 @@ export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
         size={'icon-sm'}
         variant={'outline'}
       >
-        <span className={'sr-only'}>{'Go to previous page'}</span>
+        <span className={'sr-only'}>{t('table.goPreviousPage')}</span>
 
         <ChevronLeft className={'size-4'} />
       </Button>
@@ -50,7 +53,7 @@ export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
         size={'icon-sm'}
         variant={'outline'}
       >
-        <span className={'sr-only'}>{'Go to next page'}</span>
+        <span className={'sr-only'}>{t('table.goNextPage')}</span>
 
         <ChevronRight className={'size-4'} />
       </Button>
@@ -61,7 +64,7 @@ export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
         size={'icon-sm'}
         variant={'outline'}
       >
-        <span className={'sr-only'}>{'Go to last page'}</span>
+        <span className={'sr-only'}>{t('table.goLastPage')}</span>
 
         <ChevronsRight className={'size-4'} />
       </Button>
