@@ -24,12 +24,12 @@ import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import { deleteAccount } from '../firebase/auth';
 import {
-  type AllUserData,
   deleteAllUserData,
   importAllUserData,
   loadAllUserData,
 } from '../firebase/database';
 import { cropToSquareDataUrl } from '../lib/image';
+import { validateImportData } from '../lib/validate-import';
 
 export const SettingsPage = () => {
   const { t } = useTranslation();
@@ -145,9 +145,9 @@ export const SettingsPage = () => {
 
     try {
       const text = await file.text();
-      const data = JSON.parse(text) as AllUserData;
+      const data = JSON.parse(text) as unknown;
 
-      if (!data || typeof data !== 'object') {
+      if (!validateImportData(data)) {
         throw new Error('Invalid format');
       }
 

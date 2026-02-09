@@ -4,7 +4,15 @@ import type {
 } from '../contexts/SettingsContext';
 import type { Message } from '@components/Chat';
 
-import { get, getDatabase, ref, remove, set, update } from 'firebase/database';
+import {
+  get,
+  getDatabase,
+  ref,
+  remove,
+  runTransaction,
+  set,
+  update,
+} from 'firebase/database';
 import { onValue } from 'firebase/database';
 
 import { app } from './config';
@@ -387,11 +395,15 @@ const getUserLimits = async (
         await Promise.all(archivePromises);
       }
 
-      return {
+      // Atomically reset the counter for the new day
+      const resetData: DailyMessageLimit = {
         count: 0,
         max: limits.max ?? DAILY_MESSAGE_LIMIT,
         lastUpdated: Date.now(),
       };
+      await set(limitsRef, resetData);
+
+      return resetData;
     }
 
     return limits;
@@ -409,19 +421,39 @@ export const getDailyMessageCount = async (userId: string): Promise<number> => {
 export const incrementDailyMessageCount = async (
   userId: string,
 ): Promise<void> => {
-  const limits = await getUserLimits(userId);
   const limitsRef = getUserLimitsRef(userId);
   const timestamp = Date.now();
   const today = getTodayDateString();
 
-  // Update daily limit counter
-  await set(limitsRef, {
-    count: (limits?.count ?? 0) + 1,
-    max: limits?.max ?? DAILY_MESSAGE_LIMIT,
-    lastUpdated: timestamp,
+  // Atomically increment the daily limit counter
+  await runTransaction(limitsRef, (currentData: DailyMessageLimit | null) => {
+    if (!currentData) {
+      return {
+        count: 1,
+        max: DAILY_MESSAGE_LIMIT,
+        lastUpdated: timestamp,
+      };
+    }
+
+    const limitsDate = getDateStringFromTimestamp(currentData.lastUpdated);
+
+    // New day — reset counter
+    if (limitsDate !== today) {
+      return {
+        count: 1,
+        max: currentData.max ?? DAILY_MESSAGE_LIMIT,
+        lastUpdated: timestamp,
+      };
+    }
+
+    return {
+      count: (currentData.count ?? 0) + 1,
+      max: currentData.max ?? DAILY_MESSAGE_LIMIT,
+      lastUpdated: timestamp,
+    };
   });
 
-  // Log message send for real-time analytics (independent of daily archiving)
+  // Atomically increment the real-time analytics counter
   const yearMonth = today.substring(0, 7); // "2026-02"
   const day = today.substring(8); // "09"
   const logRef = ref(
@@ -429,10 +461,9 @@ export const incrementDailyMessageCount = async (
     `userDirectory/${userId}/messageSends/${yearMonth}/${day}`,
   );
 
-  // Increment counter for this day in real-time
-  const logSnapshot = await get(logRef);
-  const currentCount = logSnapshot.exists() ? (logSnapshot.val() as number) : 0;
-  await set(logRef, currentCount + 1);
+  await runTransaction(logRef, (currentCount: number | null) => {
+    return (currentCount ?? 0) + 1;
+  });
 };
 
 export const isMessageLimitReached = async (

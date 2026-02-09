@@ -110,14 +110,24 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     [user],
   );
 
-  // Cleanup timeout on unmount
+  // Flush pending save on unmount to prevent data loss
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+
+      const dataToSave = pendingSaveRef.current;
+      const userId = user?.uid;
+      if (dataToSave && userId) {
+        // Fire-and-forget: save pending data before unmount
+        saveUserData(userId, toFirebaseFormat(dataToSave)).catch(() => {
+          // Can't show toast during unmount, fail silently
+        });
+        pendingSaveRef.current = null;
+      }
     };
-  }, []);
+  }, [user]);
 
   return (
     <DataContext.Provider value={{ dataSet, setDataSet, isLoading }}>

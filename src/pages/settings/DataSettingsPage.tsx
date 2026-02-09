@@ -18,11 +18,11 @@ import { toast } from 'sonner';
 import { useAuth } from '../../contexts/useAuth';
 import { deleteAccount } from '../../firebase/auth';
 import {
-  type AllUserData,
   deleteAllUserData,
   importAllUserData,
   loadAllUserData,
 } from '../../firebase/database';
+import { validateImportData } from '../../lib/validate-import';
 
 export const DataSettingsPage = () => {
   const { t } = useTranslation();
@@ -62,9 +62,9 @@ export const DataSettingsPage = () => {
 
     try {
       const text = await file.text();
-      const data = JSON.parse(text) as AllUserData;
+      const data = JSON.parse(text) as unknown;
 
-      if (!data || typeof data !== 'object') {
+      if (!validateImportData(data)) {
         throw new Error('Invalid format');
       }
 

@@ -1,17 +1,20 @@
 import type { AIConfig, StreamCallbacks } from './types';
 
-const apiKey = import.meta.env.VITE_XAI_API_KEY ?? null;
+// In dev mode, use the API key directly (safe on localhost).
+// In production, the key is only on the server behind /api/ai/grok.
+const devApiKey = import.meta.env.DEV
+  ? (import.meta.env.VITE_XAI_API_KEY ?? null)
+  : null;
 
-export const isGrokAvailable = (): boolean => !!apiKey;
+export const isGrokAvailable = (): boolean => {
+  return import.meta.env.DEV ? !!devApiKey : true;
+};
 
-export const streamFromGrok = async (
+// Dev mode: call xAI API directly
+const streamDev = async (
   config: AIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
-  if (!apiKey) {
-    throw new Error('Grok API key is not configured');
-  }
-
   const messages = [
     { role: 'system' as const, content: config.systemInstruction },
     ...config.messages,
@@ -22,7 +25,7 @@ export const streamFromGrok = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${devApiKey}`,
     },
     body: JSON.stringify({
       model: 'grok-4-1-fast-reasoning',
@@ -77,3 +80,69 @@ export const streamFromGrok = async (
 
   callbacks.onComplete(fullText);
 };
+
+// Production: proxy through Vercel serverless function
+const streamProd = async (
+  config: AIConfig,
+  callbacks: StreamCallbacks,
+): Promise<void> => {
+  const res = await fetch('/api/ai/grok', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(err.error || `Grok API error: ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) {
+    throw new Error('No response body');
+  }
+
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    const chunk = decoder.decode(value, { stream: true });
+    const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') {
+          continue;
+        }
+
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if (parsed.text) {
+            fullText += parsed.text;
+            callbacks.onChunk(fullText);
+          }
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            e.message !== 'Unexpected end of JSON input'
+          ) {
+            throw e;
+          }
+        }
+      }
+    }
+  }
+
+  callbacks.onComplete(fullText);
+};
+
+export const streamFromGrok = import.meta.env.DEV ? streamDev : streamProd;
