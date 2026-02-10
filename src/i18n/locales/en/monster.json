@@ -1,0 +1,26 @@
+{
+  "monster": {
+    "title": "Energy Drinks",
+    "description": "Your favourite addiction - now officially tracked!",
+    "search": "Search...",
+    "section": "Section",
+    "sugar": "Sugar",
+    "filterAll": "All",
+    "sugarYes": "With Sugar",
+    "sugarNo": "Sugar Free",
+    "history": "History",
+    "noHistory": "No drinks tracked yet. Click on a drink to add it!",
+    "noHistoryPeriod": "No drinks in this period.",
+    "periodDay": "Today",
+    "periodWeek": "Last 7 days",
+    "periodMonth": "Last 30 days",
+    "added": "{{name}} added!",
+    "removed": "Drink removed.",
+    "addError": "Failed to add drink.",
+    "removeError": "Failed to remove drink.",
+    "heatmap": "Activity",
+    "totalDrinks": "{{count}} drinks this year",
+    "less": "Less",
+    "more": "More"
+  }
+}

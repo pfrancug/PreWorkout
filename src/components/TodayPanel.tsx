@@ -47,7 +47,7 @@ export const TodayPanel = () => {
   const navigate = useNavigate();
   const { dataSet, setDataSet } = useDataSet();
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const todayKey = formatDateKey(today);
 
   const todayLabel = today.toLocaleDateString(i18n.language, {

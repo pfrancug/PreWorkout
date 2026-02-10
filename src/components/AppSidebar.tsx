@@ -27,6 +27,7 @@ import {
   ChevronsUpDown,
   Database,
   Dumbbell,
+  GlassWater,
   Globe,
   Home,
   LogOut,
@@ -68,6 +69,11 @@ const menuItems = [
     titleKey: 'nav.chat',
     icon: MessageSquare,
     path: '/chat',
+  },
+  {
+    titleKey: 'nav.monster',
+    icon: GlassWater,
+    path: '/monster',
   },
 ];
 

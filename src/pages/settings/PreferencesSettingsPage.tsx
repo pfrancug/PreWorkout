@@ -154,6 +154,50 @@ export const PreferencesSettingsPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.preferences.monster.title')}</CardTitle>
+
+          <CardDescription>
+            {t('settings.preferences.monster.description')}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className={'space-y-4'}>
+          <div className={'space-y-2'}>
+            <Label>{t('settings.preferences.monster.sugarFilterLabel')}</Label>
+
+            <Select
+              value={preferences.monsterSugarFilter || 'all'}
+              onValueChange={(value) =>
+                updatePreference(
+                  'monsterSugarFilter',
+                  value as 'all' | 'sugar' | 'no-sugar',
+                )
+              }
+            >
+              <SelectTrigger className={'w-48'}>
+                <SelectValue />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value={'all'}>
+                  {t('settings.preferences.monster.all')}
+                </SelectItem>
+
+                <SelectItem value={'sugar'}>
+                  {t('settings.preferences.monster.sugar')}
+                </SelectItem>
+
+                <SelectItem value={'no-sugar'}>
+                  {t('settings.preferences.monster.noSugar')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

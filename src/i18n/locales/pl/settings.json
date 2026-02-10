@@ -26,6 +26,14 @@
         "title": "Kalendarz",
         "description": "Wybierz domyślny widok po otwarciu kalendarza.",
         "label": "Domyślny widok"
+      },
+      "monster": {
+        "title": "Napoje Monster",
+        "description": "Skonfiguruj domyślne filtry dla strony napojów Monster.",
+        "sugarFilterLabel": "Domyślny filtr cukru",
+        "all": "Wszystkie",
+        "sugar": "Z cukrem",
+        "noSugar": "Bez cukru"
       }
     },
     "data": {

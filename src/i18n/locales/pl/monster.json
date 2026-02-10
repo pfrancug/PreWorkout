@@ -1,0 +1,26 @@
+{
+  "monster": {
+    "title": "Energetyki",
+    "description": "Twój ulubiony nałóg - teraz możesz go śledzić!",
+    "search": "Szukaj...",
+    "section": "Sekcja",
+    "sugar": "Cukier",
+    "filterAll": "Wszystkie",
+    "sugarYes": "Z cukrem",
+    "sugarNo": "Bez cukru",
+    "history": "Historia",
+    "noHistory": "Brak nagranych napojów. Kliknij na napój, aby go dodać!",
+    "noHistoryPeriod": "Brak napojów w tym okresie.",
+    "periodDay": "Dzisiaj",
+    "periodWeek": "Ostatnie 7 dni",
+    "periodMonth": "Ostatnie 30 dni",
+    "added": "{{name}} dodane!",
+    "removed": "Napój usunięty.",
+    "addError": "Nie udało się dodać napoju.",
+    "removeError": "Nie udało się usunąć napoju.",
+    "heatmap": "Aktywność",
+    "totalDrinks": "{{count}} napojów w tym roku",
+    "less": "Mniej",
+    "more": "Więcej"
+  }
+}

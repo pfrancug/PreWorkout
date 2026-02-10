@@ -310,10 +310,23 @@ export const loadUserMessages = async (
 // Daily message limits
 const DAILY_MESSAGE_LIMIT = 5;
 
-const getTodayDateString = (): string => new Date().toISOString().split('T')[0];
+const getTodayDateString = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
 
-const getDateStringFromTimestamp = (timestamp: number): string =>
-  new Date(timestamp).toISOString().split('T')[0];
+  return `${year}-${month}-${day}`;
+};
+
+const getDateStringFromTimestamp = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
 
 export const getUserLimitsRef = (userId: string) =>
   ref(database, `users/${userId}/limits`);
@@ -781,4 +794,76 @@ export const getUserUsageStats = async (
     averageDaily,
     allTimeTotal,
   };
+};
+
+// Monster Drinks Tracking
+export interface MonsterDrinksData {
+  [date: string]: string[]; // date -> array of drink IDs
+}
+
+export const getMonsterDrinksRef = (userId: string) =>
+  ref(database, `users/${userId}/monsterDrinks`);
+
+export const loadMonsterDrinks = async (
+  userId: string,
+): Promise<MonsterDrinksData | null> => {
+  const drinksRef = getMonsterDrinksRef(userId);
+  const snapshot = await get(drinksRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as MonsterDrinksData;
+  }
+
+  return null;
+};
+
+export const addMonsterDrink = async (
+  userId: string,
+  drinkId: string,
+  date?: string,
+): Promise<void> => {
+  const targetDate = date ?? getTodayDateString();
+  const dayRef = ref(database, `users/${userId}/monsterDrinks/${targetDate}`);
+
+  await runTransaction(dayRef, (currentDrinks: string[] | null) => {
+    if (!currentDrinks) {
+      return [drinkId];
+    }
+
+    return [...currentDrinks, drinkId];
+  });
+};
+
+export const removeMonsterDrink = async (
+  userId: string,
+  date: string,
+  drinkIndex: number,
+): Promise<void> => {
+  const dayRef = ref(database, `users/${userId}/monsterDrinks/${date}`);
+
+  await runTransaction(dayRef, (currentDrinks: string[] | null) => {
+    if (!currentDrinks || currentDrinks.length === 0) {
+      return null;
+    }
+    const newDrinks = [...currentDrinks];
+    newDrinks.splice(drinkIndex, 1);
+
+    return newDrinks.length > 0 ? newDrinks : null;
+  });
+};
+
+export const subscribeToMonsterDrinks = (
+  userId: string,
+  callback: (data: MonsterDrinksData | null) => void,
+): (() => void) => {
+  const drinksRef = getMonsterDrinksRef(userId);
+  const unsubscribe = onValue(drinksRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as MonsterDrinksData);
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
 };

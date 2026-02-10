@@ -41,7 +41,7 @@
         "preferences": {
           ".read": "auth != null && auth.uid == $userId",
           ".write": "auth != null && auth.uid == $userId",
-          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen', 'language', 'defaultCalendarView']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean() && newData.child('language').isString() && (newData.child('language').val() === 'en' || newData.child('language').val() === 'pl') && newData.child('defaultCalendarView').isString() && (newData.child('defaultCalendarView').val() === 'month' || newData.child('defaultCalendarView').val() === 'week')"
+          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen', 'language', 'defaultCalendarView', 'monsterSugarFilter']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean() && newData.child('language').isString() && (newData.child('language').val() === 'en' || newData.child('language').val() === 'pl') && newData.child('defaultCalendarView').isString() && (newData.child('defaultCalendarView').val() === 'month' || newData.child('defaultCalendarView').val() === 'week') && newData.child('monsterSugarFilter').isString() && (newData.child('monsterSugarFilter').val() === 'all' || newData.child('monsterSugarFilter').val() === 'sugar' || newData.child('monsterSugarFilter').val() === 'no-sugar')"
         },
 
         "messages": {
@@ -115,6 +115,17 @@
           },
           "$other": {
             ".validate": false
+          }
+        },
+
+        "monsterDrinks": {
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId",
+          "$date": {
+            ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/)",
+            "$drinkIndex": {
+              ".validate": "newData.isString() && newData.val().length <= 50"
+            }
           }
         },
 
