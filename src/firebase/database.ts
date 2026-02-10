@@ -724,8 +724,8 @@ export const getUserUsageStats = async (
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   // Get current and previous month from messageSends (real-time logs)
-  const currentMonth = today.toISOString().substring(0, 7);
-  const previousMonth = thirtyDaysAgo.toISOString().substring(0, 7);
+  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const previousMonth = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}`;
 
   const [allTimeTotal, currentSends, previousSends, currentLimits] =
     await Promise.all([

@@ -148,9 +148,14 @@ export const AdminPage = () => {
       setSavingUser(uid);
       try {
         const user = users.find((u) => u.uid === uid);
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const limitsDate = user?.limits
-          ? new Date(user.limits.lastUpdated).toISOString().split('T')[0]
+          ? (() => {
+              const d = new Date(user.limits.lastUpdated);
+
+              return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            })()
           : null;
         const isToday = limitsDate === today;
         await setUserLimitsForAdmin(uid, {
