@@ -126,6 +126,10 @@ const streamProd = async (
     }
   }
 
+  if (!fullText) {
+    throw new Error('Gemini returned an empty response');
+  }
+
   callbacks.onComplete(fullText);
 };
 

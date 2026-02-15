@@ -122,6 +122,10 @@ const streamProd = async (
     }
   }
 
+  if (!fullText) {
+    throw new Error('Grok returned an empty response');
+  }
+
   callbacks.onComplete(fullText);
 };
 
