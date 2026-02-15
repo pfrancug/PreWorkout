@@ -14,4 +14,5 @@ export interface AIConfig {
   messages: ChatMessage[];
   userMessage: string;
   authToken?: string;
+  skipRateLimit?: boolean;
 }

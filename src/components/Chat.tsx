@@ -1,4 +1,5 @@
 import type { IRow } from '../types/types';
+import type { AIConfig } from '@lib/ai/types';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@components/ui/alert';
@@ -194,7 +195,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
             isFirst = false;
             isAnimating.current = true;
             setTimeout(() => {
-              smoothScrollToBottom(2500);
+              smoothScrollToBottom(2000);
               setTimeout(() => {
                 isAnimating.current = false;
               }, 2600);
@@ -310,7 +311,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       content: m.parts[0].text,
     }));
 
-    const aiConfig = {
+    const aiConfig: AIConfig = {
       systemInstruction,
       messages: aiMessages,
       userMessage: userMessageContent,
@@ -368,6 +369,8 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
         finalMessages = [...messages, newUserMessage, emptyModelMessage];
         setMessages(finalMessages);
 
+        // Skip rate limit on fallback — primary already counted
+        aiConfig.skipRateLimit = true;
         success = await tryProvider(fallbackProvider);
       }
 
