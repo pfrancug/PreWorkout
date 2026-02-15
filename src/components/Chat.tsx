@@ -276,7 +276,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
 
     // Build conversation context: keep last 20 messages as full context,
     // summarize older messages into a compact prefix for the system prompt
-    const MAX_RECENT = 10;
+    const MAX_RECENT = 20;
     let conversationSummary = '';
     let recentMessages = messages;
 
