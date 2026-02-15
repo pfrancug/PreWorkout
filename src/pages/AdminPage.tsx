@@ -1,7 +1,4 @@
-import type {
-  DailyMessageLimit,
-  UserDirectoryEntry,
-} from '../firebase/database';
+import type { UserDirectoryEntry } from '../firebase/database';
 
 import { Button } from '@components/ui/button';
 import {
@@ -36,9 +33,9 @@ import { toast } from 'sonner';
 
 import { useAuth } from '../contexts/useAuth';
 import {
-  getUserLimitsForAdmin,
+  getUserMaxLimitForAdmin,
   getUserUsageStats,
-  setUserLimitsForAdmin,
+  setUserMaxLimitForAdmin,
   subscribeToUserDirectory,
 } from '../firebase/database';
 
@@ -47,9 +44,10 @@ interface UserWithLimits {
   email: string | null;
   displayName: string | null;
   lastLogin: string | null;
-  limits: DailyMessageLimit | null;
+  maxLimit: number;
   deleted?: boolean;
   stats?: {
+    todayMessages: number;
     totalMessages: number;
     averageDaily: number;
     allTimeTotal: number;
@@ -83,8 +81,8 @@ export const AdminPage = () => {
         const entries = await Promise.all(
           Object.entries(directory).map(async ([uid, entry]) => {
             const isDeleted = !entry.email && !entry.lastLogin;
-            const [limits, stats] = await Promise.all([
-              getUserLimitsForAdmin(uid),
+            const [maxLimit, stats] = await Promise.all([
+              getUserMaxLimitForAdmin(uid),
               getUserUsageStats(uid),
             ]);
 
@@ -94,9 +92,10 @@ export const AdminPage = () => {
               displayName: entry.displayName || null,
               lastLogin: entry.lastLogin || null,
               deleted: isDeleted,
-              limits,
+              maxLimit,
               stats: stats
                 ? {
+                    todayMessages: stats.todayMessages,
                     totalMessages: stats.totalMessages,
                     averageDaily: Math.round(stats.averageDaily * 10) / 10,
                     allTimeTotal: stats.allTimeTotal,
@@ -147,34 +146,9 @@ export const AdminPage = () => {
 
       setSavingUser(uid);
       try {
-        const user = users.find((u) => u.uid === uid);
-        const now = new Date();
-        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const limitsDate = user?.limits
-          ? (() => {
-              const d = new Date(user.limits.lastUpdated);
-
-              return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            })()
-          : null;
-        const isToday = limitsDate === today;
-        await setUserLimitsForAdmin(uid, {
-          count: isToday ? (user?.limits?.count ?? 0) : 0,
-          max,
-        });
+        await setUserMaxLimitForAdmin(uid, max);
         setUsers((prev) =>
-          prev.map((u) =>
-            u.uid === uid
-              ? {
-                  ...u,
-                  limits: {
-                    count: isToday ? (user?.limits?.count ?? 0) : 0,
-                    max,
-                    lastUpdated: Date.now(),
-                  },
-                }
-              : u,
-          ),
+          prev.map((u) => (u.uid === uid ? { ...u, maxLimit: max } : u)),
         );
         setEditingLimits((prev) => {
           const next = { ...prev };
@@ -189,7 +163,7 @@ export const AdminPage = () => {
         setSavingUser(null);
       }
     },
-    [editingLimits, t, users],
+    [editingLimits, t],
   );
 
   if (!isAdmin) {
@@ -365,7 +339,7 @@ export const AdminPage = () => {
                   {users.map((user) => {
                     const isEditing = editingLimits[user.uid] !== undefined;
                     const currentMax =
-                      editingLimits[user.uid] ?? String(user.limits?.max ?? 5);
+                      editingLimits[user.uid] ?? String(user.maxLimit);
 
                     return (
                       <TableRow key={user.uid}>
@@ -412,7 +386,7 @@ export const AdminPage = () => {
                         </TableCell>
 
                         <TableCell className={'text-sm font-medium'}>
-                          {user.limits?.count ?? (
+                          {user.stats?.todayMessages ?? (
                             <span className={'text-muted-foreground'}>
                               {'-'}
                             </span>

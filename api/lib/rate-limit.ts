@@ -2,45 +2,46 @@ import admin from 'firebase-admin';
 
 const DEFAULT_DAILY_LIMIT = 5;
 
-interface LimitsData {
-  count: number;
-  max?: number;
-  lastUpdated: number;
-}
-
 /**
  * Check if user has exceeded their daily message limit.
- * Returns { allowed: true, remaining } or { allowed: false, remaining: 0 }.
+ * Reads max from users/{uid}/limits and today's count from userDirectory/{uid}/messageSends.
+ * If allowed, atomically increments the count (server-side only).
  */
 export const checkRateLimit = async (
   uid: string,
 ): Promise<{ allowed: boolean; remaining: number }> => {
   const db = admin.database();
-  const limitsRef = db.ref(`users/${uid}/limits`);
-  const snapshot = await limitsRef.get();
+  const today = new Date().toISOString().split('T')[0];
+  const yearMonth = today.substring(0, 7);
+  const day = today.substring(8);
 
-  if (!snapshot.exists()) {
-    // No limits data yet — first message ever, allow it
-    return { allowed: true, remaining: DEFAULT_DAILY_LIMIT - 1 };
-  }
+  const countRef = db.ref(
+    `userDirectory/${uid}/messageSends/${yearMonth}/${day}`,
+  );
 
-  const limits = snapshot.val() as LimitsData;
-  const max = limits.max ?? DEFAULT_DAILY_LIMIT;
+  const [limitsSnap, countsSnap] = await Promise.all([
+    db.ref(`users/${uid}/limits`).get(),
+    countRef.get(),
+  ]);
+
+  const max = limitsSnap.exists()
+    ? (limitsSnap.val().max ?? DEFAULT_DAILY_LIMIT)
+    : DEFAULT_DAILY_LIMIT;
+  const count = countsSnap.exists() ? (countsSnap.val() as number) : 0;
 
   // -1 means unlimited
   if (max === -1) {
+    await countRef.transaction((c: number | null) => (c ?? 0) + 1);
+
     return { allowed: true, remaining: Infinity };
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  const limitsDate = new Date(limits.lastUpdated).toISOString().split('T')[0];
-
-  // New day — counter will be reset, allow
-  if (limitsDate !== today) {
-    return { allowed: true, remaining: max - 1 };
+  if (count >= max) {
+    return { allowed: false, remaining: 0 };
   }
 
-  const remaining = Math.max(0, max - limits.count);
+  // Increment count server-side (Admin SDK bypasses security rules)
+  await countRef.transaction((c: number | null) => (c ?? 0) + 1);
 
-  return { allowed: limits.count < max, remaining: Math.max(0, remaining - 1) };
+  return { allowed: true, remaining: Math.max(0, max - count - 1) };
 };

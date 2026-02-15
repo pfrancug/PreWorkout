@@ -140,13 +140,7 @@ export const validateImportData = (data: unknown): data is AllUserData => {
       return false;
     }
     const l = d.limits as Record<string, unknown>;
-    if (typeof l.count !== 'number') {
-      return false;
-    }
-    if (typeof l.lastUpdated !== 'number') {
-      return false;
-    }
-    if (l.max != null && typeof l.max !== 'number') {
+    if (typeof l.max !== 'number') {
       return false;
     }
   }

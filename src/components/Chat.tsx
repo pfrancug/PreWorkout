@@ -25,7 +25,6 @@ import { useSettings } from '../contexts/useSettings';
 import {
   clearUserMessages,
   getRemainingMessages,
-  incrementDailyMessageCount,
   saveUserMessages,
   subscribeToUserMessages,
 } from '../firebase/database';
@@ -283,7 +282,6 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       if (user && finalMessages.length > 1) {
         try {
           await saveUserMessages(user.uid, finalMessages);
-          await incrementDailyMessageCount(user.uid);
           const remaining = await getRemainingMessages(user.uid);
           setRemainingMessages(remaining);
         } catch {
