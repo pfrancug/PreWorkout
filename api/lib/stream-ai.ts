@@ -40,10 +40,10 @@ const createModel = (provider: Provider) => {
   return xai('grok-4-1-fast-reasoning');
 };
 
-const tryStream = async (
+const tryStream = (
   provider: Provider,
   messages: ChatMessage[],
-): Promise<{ textStream: AsyncIterable<string> }> => {
+): AsyncIterable<string> => {
   const model = createModel(provider);
 
   if (!model) {
@@ -57,13 +57,39 @@ const tryStream = async (
     ...(provider === 'grok' && { temperature: 0.7 }),
   });
 
-  return result;
+  return result.textStream;
+};
+
+/**
+ * Consume a text stream, writing chunks as SSE.
+ * Returns the full text (empty string if no chunks received).
+ * Throws if the stream errors.
+ */
+const consumeStream = async (
+  stream: AsyncIterable<string>,
+  res: VercelResponse,
+  headersSet: boolean,
+): Promise<{ text: string; headersSet: boolean }> => {
+  if (!headersSet) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+  }
+
+  let fullText = '';
+
+  for await (const chunk of stream) {
+    fullText += chunk;
+    res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+  }
+
+  return { text: fullText, headersSet: true };
 };
 
 /**
  * Stream an AI response with automatic fallback.
- * Tries the primary provider first; if it fails before any data is sent,
- * transparently falls back to the other provider.
+ * Tries the primary provider first; if it fails or returns empty
+ * before any data is sent, transparently falls back to the other provider.
  */
 export const streamWithFallback = async (
   res: VercelResponse,
@@ -78,67 +104,60 @@ export const streamWithFallback = async (
     { role: 'user', content: config.userMessage },
   ];
 
+  let headersSet = false;
+  let hasData = false;
+
   // Try primary provider
-  let result: { textStream: AsyncIterable<string> };
-
   try {
-    result = await tryStream(primary, messages);
+    const stream = tryStream(primary, messages);
+    const result = await consumeStream(stream, res, headersSet);
+    headersSet = result.headersSet;
+    hasData = result.text.length > 0;
   } catch (error) {
-    console.error(`${primary} init failed, trying ${fallback}:`, error);
-
-    // Primary failed to initialize — try fallback immediately
-    result = await tryStream(fallback, messages);
+    console.error(`${primary} failed:`, error);
+    // hasData stays false — will try fallback below
   }
 
-  // Set up SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
-  let hasWritten = false;
-
-  try {
-    for await (const chunk of result.textStream) {
-      hasWritten = true;
-      res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
-    }
-
+  // If primary succeeded with data, finish
+  if (hasData) {
     res.write('data: [DONE]\n\n');
     res.end();
-  } catch (error) {
-    // Primary stream failed mid-way — can only fallback if nothing was sent
-    if (hasWritten) {
-      const message = error instanceof Error ? error.message : 'Stream error';
-      res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
-      res.end();
 
-      return;
-    }
+    return;
+  }
 
-    // Nothing was written yet — try fallback
-    console.error(`${primary} stream failed, trying ${fallback}:`, error);
+  // Primary returned empty or errored — try fallback
+  console.log(`${primary} returned no data, falling back to ${fallback}`);
 
-    try {
-      const fallbackResult = await tryStream(fallback, messages);
+  try {
+    const stream = tryStream(fallback, messages);
+    const result = await consumeStream(stream, res, headersSet);
+    headersSet = result.headersSet;
+    hasData = result.text.length > 0;
 
-      for await (const chunk of fallbackResult.textStream) {
-        res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
-      }
-
+    if (hasData) {
       res.write('data: [DONE]\n\n');
       res.end();
-    } catch (fallbackError) {
-      const message =
-        fallbackError instanceof Error
-          ? fallbackError.message
-          : 'Unknown error';
-
-      if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
+    } else {
+      // Both providers returned empty
+      if (headersSet) {
+        res.write(
+          `data: ${JSON.stringify({ error: 'No response from AI providers' })}\n\n`,
+        );
         res.end();
       } else {
-        res.status(500).json({ error: message });
+        res.status(500).json({ error: 'No response from AI providers' });
       }
+    }
+  } catch (fallbackError) {
+    const message =
+      fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+
+    if (headersSet) {
+      res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
+      res.end();
+    } else {
+      res.status(500).json({ error: message });
     }
   }
 };
