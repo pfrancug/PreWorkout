@@ -10,11 +10,11 @@ Enable personal trainers to connect with users, supervise their progress (calend
 
 ### Phase 1: Role & Data Model Foundation
 
-- [ ] Add `trainer` role to auth system (`isTrainer` context flag, custom claim)
-- [ ] Create `scripts/set-trainer.ts` CLI script
-- [ ] Add "Set Trainer" action to Admin Page
-- [ ] Design & document new database nodes (`trainerConnections`, `trainingPayments`, `users/{uid}/trainerId`)
-- [ ] Update `database.rules.json` with cross-user read rules for trainers
+- [x] Add `trainer` role to auth system (`isTrainer` context flag, custom claim)
+- [x] Create `scripts/set-trainer.ts` CLI script
+- [x] Add "Set Trainer" action to Admin Page
+- [x] Design & document new database nodes (`trainerConnections`, `trainingPayments`, `users/{uid}/trainerId`)
+- [x] Update `database.rules.json` with cross-user read rules for trainers
 
 ### Phase 2: Trainer–Trainee Connection Flow
 

@@ -10,6 +10,7 @@ import {
 } from '@components/ui/card';
 import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
+import { Switch } from '@components/ui/switch';
 import {
   Table,
   TableBody,
@@ -32,9 +33,12 @@ import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useAuth } from '../contexts/useAuth';
+import { auth as firebaseAuth } from '../firebase/auth';
 import {
+  getTrainerFlagFromDirectory,
   getUserMaxLimitForAdmin,
   getUserUsageStats,
+  setTrainerFlagInDirectory,
   setUserMaxLimitForAdmin,
   subscribeToUserDirectory,
 } from '../firebase/database';
@@ -46,6 +50,7 @@ interface UserWithLimits {
   lastLogin: string | null;
   maxLimit: number;
   deleted?: boolean;
+  isTrainer?: boolean;
   stats?: {
     todayMessages: number;
     totalMessages: number;
@@ -63,6 +68,7 @@ export const AdminPage = () => {
     {},
   );
   const [savingUser, setSavingUser] = useState<string | null>(null);
+  const [togglingTrainer, setTogglingTrainer] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -81,9 +87,10 @@ export const AdminPage = () => {
         const entries = await Promise.all(
           Object.entries(directory).map(async ([uid, entry]) => {
             const isDeleted = !entry.email && !entry.lastLogin;
-            const [maxLimit, stats] = await Promise.all([
+            const [maxLimit, stats, isTrainer] = await Promise.all([
               getUserMaxLimitForAdmin(uid),
               getUserUsageStats(uid),
+              getTrainerFlagFromDirectory(uid),
             ]);
 
             return {
@@ -93,6 +100,7 @@ export const AdminPage = () => {
               lastLogin: entry.lastLogin || null,
               deleted: isDeleted,
               maxLimit,
+              isTrainer,
               stats: stats
                 ? {
                     todayMessages: stats.todayMessages,
@@ -164,6 +172,49 @@ export const AdminPage = () => {
       }
     },
     [editingLimits, t],
+  );
+
+  const handleTrainerToggle = useCallback(
+    async (uid: string, currentIsTrainer: boolean) => {
+      setTogglingTrainer(uid);
+      try {
+        const token = await firebaseAuth.currentUser?.getIdToken();
+        const response = await fetch('/api/admin/set-trainer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            targetUid: uid,
+            isTrainer: !currentIsTrainer,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('API error');
+        }
+
+        // Update the directory flag for display
+        await setTrainerFlagInDirectory(uid, !currentIsTrainer);
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.uid === uid ? { ...u, isTrainer: !currentIsTrainer } : u,
+          ),
+        );
+        toast.success(
+          !currentIsTrainer
+            ? t('admin.users.trainerGranted')
+            : t('admin.users.trainerRevoked'),
+        );
+      } catch {
+        toast.error(t('admin.users.trainerToggleError'));
+      } finally {
+        setTogglingTrainer(null);
+      }
+    },
+    [t],
   );
 
   if (!isAdmin) {
@@ -331,6 +382,8 @@ export const AdminPage = () => {
 
                     <TableHead>{t('admin.analytics.maxLimit')}</TableHead>
 
+                    <TableHead>{t('admin.users.trainer')}</TableHead>
+
                     <TableHead className={'w-[100px]'} />
                   </TableRow>
                 </TableHeader>
@@ -430,6 +483,23 @@ export const AdminPage = () => {
                               <Save className={'h-3.5 w-3.5'} />
                             )}
                           </Button>
+                        </TableCell>
+
+                        <TableCell>
+                          {togglingTrainer === user.uid ? (
+                            <Loader2 className={'h-4 w-4 animate-spin'} />
+                          ) : (
+                            <Switch
+                              checked={user.isTrainer ?? false}
+                              disabled={user.deleted}
+                              onCheckedChange={() =>
+                                handleTrainerToggle(
+                                  user.uid,
+                                  user.isTrainer ?? false,
+                                )
+                              }
+                            />
+                          )}
                         </TableCell>
                       </TableRow>
                     );

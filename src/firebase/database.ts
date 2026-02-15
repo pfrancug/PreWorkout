@@ -2,11 +2,16 @@ import type {
   UserPreferences,
   UserSettings,
 } from '../contexts/SettingsContext';
+import type { ITrainerConnection } from '../types/types';
 import type { Message } from '@components/Chat';
 
 import {
+  equalTo,
   get,
   getDatabase,
+  orderByChild,
+  push,
+  query,
   ref,
   remove,
   runTransaction,
@@ -728,4 +733,234 @@ export const subscribeToEnergyDrinks = (
   });
 
   return unsubscribe;
+};
+
+// ─── Trainer Feature ────────────────────────────────────────────────────────
+
+/** Generate a short random invite code (6 chars, alphanumeric uppercase) */
+const generateInviteCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I ambiguity
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return code;
+};
+
+/**
+ * Trainer creates an invite code for a trainee to use.
+ * Returns the invite code and connection ID.
+ */
+export const createTrainerInvite = async (
+  trainerId: string,
+): Promise<{ inviteCode: string; connectionId: string }> => {
+  const inviteCode = generateInviteCode();
+
+  // Create the connection record
+  const connectionsRef = ref(database, 'trainerConnections');
+  const newConnectionRef = push(connectionsRef);
+  const connectionId = newConnectionRef.key!;
+
+  const connection: ITrainerConnection = {
+    id: connectionId,
+    trainerId,
+    traineeId: '', // Will be filled when trainee accepts
+    status: 'pending',
+    inviteCode,
+    createdAt: Date.now(),
+  };
+
+  await set(newConnectionRef, connection);
+
+  // Create a lookup entry for the invite code
+  await set(ref(database, `trainerInvites/${inviteCode}`), {
+    trainerId,
+    connectionId,
+  });
+
+  return { inviteCode, connectionId };
+};
+
+/**
+ * Trainee accepts a trainer invite by entering the invite code.
+ * Sets the connection to active and stores trainerId on the user.
+ */
+export const acceptTrainerInvite = async (
+  traineeId: string,
+  inviteCode: string,
+): Promise<{ success: boolean; error?: string }> => {
+  // Look up the invite
+  const inviteSnapshot = await get(
+    ref(database, `trainerInvites/${inviteCode.toUpperCase()}`),
+  );
+
+  if (!inviteSnapshot.exists()) {
+    return { success: false, error: 'invalid_code' };
+  }
+
+  const { trainerId, connectionId } = inviteSnapshot.val() as {
+    trainerId: string;
+    connectionId: string;
+  };
+
+  // Check if trainee already has a trainer
+  const existingTrainer = await get(
+    ref(database, `users/${traineeId}/trainerId`),
+  );
+  if (existingTrainer.exists()) {
+    return { success: false, error: 'already_has_trainer' };
+  }
+
+  // Verify the connection still exists and is pending
+  const connectionSnapshot = await get(
+    ref(database, `trainerConnections/${connectionId}`),
+  );
+  if (!connectionSnapshot.exists()) {
+    return { success: false, error: 'connection_not_found' };
+  }
+
+  const connection = connectionSnapshot.val() as ITrainerConnection;
+  if (connection.status !== 'pending') {
+    return { success: false, error: 'invite_already_used' };
+  }
+
+  // Activate the connection
+  await update(ref(database, `trainerConnections/${connectionId}`), {
+    traineeId,
+    status: 'active',
+  });
+
+  // Set trainerId on the user profile
+  await set(ref(database, `users/${traineeId}/trainerId`), trainerId);
+
+  // Remove the invite code (one-time use)
+  await remove(ref(database, `trainerInvites/${inviteCode.toUpperCase()}`));
+
+  return { success: true };
+};
+
+/**
+ * Either party can disconnect the trainer–trainee relationship.
+ */
+export const disconnectTrainer = async (
+  connectionId: string,
+  traineeId: string,
+): Promise<void> => {
+  // Remove the connection
+  await remove(ref(database, `trainerConnections/${connectionId}`));
+
+  // Remove trainerId from the user
+  await remove(ref(database, `users/${traineeId}/trainerId`));
+};
+
+/**
+ * Subscribe to all connections where the given user is the trainer.
+ */
+export const subscribeToTrainerConnections = (
+  trainerId: string,
+  callback: (connections: ITrainerConnection[]) => void,
+): (() => void) => {
+  const connectionsRef = ref(database, 'trainerConnections');
+  const q = query(
+    connectionsRef,
+    orderByChild('trainerId'),
+    equalTo(trainerId),
+  );
+
+  const unsubscribe = onValue(q, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val() as Record<string, ITrainerConnection>;
+      const connections = Object.entries(data).map(([key, val]) => ({
+        ...val,
+        id: key,
+      }));
+      callback(connections);
+    } else {
+      callback([]);
+    }
+  });
+
+  return unsubscribe;
+};
+
+/**
+ * Subscribe to the trainee's active trainer connection.
+ */
+export const subscribeToTraineeConnection = (
+  traineeId: string,
+  callback: (connection: ITrainerConnection | null) => void,
+): (() => void) => {
+  const connectionsRef = ref(database, 'trainerConnections');
+  const q = query(
+    connectionsRef,
+    orderByChild('traineeId'),
+    equalTo(traineeId),
+  );
+
+  const unsubscribe = onValue(q, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val() as Record<string, ITrainerConnection>;
+      const active = Object.entries(data).find(
+        ([, val]) => val.status === 'active',
+      );
+      if (active) {
+        callback({ ...active[1], id: active[0] });
+      } else {
+        callback(null);
+      }
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+/**
+ * Get user's trainerId (the trainer assigned to them).
+ */
+export const getTrainerId = async (userId: string): Promise<string | null> => {
+  const snapshot = await get(ref(database, `users/${userId}/trainerId`));
+
+  return snapshot.exists() ? (snapshot.val() as string) : null;
+};
+
+/**
+ * Get a single user directory entry (for looking up trainee/trainer info).
+ */
+export const getUserDirectoryEntry = async (
+  userId: string,
+): Promise<UserDirectoryEntry | null> => {
+  const snapshot = await get(ref(database, `userDirectory/${userId}`));
+
+  return snapshot.exists() ? (snapshot.val() as UserDirectoryEntry) : null;
+};
+
+/**
+ * Admin: set trainer custom claim via Cloud Function or server action.
+ * This is a client-side helper that stores a flag in userDirectory
+ * so the admin UI can display trainer status. The actual custom claim
+ * must be set server-side (via set-trainer.ts script or admin API).
+ */
+export const setTrainerFlagInDirectory = async (
+  userId: string,
+  isTrainer: boolean,
+): Promise<void> => {
+  await update(ref(database, `userDirectory/${userId}`), {
+    isTrainer,
+  });
+};
+
+/**
+ * Read trainer flag from user directory (for admin display).
+ */
+export const getTrainerFlagFromDirectory = async (
+  userId: string,
+): Promise<boolean> => {
+  const snapshot = await get(
+    ref(database, `userDirectory/${userId}/isTrainer`),
+  );
+
+  return snapshot.exists() ? (snapshot.val() as boolean) : false;
 };

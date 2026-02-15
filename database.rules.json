@@ -6,7 +6,7 @@
     "userDirectory": {
       ".read": "auth != null && auth.token.admin === true",
       "$userId": {
-        ".read": "auth != null && auth.uid == $userId",
+        ".read": "auth != null && (auth.uid == $userId || auth.token.trainer === true)",
         ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
         "email": {
           ".validate": "newData.isString() && newData.val().length <= 200"
@@ -17,9 +17,48 @@
         "lastLogin": {
           ".validate": "newData.isString() && newData.val().length <= 30"
         },
+        "isTrainer": {
+          ".validate": "newData.isBoolean()"
+        },
         "messageSends": {
           ".write": false,
           ".validate": false
+        }
+      }
+    },
+
+    "trainerConnections": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".indexOn": ["trainerId", "traineeId", "inviteCode"],
+      "$connectionId": {
+        ".read": "auth != null && (data.child('trainerId').val() === auth.uid || data.child('traineeId').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.trainer === true || data.child('traineeId').val() === auth.uid || !data.exists())",
+        ".validate": "newData.hasChildren(['trainerId', 'traineeId', 'status', 'inviteCode', 'createdAt']) && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'active' || newData.child('status').val() === 'declined') && newData.child('inviteCode').isString() && newData.child('inviteCode').val().length <= 20 && newData.child('createdAt').isNumber()",
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "trainerInvites": {
+      "$inviteCode": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.token.trainer === true || auth.token.admin === true)",
+        ".validate": "newData.hasChildren(['trainerId', 'connectionId']) && newData.child('trainerId').isString() && newData.child('connectionId').isString()"
+      }
+    },
+
+    "trainingPayments": {
+      "$connectionId": {
+        ".read": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid)",
+        ".write": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid)",
+        "$yearMonth": {
+          ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
+          "sessions": {
+            "$sessionIndex": {
+              ".validate": "newData.hasChildren(['date', 'markedPaidBy', 'confirmedByTrainer']) && newData.child('date').isString() && newData.child('date').val().length <= 10 && newData.child('markedPaidBy').isString() && (newData.child('markedPaidBy').val() === 'trainer' || newData.child('markedPaidBy').val() === 'trainee') && newData.child('confirmedByTrainer').isBoolean()"
+            }
+          }
         }
       }
     },
@@ -29,8 +68,14 @@
         ".read": false,
         ".write": false,
 
-        "settings": {
+        "trainerId": {
           ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
+          ".validate": "newData.isString() && newData.val().length <= 128"
+        },
+
+        "settings": {
+          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('age').isString() && newData.child('age').val().length <= 3 && newData.child('height').isString() && newData.child('height').val().length <= 3 && newData.child('sex').isString() && (newData.child('sex').val() === '' || newData.child('sex').val() === 'male' || newData.child('sex').val() === 'female') && (!newData.hasChild('avatarUrl') || (newData.child('avatarUrl').isString() && newData.child('avatarUrl').val().length <= 200000))"
         },
@@ -64,7 +109,7 @@
         },
 
         "data": {
-          ".read": "auth != null && auth.uid == $userId",
+          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           "$entryIndex": {
             ".validate": "newData.hasChildren(['id', 'date']) && newData.child('id').isNumber() && newData.child('date').isString() && newData.child('date').val().length <= 30 && (!newData.hasChild('weight') || newData.child('weight').val() == null || newData.child('weight').isNumber()) && (!newData.hasChild('kcal') || newData.child('kcal').val() == null || newData.child('kcal').isNumber()) && (!newData.hasChild('protein') || newData.child('protein').val() == null || newData.child('protein').isNumber()) && (!newData.hasChild('fat') || newData.child('fat').val() == null || newData.child('fat').isNumber()) && (!newData.hasChild('carbs') || newData.child('carbs').val() == null || newData.child('carbs').isNumber()) && (!newData.hasChild('completed') || newData.child('completed').isBoolean())"
@@ -81,7 +126,7 @@
         },
 
         "calendar": {
-          ".read": "auth != null && auth.uid == $userId",
+          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           "$date": {
             ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/)",
@@ -92,7 +137,7 @@
         },
 
         "calendarNotes": {
-          ".read": "auth != null && auth.uid == $userId",
+          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           "$date": {
             ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.isString() && newData.val().length <= 2000"
@@ -100,7 +145,7 @@
         },
 
         "activityCategories": {
-          ".read": "auth != null && auth.uid == $userId",
+          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           "_initialized": {
             ".validate": "newData.isBoolean()"
@@ -116,7 +161,7 @@
         },
 
         "energyDrinks": {
-          ".read": "auth != null && auth.uid == $userId",
+          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           "$date": {
             ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/)",

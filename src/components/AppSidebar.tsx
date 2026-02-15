@@ -36,6 +36,7 @@ import {
   SlidersHorizontal,
   Tags,
   User,
+  UserRound,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -104,7 +105,7 @@ export const AppSidebar = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isTrainer } = useAuth();
   const { settings, changeLanguage } = useSettings();
 
   const displayName = settings.name || t('nav.anonymous');
@@ -323,6 +324,26 @@ export const AppSidebar = () => {
                     </div>
                   </div>
                 </DropdownMenuLabel>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <UserRound />
+
+                      {'Admin'}
+                    </>
+                  )}
+
+                  {isTrainer && (
+                    <>
+                      <UserRound />
+
+                      {'Trainer'}
+                    </>
+                  )}
+                </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
 

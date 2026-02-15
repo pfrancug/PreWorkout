@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }: Props) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTrainer, setIsTrainer] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }: Props) => {
       if (firebaseUser) {
         const token = await firebaseUser.getIdTokenResult();
         setIsAdmin(token.claims.admin === true);
+        setIsTrainer(token.claims.trainer === true);
 
         // Populate user directory entry
         updateUserDirectory(
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }: Props) => {
         });
       } else {
         setIsAdmin(false);
+        setIsTrainer(false);
       }
       setLoading(false);
     });
@@ -42,7 +45,7 @@ export const AuthProvider = ({ children }: Props) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, isTrainer }}>
       {children}
     </AuthContext.Provider>
   );

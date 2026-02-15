@@ -8,3 +8,28 @@ export interface IRow {
   carbs: number | null;
   completed: boolean;
 }
+
+// Trainer feature types
+
+export type TrainerConnectionStatus = 'pending' | 'active' | 'declined';
+
+export interface ITrainerConnection {
+  id: string;
+  trainerId: string;
+  traineeId: string;
+  status: TrainerConnectionStatus;
+  inviteCode: string;
+  createdAt: number;
+}
+
+export type PaymentMarkedBy = 'trainer' | 'trainee';
+
+export interface IPaymentSession {
+  date: string; // YYYY-MM-DD
+  markedPaidBy: PaymentMarkedBy;
+  confirmedByTrainer: boolean;
+}
+
+export interface IMonthlyPayments {
+  sessions: IPaymentSession[];
+}

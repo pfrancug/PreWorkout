@@ -28,3 +28,5 @@ Desktop.ini
 migrations/
 scripts/
 secrets/
+.vercel
+.env*.local
