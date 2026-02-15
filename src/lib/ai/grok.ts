@@ -30,6 +30,7 @@ const streamDev = async (
     model: xai('grok-4-1-fast-reasoning'),
     messages,
     temperature: 0.7,
+    maxRetries: 0,
   });
 
   let fullText = '';

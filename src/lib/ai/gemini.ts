@@ -29,12 +29,18 @@ const streamDev = async (
   const result = streamText({
     model: google('gemini-2.5-flash'),
     messages,
+    maxRetries: 0,
   });
 
   let fullText = '';
+
   for await (const chunk of result.textStream) {
     fullText += chunk;
     callbacks.onChunk(fullText);
+  }
+
+  if (!fullText) {
+    throw new Error('Gemini returned an empty response');
   }
 
   callbacks.onComplete(fullText);

@@ -31,7 +31,6 @@ import {
 import {
   isGeminiAvailable,
   isGrokAvailable,
-  isRateLimitError,
   streamFromGemini,
   streamFromGrok,
 } from '../lib/ai';
@@ -87,13 +86,45 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = (behavior: 'instant' | 'smooth' = 'smooth') => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior,
-      });
+  const scrollToBottom = () => {
+    const el = scrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
     }
+  };
+
+  const smoothScrollToBottom = (duration: number) => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+
+    const start = el.scrollTop;
+    const startTime = performance.now();
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-in-out
+      const ease =
+        progress < 0.5
+          ? 2 * progress * progress
+          : 1 - (-2 * progress + 2) ** 2 / 2;
+
+      // Recalculate target each frame in case content height changed
+      const target = el.scrollHeight - el.clientHeight;
+      const distance = target - start;
+      el.scrollTop = start + distance * ease;
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        // Ensure we're at the very bottom
+        el.scrollTop = el.scrollHeight;
+      }
+    };
+
+    requestAnimationFrame(step);
   };
 
   const [input, setInput] = useState('');
@@ -102,6 +133,26 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
   const [remainingMessages, setRemainingMessages] = useState<number>(10);
+  const [isAtTop, setIsAtTop] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+
+    if (!el) {
+      return;
+    }
+
+    const handleScroll = () => {
+      setIsAtTop(el.scrollTop <= 1);
+      setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 1);
+    };
+
+    handleScroll();
+    el.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [messages.length]);
 
   const isLimitReached = remainingMessages <= 0;
   const isUnlimited = remainingMessages === Infinity;
@@ -131,18 +182,41 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       return;
     }
 
+    let isFirst = true;
     const unsubscribe = subscribeToUserMessages(
       user.uid,
       (firebaseMessages) => {
         if (firebaseMessages.length > 0) {
           setMessages(firebaseMessages);
+
+          // On first load from Firebase, do a slow smooth scroll
+          if (isFirst) {
+            isFirst = false;
+            isAnimating.current = true;
+            setTimeout(() => {
+              smoothScrollToBottom(2500);
+              setTimeout(() => {
+                isAnimating.current = false;
+              }, 2600);
+            }, 100);
+          }
         }
-        setTimeout(() => scrollToBottom('instant'), 0);
       },
     );
 
     return () => unsubscribe();
   }, [user]);
+
+  const isAnimating = useRef(false);
+
+  // Auto-scroll to bottom whenever messages change (except during initial animation)
+  useEffect(() => {
+    if (isAnimating.current) {
+      return;
+    }
+
+    requestAnimationFrame(() => scrollToBottom());
+  }, [messages]);
 
   const handleSubmit = async () => {
     if (!user || isLimitReached) {
@@ -194,13 +268,41 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       userInfo.push(`Height: ${settings.height}cm`);
     }
 
-    const systemInstruction =
+    const baseInstruction =
       userInfo.length > 0
         ? `You are a helpful fitness and nutrition assistant. The user's profile: ${userInfo.join(', ')}. Use this information to provide personalized advice.`
         : 'You are a helpful fitness and nutrition assistant.';
 
-    // Convert messages to AI format
-    const aiMessages = messages.map((m) => ({
+    // Build conversation context: keep last 20 messages as full context,
+    // summarize older messages into a compact prefix for the system prompt
+    const MAX_RECENT = 10;
+    let conversationSummary = '';
+    let recentMessages = messages;
+
+    if (messages.length > MAX_RECENT) {
+      const olderMessages = messages.slice(0, -MAX_RECENT);
+      recentMessages = messages.slice(-MAX_RECENT);
+
+      // Build a compact summary of older conversation topics
+      const olderUserMessages = olderMessages
+        .filter((m) => m.role === 'user')
+        .map((m) => m.parts[0].text.substring(0, 150))
+        .join(' | ');
+
+      const olderModelMessages = olderMessages
+        .filter((m) => m.role === 'model')
+        .map((m) => m.parts[0].text.substring(0, 150))
+        .join(' | ');
+
+      conversationSummary =
+        `\n\nEarlier in this conversation, the user asked about: ${olderUserMessages.substring(0, 1000)}` +
+        `\nYour earlier responses covered: ${olderModelMessages.substring(0, 1000)}` +
+        `\nUse this context to maintain continuity but focus on the recent messages.`;
+    }
+
+    const systemInstruction = baseInstruction + conversationSummary;
+
+    const aiMessages = recentMessages.map((m) => ({
       role: (m.role === 'model' ? 'assistant' : 'user') as
         | 'user'
         | 'assistant'
@@ -232,43 +334,44 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       },
     };
 
-    try {
-      if (aiProvider === 'grok' && isGrokAvailable()) {
-        await streamFromGrok(aiConfig, callbacks);
-      } else if (isGeminiAvailable()) {
-        await streamFromGemini(aiConfig, callbacks);
-      } else {
-        throw new Error('No AI provider available');
+    const tryProvider = async (provider: AIProvider): Promise<boolean> => {
+      try {
+        if (provider === 'grok' && isGrokAvailable()) {
+          await streamFromGrok(aiConfig, callbacks);
+
+          return true;
+        } else if (provider === 'gemini' && isGeminiAvailable()) {
+          await streamFromGemini(aiConfig, callbacks);
+
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        console.error(`${provider} failed:`, error);
+
+        return false;
       }
-    } catch (error) {
-      // If primary provider fails with rate limit, try fallback
-      if (isRateLimitError(error)) {
-        console.log(`${aiProvider} rate limited, trying fallback...`);
-        // Switch to the fallback provider
-        if (aiProvider === 'gemini' && isGrokAvailable()) {
-          setAiProvider('grok');
-        } else if (aiProvider === 'grok' && isGeminiAvailable()) {
-          setAiProvider('gemini');
-        }
-        try {
-          if (aiProvider === 'gemini' && isGrokAvailable()) {
-            await streamFromGrok(aiConfig, callbacks);
-          } else if (aiProvider === 'grok' && isGeminiAvailable()) {
-            await streamFromGemini(aiConfig, callbacks);
-          } else {
-            throw error;
-          }
-        } catch (fallbackError) {
-          console.error('Fallback API error:', fallbackError);
-          const errorMessage: Message = {
-            role: 'model',
-            parts: [{ text: t('chat.errorGenerating') }],
-          };
-          finalMessages = [...messages, newUserMessage, errorMessage];
-          setMessages(finalMessages);
-        }
-      } else {
-        console.error('API error:', error);
+    };
+
+    const fallbackProvider: AIProvider =
+      aiProvider === 'gemini' ? 'grok' : 'gemini';
+
+    try {
+      let success = await tryProvider(aiProvider);
+
+      if (!success) {
+        console.log(`Falling back to ${fallbackProvider}...`);
+        setAiProvider(fallbackProvider);
+
+        // Reset the model message for the retry
+        finalMessages = [...messages, newUserMessage, emptyModelMessage];
+        setMessages(finalMessages);
+
+        success = await tryProvider(fallbackProvider);
+      }
+
+      if (!success) {
         const errorMessage: Message = {
           role: 'model',
           parts: [{ text: t('chat.errorGenerating') }],
@@ -288,7 +391,6 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
           toast.error(t('common.saveError'));
         }
       }
-      scrollToBottom();
     }
   };
 
@@ -376,7 +478,16 @@ export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
       <ScrollArea
         viewportRef={scrollRef}
         className={cn(
-          'min-h-0 flex-1 [mask-image:linear-gradient(to_bottom,transparent_0%,black_32px,black_calc(100%-32px),transparent_100%)]',
+          'min-h-0 flex-1',
+          !isAtTop &&
+            !isAtBottom &&
+            '[mask-image:linear-gradient(to_bottom,transparent_0%,black_32px,black_calc(100%-32px),transparent_100%)]',
+          !isAtTop &&
+            isAtBottom &&
+            '[mask-image:linear-gradient(to_bottom,transparent_0%,black_32px,black_100%)]',
+          isAtTop &&
+            !isAtBottom &&
+            '[mask-image:linear-gradient(to_bottom,black_0%,black_calc(100%-32px),transparent_100%)]',
           showSettingsAlert && '[&>div>div]:h-full',
         )}
       >

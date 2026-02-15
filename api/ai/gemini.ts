@@ -69,6 +69,7 @@ const handler = async (
     const result = streamText({
       model: google('gemini-2.5-flash'),
       messages,
+      maxRetries: 0,
     });
 
     // Set up SSE headers
