@@ -27,9 +27,9 @@
         "description": "Choose the default view when opening the calendar.",
         "label": "Default View"
       },
-      "monster": {
-        "title": "Monster Drinks",
-        "description": "Configure default filters for the Monster drinks page.",
+      "drinks": {
+        "title": "Energy Drinks",
+        "description": "Configure default filters for the energy drinks page.",
         "sugarFilterLabel": "Default Sugar Filter",
         "all": "All",
         "sugar": "With Sugar",

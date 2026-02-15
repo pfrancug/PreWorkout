@@ -1,5 +1,8 @@
 import type { AIConfig, StreamCallbacks } from './types';
 
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { streamText } from 'ai';
+
 // In dev mode, use the API key directly (safe on localhost).
 // In production, the key is only on the server behind /api/ai/gemini.
 const devApiKey = import.meta.env.DEV
@@ -10,31 +13,27 @@ export const isGeminiAvailable = (): boolean => {
   return import.meta.env.DEV ? !!devApiKey : true;
 };
 
-// Dev mode: call Gemini SDK directly via dynamic import
+// Dev mode: call Gemini API directly via AI SDK
 const streamDev = async (
   config: AIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
-  const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({ apiKey: devApiKey! });
+  const google = createGoogleGenerativeAI({ apiKey: devApiKey! });
 
-  const contents = [
-    ...config.messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : m.role,
-      parts: [{ text: m.content }],
-    })),
-    { role: 'user', parts: [{ text: config.userMessage }] },
+  const messages = [
+    { role: 'system' as const, content: config.systemInstruction },
+    ...config.messages,
+    { role: 'user' as const, content: config.userMessage },
   ];
 
-  const stream = await ai.models.generateContentStream({
-    model: 'gemini-2.5-flash',
-    config: { systemInstruction: config.systemInstruction },
-    contents,
+  const result = streamText({
+    model: google('gemini-2.5-flash'),
+    messages,
   });
 
   let fullText = '';
-  for await (const chunk of stream) {
-    fullText += chunk.text ?? '';
+  for await (const chunk of result.textStream) {
+    fullText += chunk;
     callbacks.onChunk(fullText);
   }
 
@@ -86,7 +85,6 @@ const streamProd = async (
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
-    // Keep the last incomplete line in the buffer
     buffer = lines.pop() ?? '';
 
     for (const line of lines) {

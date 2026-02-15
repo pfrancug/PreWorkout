@@ -1,4 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { streamText } from 'ai';
+import { createXai } from '@ai-sdk/xai';
 
 import { verifyAuthToken } from '../lib/auth.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
@@ -62,70 +64,23 @@ const handler = async (
   ];
 
   try {
-    const upstream = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',
-        messages,
-        temperature: 0.7,
-        stream: true,
-      }),
+    const xai = createXai({ apiKey });
+
+    const result = streamText({
+      model: xai('grok-4-1-fast-reasoning'),
+      messages,
+      temperature: 0.7,
     });
 
-    if (!upstream.ok) {
-      const err = await upstream.json().catch(() => ({}));
-      const message = err.error?.message || 'Grok API request failed';
-      res.status(upstream.status).json({ error: message });
-      return;
-    }
-
-    // Set up SSE headers only after confirming upstream is OK
+    // Set up SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const reader = upstream.body?.getReader();
-    if (!reader) {
-      res.write(`data: ${JSON.stringify({ error: 'No response body' })}\n\n`);
-      res.end();
-      return;
+    for await (const chunk of result.textStream) {
+      res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
     }
 
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            res.write('data: [DONE]\n\n');
-            continue;
-          }
-
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              res.write(`data: ${JSON.stringify({ text: content })}\n\n`);
-            }
-          } catch {
-            // Skip invalid JSON chunks
-          }
-        }
-      }
-    }
-
-    // Ensure we send DONE if upstream didn't
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {

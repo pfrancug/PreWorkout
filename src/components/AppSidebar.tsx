@@ -71,9 +71,9 @@ const menuItems = [
     path: '/chat',
   },
   {
-    titleKey: 'nav.monster',
+    titleKey: 'nav.drinks',
     icon: GlassWater,
-    path: '/monster',
+    path: '/drinks',
   },
 ];
 

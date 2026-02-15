@@ -157,22 +157,22 @@ export const PreferencesSettingsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('settings.preferences.monster.title')}</CardTitle>
+          <CardTitle>{t('settings.preferences.drinks.title')}</CardTitle>
 
           <CardDescription>
-            {t('settings.preferences.monster.description')}
+            {t('settings.preferences.drinks.description')}
           </CardDescription>
         </CardHeader>
 
         <CardContent className={'space-y-4'}>
           <div className={'space-y-2'}>
-            <Label>{t('settings.preferences.monster.sugarFilterLabel')}</Label>
+            <Label>{t('settings.preferences.drinks.sugarFilterLabel')}</Label>
 
             <Select
-              value={preferences.monsterSugarFilter || 'all'}
+              value={preferences.drinksSugarFilter || 'all'}
               onValueChange={(value) =>
                 updatePreference(
-                  'monsterSugarFilter',
+                  'drinksSugarFilter',
                   value as 'all' | 'sugar' | 'no-sugar',
                 )
               }
@@ -183,15 +183,15 @@ export const PreferencesSettingsPage = () => {
 
               <SelectContent>
                 <SelectItem value={'all'}>
-                  {t('settings.preferences.monster.all')}
+                  {t('settings.preferences.drinks.all')}
                 </SelectItem>
 
                 <SelectItem value={'sugar'}>
-                  {t('settings.preferences.monster.sugar')}
+                  {t('settings.preferences.drinks.sugar')}
                 </SelectItem>
 
                 <SelectItem value={'no-sugar'}>
-                  {t('settings.preferences.monster.noSugar')}
+                  {t('settings.preferences.drinks.noSugar')}
                 </SelectItem>
               </SelectContent>
             </Select>

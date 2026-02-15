@@ -1,5 +1,8 @@
 import type { AIConfig, StreamCallbacks } from './types';
 
+import { createXai } from '@ai-sdk/xai';
+import { streamText } from 'ai';
+
 // In dev mode, use the API key directly (safe on localhost).
 // In production, the key is only on the server behind /api/ai/grok.
 const devApiKey = import.meta.env.DEV
@@ -10,79 +13,29 @@ export const isGrokAvailable = (): boolean => {
   return import.meta.env.DEV ? !!devApiKey : true;
 };
 
-// Dev mode: call xAI API directly
+// Dev mode: call xAI API directly via AI SDK
 const streamDev = async (
   config: AIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
+  const xai = createXai({ apiKey: devApiKey! });
+
   const messages = [
     { role: 'system' as const, content: config.systemInstruction },
     ...config.messages,
     { role: 'user' as const, content: config.userMessage },
   ];
 
-  const res = await fetch('https://api.x.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${devApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'grok-4-1-fast-reasoning',
-      messages,
-      temperature: 0.7,
-      stream: true,
-    }),
+  const result = streamText({
+    model: xai('grok-4-1-fast-reasoning'),
+    messages,
+    temperature: 0.7,
   });
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || 'Grok API request failed');
-  }
-
-  const reader = res.body?.getReader();
-  if (!reader) {
-    throw new Error('No response body');
-  }
-
-  const decoder = new TextDecoder();
   let fullText = '';
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() ?? '';
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) {
-        continue;
-      }
-
-      if (trimmed.startsWith('data: ')) {
-        const data = trimmed.slice(6);
-        if (data === '[DONE]') {
-          continue;
-        }
-
-        try {
-          const parsed = JSON.parse(data);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            fullText += content;
-            callbacks.onChunk(fullText);
-          }
-        } catch {
-          // Skip invalid JSON chunks
-        }
-      }
-    }
+  for await (const chunk of result.textStream) {
+    fullText += chunk;
+    callbacks.onChunk(fullText);
   }
 
   callbacks.onComplete(fullText);

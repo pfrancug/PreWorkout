@@ -1,4 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { streamText } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 import { verifyAuthToken } from '../lib/auth.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
@@ -55,76 +57,27 @@ const handler = async (
     return;
   }
 
-  const contents = [
-    ...config.messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : m.role,
-      parts: [{ text: m.content }],
-    })),
-    {
-      role: 'user',
-      parts: [{ text: config.userMessage }],
-    },
+  const messages = [
+    { role: 'system' as const, content: config.systemInstruction },
+    ...config.messages,
+    { role: 'user' as const, content: config.userMessage },
   ];
 
   try {
-    const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: config.systemInstruction }],
-          },
-          contents,
-        }),
-      },
-    );
+    const google = createGoogleGenerativeAI({ apiKey });
 
-    if (!upstream.ok) {
-      const err = await upstream.json().catch(() => ({}));
-      const message =
-        err.error?.message || `Gemini API error: ${upstream.status}`;
-      res.status(upstream.status).json({ error: message });
-      return;
-    }
+    const result = streamText({
+      model: google('gemini-2.5-flash'),
+      messages,
+    });
 
-    // Set up SSE headers only after confirming upstream is OK
+    // Set up SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const reader = upstream.body?.getReader();
-    if (!reader) {
-      res.write(`data: ${JSON.stringify({ error: 'No response body' })}\n\n`);
-      res.end();
-      return;
-    }
-
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-
-          try {
-            const parsed = JSON.parse(data);
-            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) {
-              res.write(`data: ${JSON.stringify({ text })}\n\n`);
-            }
-          } catch {
-            // Skip invalid JSON chunks
-          }
-        }
-      }
+    for await (const chunk of result.textStream) {
+      res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
     }
 
     res.write('data: [DONE]\n\n');

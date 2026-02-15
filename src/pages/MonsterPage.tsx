@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { CandyOff, Plus, Trash2 } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -21,10 +21,10 @@ import {
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import {
-  addMonsterDrink,
-  type MonsterDrinksData,
-  removeMonsterDrink,
-  subscribeToMonsterDrinks,
+  addEnergyDrink,
+  type EnergyDrinksData,
+  removeEnergyDrink,
+  subscribeToEnergyDrinks,
 } from '../firebase/database';
 
 const MonsterCard = ({
@@ -34,11 +34,11 @@ const MonsterCard = ({
   drink: MonsterDrink;
   onAdd: (drinkId: string) => void;
 }) => {
-  const { id, name, color, category, filename } = drink;
+  const { id, name, color } = drink;
 
   return (
     <div
-      className={'w-full h-[290px] rounded-lg p-[1px] cursor-pointer group'}
+      className={'w-full rounded-lg p-[1px] cursor-pointer group'}
       onClick={() => onAdd(id)}
       style={{
         background: `linear-gradient(135deg, ${color} 0%, #09090b 15%, #09090b 85%, ${color} 100%)`,
@@ -46,29 +46,27 @@ const MonsterCard = ({
     >
       <div
         className={
-          'flex flex-col items-center rounded-lg p-3 w-full h-full bg-zinc-950 align-center justify-between py-6 relative'
+          'flex items-center justify-center rounded-lg p-4 w-full bg-zinc-950 relative min-h-[100px]'
         }
       >
         <div
           className={
-            'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center'
+            'absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center z-10'
           }
         >
-          <Plus className={'w-12 h-12 text-white'} />
+          <Plus className={'w-8 h-8 text-white'} />
         </div>
         <span
+          className={'text-center text-sm font-medium drop-shadow-md'}
           style={{ color }}
-          className={
-            'mb-2 text-center text-sm font-thin drop-shadow-md w-[200px] h-[40px] flex items-center justify-center'
-          }
         >
           {name}
         </span>
-        <img
-          alt={name}
-          className={'h-[175px] w-auto object-contain'}
-          src={`/assets/monster/${category}/${filename}.webp`}
-        />
+        {!drink.sugar && (
+          <CandyOff
+            className={'absolute top-2 right-2 w-4 h-4 text-zinc-500'}
+          />
+        )}
       </div>
     </div>
   );
@@ -112,10 +110,9 @@ const DrinkHistoryItem = ({
         'flex items-center gap-3 p-2 rounded-lg bg-zinc-900 border border-zinc-800'
       }
     >
-      <img
-        alt={drink.name}
-        className={'h-12 w-auto object-contain'}
-        src={`/assets/monster/${drink.category}/${drink.filename}.webp`}
+      <div
+        className={'w-3 h-3 rounded-full shrink-0'}
+        style={{ backgroundColor: drink.color }}
       />
       <div className={'flex-1 min-w-0'}>
         <p
@@ -143,7 +140,7 @@ const DrinkHistory = ({
   drinksData,
   onRemove,
 }: {
-  drinksData: MonsterDrinksData | null;
+  drinksData: EnergyDrinksData | null;
   onRemove: (date: string, index: number) => void;
 }) => {
   const { t } = useTranslation();
@@ -170,9 +167,9 @@ const DrinkHistory = ({
   if (!drinksData || Object.keys(drinksData).length === 0) {
     return (
       <div className={'space-y-3'}>
-        <h2 className={'text-xl font-semibold'}>{t('monster.history')}</h2>
+        <h2 className={'text-xl font-semibold'}>{t('drinks.history')}</h2>
         <p className={'text-muted-foreground text-sm'}>
-          {t('monster.noHistory')}
+          {t('drinks.noHistory')}
         </p>
       </div>
     );
@@ -207,7 +204,7 @@ const DrinkHistory = ({
   return (
     <div className={'space-y-3'}>
       <div className={'flex items-center justify-between'}>
-        <h2 className={'text-xl font-semibold'}>{t('monster.history')}</h2>
+        <h2 className={'text-xl font-semibold'}>{t('drinks.history')}</h2>
         <Select
           onValueChange={(v) => setPeriod(v as typeof period)}
           value={period}
@@ -216,15 +213,15 @@ const DrinkHistory = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={'day'}>{t('monster.periodDay')}</SelectItem>
-            <SelectItem value={'week'}>{t('monster.periodWeek')}</SelectItem>
-            <SelectItem value={'month'}>{t('monster.periodMonth')}</SelectItem>
+            <SelectItem value={'day'}>{t('drinks.periodDay')}</SelectItem>
+            <SelectItem value={'week'}>{t('drinks.periodWeek')}</SelectItem>
+            <SelectItem value={'month'}>{t('drinks.periodMonth')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {allDrinks.length === 0 ? (
         <p className={'text-muted-foreground text-sm'}>
-          {t('monster.noHistoryPeriod')}
+          {t('drinks.noHistoryPeriod')}
         </p>
       ) : (
         <div className={'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'}>
@@ -246,7 +243,7 @@ const DrinkHistory = ({
 const DrinkHeatmap = ({
   drinksData,
 }: {
-  drinksData: MonsterDrinksData | null;
+  drinksData: EnergyDrinksData | null;
 }) => {
   const { t } = useTranslation();
 
@@ -314,9 +311,9 @@ const DrinkHeatmap = ({
   return (
     <div className={'space-y-3 w-full overflow-hidden'}>
       <div className={'flex items-center justify-between'}>
-        <h2 className={'text-xl font-semibold'}>{t('monster.heatmap')}</h2>
+        <h2 className={'text-xl font-semibold'}>{t('drinks.heatmap')}</h2>
         <span className={'text-sm text-muted-foreground'}>
-          {t('monster.totalDrinks', { count: totalDrinks })}
+          {t('drinks.totalDrinks', { count: totalDrinks })}
         </span>
       </div>
       <div className={'overflow-x-auto pb-2'}>
@@ -335,7 +332,7 @@ const DrinkHeatmap = ({
         </div>
       </div>
       <div className={'flex items-center gap-2 text-xs text-muted-foreground'}>
-        <span>{t('monster.less')}</span>
+        <span>{t('drinks.less')}</span>
         <div className={'flex gap-1'}>
           <div className={'w-[10px] h-[10px] rounded-sm bg-zinc-800'} />
           <div className={'w-[10px] h-[10px] rounded-sm bg-green-900'} />
@@ -343,7 +340,7 @@ const DrinkHeatmap = ({
           <div className={'w-[10px] h-[10px] rounded-sm bg-green-500'} />
           <div className={'w-[10px] h-[10px] rounded-sm bg-green-400'} />
         </div>
-        <span>{t('monster.more')}</span>
+        <span>{t('drinks.more')}</span>
       </div>
     </div>
   );
@@ -357,17 +354,17 @@ export const MonsterPage = memo(() => {
     'all' | 'energy' | 'ultra' | 'juiced'
   >('all');
   const [sugarFilter, setSugarFilter] = useState<'all' | 'sugar' | 'no-sugar'>(
-    preferences.monsterSugarFilter || 'all',
+    preferences.drinksSugarFilter || 'all',
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [drinksData, setDrinksData] = useState<MonsterDrinksData | null>(null);
+  const [drinksData, setDrinksData] = useState<EnergyDrinksData | null>(null);
 
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    const unsubscribe = subscribeToMonsterDrinks(user.uid, (data) => {
+    const unsubscribe = subscribeToEnergyDrinks(user.uid, (data) => {
       setDrinksData(data);
     });
 
@@ -380,11 +377,11 @@ export const MonsterPage = memo(() => {
     }
 
     try {
-      await addMonsterDrink(user.uid, drinkId);
+      await addEnergyDrink(user.uid, drinkId);
       const drink = getMonsterById(drinkId);
-      toast.success(t('monster.added', { name: drink?.name }));
+      toast.success(t('drinks.added', { name: drink?.name }));
     } catch {
-      toast.error(t('monster.addError'));
+      toast.error(t('drinks.addError'));
     }
   };
 
@@ -394,10 +391,10 @@ export const MonsterPage = memo(() => {
     }
 
     try {
-      await removeMonsterDrink(user.uid, date, index);
-      toast.success(t('monster.removed'));
+      await removeEnergyDrink(user.uid, date, index);
+      toast.success(t('drinks.removed'));
     } catch {
-      toast.error(t('monster.removeError'));
+      toast.error(t('drinks.removeError'));
     }
   };
 
@@ -436,9 +433,9 @@ export const MonsterPage = memo(() => {
     >
       <div className={'space-y-1'}>
         <h1 className={'text-3xl font-bold tracking-tight'}>
-          {t('monster.title')}
+          {t('drinks.title')}
         </h1>
-        <p className={'text-muted-foreground'}>{t('monster.description')}</p>
+        <p className={'text-muted-foreground'}>{t('drinks.description')}</p>
       </div>
 
       <DrinkHeatmap drinksData={drinksData} />
@@ -448,7 +445,7 @@ export const MonsterPage = memo(() => {
       <div className={'grid grid-cols-3 gap-4'}>
         <Input
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={t('monster.search')}
+          placeholder={t('drinks.search')}
           type={'text'}
           value={searchQuery}
         />
@@ -458,10 +455,10 @@ export const MonsterPage = memo(() => {
           value={sectionFilter}
         >
           <SelectTrigger>
-            <SelectValue placeholder={t('monster.section')} />
+            <SelectValue placeholder={t('drinks.section')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={'all'}>{t('monster.filterAll')}</SelectItem>
+            <SelectItem value={'all'}>{t('drinks.filterAll')}</SelectItem>
             <SelectItem value={'energy'}>{'Monster Energy'}</SelectItem>
             <SelectItem value={'ultra'}>{'Monster Ultra'}</SelectItem>
             <SelectItem value={'juiced'}>{'Juiced Monster'}</SelectItem>
@@ -473,12 +470,12 @@ export const MonsterPage = memo(() => {
           value={sugarFilter}
         >
           <SelectTrigger>
-            <SelectValue placeholder={t('monster.sugar')} />
+            <SelectValue placeholder={t('drinks.sugar')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={'all'}>{t('monster.filterAll')}</SelectItem>
-            <SelectItem value={'sugar'}>{t('monster.sugarYes')}</SelectItem>
-            <SelectItem value={'no-sugar'}>{t('monster.sugarNo')}</SelectItem>
+            <SelectItem value={'all'}>{t('drinks.filterAll')}</SelectItem>
+            <SelectItem value={'sugar'}>{t('drinks.sugarYes')}</SelectItem>
+            <SelectItem value={'no-sugar'}>{t('drinks.sugarNo')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

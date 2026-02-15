@@ -9,23 +9,12 @@ dist-ssr/
 # Environment variables
 .env
 .env.production
-.env*.local
 
 # Firebase
 .firebase/
 firebase-debug.log
 firestore-debug.log
 *-firebase-adminsdk-*.json
-
-# Logs
-*.log
-
-# IDE
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 
 # macOS
 .DS_Store
@@ -36,4 +25,6 @@ Desktop.ini
 
 # Private directories
 .claude/
+migrations/
+scripts/
 secrets/

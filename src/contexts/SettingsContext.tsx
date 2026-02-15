@@ -13,7 +13,7 @@ export interface UserPreferences {
   chatPanelOpen: boolean;
   language: string;
   defaultCalendarView: 'month' | 'week';
-  monsterSugarFilter: 'all' | 'sugar' | 'no-sugar';
+  drinksSugarFilter: 'all' | 'sugar' | 'no-sugar';
 }
 
 export interface SettingsContextValue {
@@ -39,7 +39,7 @@ export const defaultPreferences: UserPreferences = {
   chatPanelOpen: false,
   language: localStorage.getItem('i18nextLng') || 'en',
   defaultCalendarView: 'month',
-  monsterSugarFilter: 'all',
+  drinksSugarFilter: 'all',
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

@@ -62,7 +62,7 @@ const pageTitleKeys: Record<string, string> = {
   '/calendar': 'nav.calendar',
   '/calculator': 'nav.calculator',
   '/chat': 'nav.chat',
-  '/monster': 'nav.monster',
+  '/drinks': 'nav.drinks',
   '/settings/profile': 'nav.settingsProfile',
   '/settings/categories': 'nav.settingsCategories',
   '/settings/preferences': 'nav.settingsPreferences',
@@ -186,7 +186,7 @@ const AppRoutes = () => {
 
                 <Route element={<CalculatorPage />} path={'/calculator'} />
 
-                <Route element={<MonsterPage />} path={'/monster'} />
+                <Route element={<MonsterPage />} path={'/drinks'} />
 
                 <Route
                   element={<Navigate replace to={'/settings/profile'} />}

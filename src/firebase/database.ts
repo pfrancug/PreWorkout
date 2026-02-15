@@ -796,34 +796,34 @@ export const getUserUsageStats = async (
   };
 };
 
-// Monster Drinks Tracking
-export interface MonsterDrinksData {
+// Energy Drinks Tracking
+export interface EnergyDrinksData {
   [date: string]: string[]; // date -> array of drink IDs
 }
 
-export const getMonsterDrinksRef = (userId: string) =>
-  ref(database, `users/${userId}/monsterDrinks`);
+export const getEnergyDrinksRef = (userId: string) =>
+  ref(database, `users/${userId}/energyDrinks`);
 
-export const loadMonsterDrinks = async (
+export const loadEnergyDrinks = async (
   userId: string,
-): Promise<MonsterDrinksData | null> => {
-  const drinksRef = getMonsterDrinksRef(userId);
+): Promise<EnergyDrinksData | null> => {
+  const drinksRef = getEnergyDrinksRef(userId);
   const snapshot = await get(drinksRef);
 
   if (snapshot.exists()) {
-    return snapshot.val() as MonsterDrinksData;
+    return snapshot.val() as EnergyDrinksData;
   }
 
   return null;
 };
 
-export const addMonsterDrink = async (
+export const addEnergyDrink = async (
   userId: string,
   drinkId: string,
   date?: string,
 ): Promise<void> => {
   const targetDate = date ?? getTodayDateString();
-  const dayRef = ref(database, `users/${userId}/monsterDrinks/${targetDate}`);
+  const dayRef = ref(database, `users/${userId}/energyDrinks/${targetDate}`);
 
   await runTransaction(dayRef, (currentDrinks: string[] | null) => {
     if (!currentDrinks) {
@@ -834,12 +834,12 @@ export const addMonsterDrink = async (
   });
 };
 
-export const removeMonsterDrink = async (
+export const removeEnergyDrink = async (
   userId: string,
   date: string,
   drinkIndex: number,
 ): Promise<void> => {
-  const dayRef = ref(database, `users/${userId}/monsterDrinks/${date}`);
+  const dayRef = ref(database, `users/${userId}/energyDrinks/${date}`);
 
   await runTransaction(dayRef, (currentDrinks: string[] | null) => {
     if (!currentDrinks || currentDrinks.length === 0) {
@@ -852,14 +852,14 @@ export const removeMonsterDrink = async (
   });
 };
 
-export const subscribeToMonsterDrinks = (
+export const subscribeToEnergyDrinks = (
   userId: string,
-  callback: (data: MonsterDrinksData | null) => void,
+  callback: (data: EnergyDrinksData | null) => void,
 ): (() => void) => {
-  const drinksRef = getMonsterDrinksRef(userId);
+  const drinksRef = getEnergyDrinksRef(userId);
   const unsubscribe = onValue(drinksRef, (snapshot) => {
     if (snapshot.exists()) {
-      callback(snapshot.val() as MonsterDrinksData);
+      callback(snapshot.val() as EnergyDrinksData);
     } else {
       callback(null);
     }
