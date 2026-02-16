@@ -23,6 +23,8 @@
     "addActivity": "Add activity",
     "manageActivities": "Manage activities",
     "monthView": "Month",
-    "weekView": "Week"
+    "weekView": "Week",
+    "trainerActivity": "Trainer session",
+    "toggleTrainerSession": "Toggle trainer session"
   }
 }

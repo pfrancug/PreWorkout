@@ -143,7 +143,9 @@ export const TraineeViewPage = () => {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'calendar' && <Calendar readOnly userId={traineeId} />}
+      {activeTab === 'calendar' && (
+        <Calendar allowTrainerToggle readOnly userId={traineeId} />
+      )}
 
       {activeTab === 'diary' && (
         <div className={'w-full'}>

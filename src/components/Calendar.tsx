@@ -3,6 +3,7 @@ import type {
   CalendarActivity,
   CalendarData,
   CalendarNotes,
+  TrainerCalendarData,
 } from '../firebase/database';
 
 import {
@@ -45,6 +46,8 @@ import {
   subscribeToActivityCategories,
   subscribeToCalendarData,
   subscribeToCalendarNotes,
+  subscribeToTrainerCalendar,
+  toggleTrainerCalendarDay,
 } from '../firebase/database';
 import { useIsMobile } from '../hooks/useMobile';
 import { ActivityIcon } from './ActivityIcon';
@@ -67,9 +70,12 @@ interface CalendarProps {
   userId?: string;
   /** When true, disable all editing (activity toggles, notes) */
   readOnly?: boolean;
+  /** Allow toggling trainer-linked activity even in readOnly mode (for trainer supervised view) */
+  allowTrainerToggle?: boolean;
 }
 
 export const Calendar = ({
+  allowTrainerToggle = false,
   userId: propUserId,
   readOnly = false,
 }: CalendarProps = {}) => {
@@ -88,6 +94,8 @@ export const Calendar = ({
   const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
     null,
   );
+  const [trainerCalendar, setTrainerCalendar] =
+    useState<TrainerCalendarData | null>(null);
   const [categories, setCategories] = useState<ActivityCategory[]>([]);
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [dropdownOpenDay, setDropdownOpenDay] = useState<string | null>(null);
@@ -120,11 +128,16 @@ export const Calendar = ({
       setCategories,
       DEFAULT_CATEGORIES,
     );
+    const unsubTrainerCal = subscribeToTrainerCalendar(
+      targetUserId,
+      setTrainerCalendar,
+    );
 
     return () => {
       unsubActivities();
       unsubNotes();
       unsubCategories();
+      unsubTrainerCal();
     };
   }, [targetUserId]);
 
@@ -227,9 +240,43 @@ export const Calendar = ({
     return days;
   }, [weekStart, todayKey]);
 
+  // Trainer activity category (the one with trainerId set, not orphaned)
+  const trainerCategory = useMemo(
+    () => categories.find((c) => c.trainerId && !c.orphaned) ?? null,
+    [categories],
+  );
+
   const toggleActivity = useCallback(
     async (dateKey: string, activity: CalendarActivity) => {
       if (!user || readOnly) {
+        return;
+      }
+
+      // If toggling the trainer-linked activity, handle trainerCalendar instead
+      if (trainerCategory && activity === trainerCategory.id) {
+        const isTrainerMarked = trainerCalendar?.[dateKey] === true;
+        const inRegular = (calendarData?.[dateKey] ?? []).includes(activity);
+
+        try {
+          // Remove from trainerCalendar if trainer marked it
+          if (isTrainerMarked) {
+            await toggleTrainerCalendarDay(user.uid, dateKey, false);
+          }
+          // Also remove from regular calendar data if present there
+          if (inRegular) {
+            const current = calendarData?.[dateKey] ?? [];
+            const updated = current.filter((a) => a !== activity);
+            await saveCalendarDay(user.uid, dateKey, updated);
+          }
+          // If neither was active, add to regular calendar
+          if (!isTrainerMarked && !inRegular) {
+            const current = calendarData?.[dateKey] ?? [];
+            await saveCalendarDay(user.uid, dateKey, [...current, activity]);
+          }
+        } catch {
+          toast.error(t('common.saveError'));
+        }
+
         return;
       }
 
@@ -244,7 +291,58 @@ export const Calendar = ({
         toast.error(t('common.saveError'));
       }
     },
-    [user, calendarData, t, readOnly],
+    [user, calendarData, trainerCalendar, trainerCategory, t, readOnly],
+  );
+
+  /** Merge regular calendar activities with trainer calendar data for a given date */
+  const getActivitiesForDay = useCallback(
+    (dateKey: string): CalendarActivity[] => {
+      const regular = calendarData?.[dateKey] ?? [];
+      if (trainerCategory && trainerCalendar?.[dateKey]) {
+        // Inject trainer activity if not already in the regular list
+        if (!regular.includes(trainerCategory.id)) {
+          return [...regular, trainerCategory.id];
+        }
+      }
+
+      return regular;
+    },
+    [calendarData, trainerCalendar, trainerCategory],
+  );
+
+  /** Toggle trainer-marked activity on a day (writes to trainerCalendar node) */
+  const toggleTrainerActivity = useCallback(
+    async (dateKey: string) => {
+      if (!targetUserId || !trainerCategory) {
+        return;
+      }
+
+      const isTrainerMarked = trainerCalendar?.[dateKey] === true;
+      const inRegular = (calendarData?.[dateKey] ?? []).includes(
+        trainerCategory.id,
+      );
+      const isActive = isTrainerMarked || inRegular;
+
+      try {
+        if (isActive) {
+          // Remove from both sources
+          if (isTrainerMarked) {
+            await toggleTrainerCalendarDay(targetUserId, dateKey, false);
+          }
+          if (inRegular) {
+            const current = calendarData?.[dateKey] ?? [];
+            const updated = current.filter((a) => a !== trainerCategory.id);
+            await saveCalendarDay(targetUserId, dateKey, updated);
+          }
+        } else {
+          // Add via trainerCalendar
+          await toggleTrainerCalendarDay(targetUserId, dateKey, true);
+        }
+      } catch {
+        toast.error(t('common.saveError'));
+      }
+    },
+    [targetUserId, calendarData, trainerCalendar, trainerCategory, t],
   );
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -414,8 +512,12 @@ export const Calendar = ({
       {showWeekView ? (
         <div className={'flex flex-col gap-1.5'}>
           {weekDaysData.map(({ day, dateKey, dayName, isToday }) => {
-            const activities = calendarData?.[dateKey] ?? [];
+            const activities = getActivitiesForDay(dateKey);
             const note = calendarNotes?.[dateKey] ?? '';
+            const isTrainerDay =
+              trainerCalendar?.[dateKey] === true ||
+              (!!trainerCategory &&
+                (calendarData?.[dateKey] ?? []).includes(trainerCategory.id));
 
             return (
               <div
@@ -456,13 +558,16 @@ export const Calendar = ({
                       return null;
                     }
 
+                    const isTrainerActivity = !!category.trainerId;
+
                     return (
                       <div
                         key={activityId}
                         title={category.name}
-                        className={
-                          'flex h-7 w-7 items-center justify-center rounded'
-                        }
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded',
+                          isTrainerActivity && 'ring-1 ring-primary/40',
+                        )}
                         style={{
                           backgroundColor: `${ACTIVITY_COLOR_MAP[category.color] ?? '#888'}26`,
                           color: ACTIVITY_COLOR_MAP[category.color],
@@ -584,6 +689,33 @@ export const Calendar = ({
                     </DropdownMenu>
                   </div>
                 )}
+
+                {/* Trainer toggle button (visible in trainer supervised view) */}
+                {allowTrainerToggle && readOnly && trainerCategory && (
+                  <div className={'flex shrink-0 items-center'}>
+                    <button
+                      onClick={() => toggleTrainerActivity(dateKey)}
+                      title={t('calendar.toggleTrainerSession')}
+                      type={'button'}
+                      className={cn(
+                        'flex h-7 w-7 cursor-pointer items-center justify-center rounded border transition-colors',
+                        isTrainerDay
+                          ? 'border-primary/50 bg-primary/10'
+                          : 'border-border bg-card hover:bg-accent',
+                      )}
+                      style={{
+                        color: isTrainerDay
+                          ? ACTIVITY_COLOR_MAP[trainerCategory.color]
+                          : undefined,
+                      }}
+                    >
+                      <ActivityIcon
+                        className={'h-4 w-4'}
+                        iconId={trainerCategory.icon}
+                      />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -607,9 +739,13 @@ export const Calendar = ({
           {/* Calendar grid */}
           <div className={'grid grid-cols-7 gap-2'}>
             {calendarDays.map(({ day, dateKey, isCurrentMonth, isToday }) => {
-              const activities = calendarData?.[dateKey] ?? [];
+              const activities = getActivitiesForDay(dateKey);
               const note = calendarNotes?.[dateKey] ?? '';
               const isHovered = hoveredDay === dateKey;
+              const isTrainerDay =
+                trainerCalendar?.[dateKey] === true ||
+                (!!trainerCategory &&
+                  (calendarData?.[dateKey] ?? []).includes(trainerCategory.id));
 
               return (
                 <div
@@ -665,13 +801,16 @@ export const Calendar = ({
                         return null;
                       }
 
+                      const isTrainerActivity = !!category.trainerId;
+
                       return (
                         <div
                           key={activityId}
                           title={category.name}
-                          className={
-                            'flex h-6 w-6 items-center justify-center rounded'
-                          }
+                          className={cn(
+                            'flex h-6 w-6 items-center justify-center rounded',
+                            isTrainerActivity && 'ring-1 ring-primary/40',
+                          )}
                           style={{
                             backgroundColor: `${ACTIVITY_COLOR_MAP[category.color] ?? '#888'}26`,
                             color: ACTIVITY_COLOR_MAP[category.color],
@@ -808,6 +947,41 @@ export const Calendar = ({
                       </DropdownMenu>
                     </div>
                   )}
+
+                  {/* Trainer toggle - visible on hover in supervised view */}
+                  {allowTrainerToggle &&
+                    readOnly &&
+                    trainerCategory &&
+                    isCurrentMonth &&
+                    isHovered && (
+                      <div
+                        className={
+                          'absolute inset-0 flex items-center justify-center'
+                        }
+                      >
+                        <button
+                          onClick={() => toggleTrainerActivity(dateKey)}
+                          title={t('calendar.toggleTrainerSession')}
+                          type={'button'}
+                          className={cn(
+                            'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border shadow-sm transition-colors',
+                            isTrainerDay
+                              ? 'border-primary/50 bg-primary/10'
+                              : 'border-border bg-card hover:bg-accent',
+                          )}
+                          style={{
+                            color: isTrainerDay
+                              ? ACTIVITY_COLOR_MAP[trainerCategory.color]
+                              : undefined,
+                          }}
+                        >
+                          <ActivityIcon
+                            className={'h-4 w-4'}
+                            iconId={trainerCategory.icon}
+                          />
+                        </button>
+                      </div>
+                    )}
                 </div>
               );
             })}

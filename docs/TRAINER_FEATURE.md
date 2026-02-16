@@ -35,10 +35,16 @@ Enable personal trainers to connect with users, supervise their progress (calend
 
 ### Phase 4: Training Sessions in Calendar
 
-- [ ] Extend calendar data model to flag trainer sessions
-- [ ] Auto-flag "Personal Training" activity when trainee has a connected trainer
-- [ ] Highlight trainer session days in supervised calendar view
-- [ ] Allow trainer to mark days as trainer sessions from their view
+- [x] Extend `ActivityCategory` with `trainerId`, `systemGenerated`, `orphaned` fields
+- [x] Auto-create trainer activity category on invite acceptance (e.g. "Training with [Name]")
+- [x] Mark trainer category as orphaned on disconnect (preserves historical data)
+- [x] Add `trainerCalendar` DB node — trainer-writable boolean flag per date
+- [x] Merge `trainerCalendar` into calendar view (displays trainer category when toggled)
+- [x] Add trainer toggle button in supervised calendar view (week + month)
+- [x] Visual distinction for trainer activities (ring indicator)
+- [x] Show "Trainer" / "Disconnected" badges in Categories Settings page
+- [x] Update DB rules for `trainerCalendar` (trainer read+write, trainee read+write)
+- [x] Add EN + PL i18n keys for trainer calendar
 
 ### Phase 5: Payment Tracking
 
@@ -76,6 +82,18 @@ Enable personal trainers to connect with users, supervise their progress (calend
 
 /users/{userId}/trainerId → string | null
 
+/users/{userId}/trainerCalendar/{YYYY-MM-DD} → boolean
+  (trainer-toggled session days, writable by connected trainer)
+
+/users/{userId}/activityCategories/items/{index}/
+  id: string
+  icon: string
+  name: string
+  color: string
+  trainerId?: string        (links category to a specific trainer)
+  systemGenerated?: boolean (auto-created by the system)
+  orphaned?: boolean        (trainer disconnected, kept for history)
+
 /trainingPayments/{connectionId}/{YYYY-MM}/
   sessions: [
     {
@@ -93,6 +111,7 @@ Enable personal trainers to connect with users, supervise their progress (calend
 | Diary (`data`)      | read/write                | **read only**       | read/write |
 | Calendar            | read/write                | **read only**       | read/write |
 | Calendar Notes      | read/write                | **read only**       | read/write |
+| Trainer Calendar    | read/write                | **read/write**      | read/write |
 | Activity Categories | read/write                | **read only**       | read/write |
 | Settings (profile)  | read/write                | **read only**       | read/write |
 | AI Chat Messages    | read/write                | **no access**       | read/write |
@@ -156,8 +175,8 @@ Trainee marks paid ──► ⏳ Pending ──► Trainer confirms ──► �
 
 - **One trainer per trainee** (enforced in DB rules)
 - **Multiple trainees per trainer** (no limit)
-- **Trainer is read-only** — cannot modify trainee's diary or calendar entries
+- **Trainer is read-only** — cannot modify trainee's diary or calendar entries (except trainer calendar toggle)
 - **No in-app payments** — only confirmation that payment happened externally
 - **Trainer cannot see AI chat** — privacy boundary
 - **Connection via invite code** — trainer generates, trainee enters
-- **Existing "Personal Training" default category** is reused for trainer sessions
+- **Auto-created trainer activity** — separate system-generated category linked to trainer (kept as orphaned on disconnect)

@@ -55,7 +55,10 @@
       "inUseError": "Ta kategoria jest używana w kalendarzu i nie może zostać usunięta.",
       "inUseTooltip": "W użyciu — nie można usunąć",
       "editTooltip": "Edytuj kategorię",
-      "deleteTooltip": "Usuń kategorię"
+      "deleteTooltip": "Usuń kategorię",
+      "trainerBadge": "Trener",
+      "orphanedBadge": "Rozłączony",
+      "trainerCategoryTooltip": "Automatycznie utworzona aktywność treningowa"
     },
     "personalInfo": {
       "title": "Dane osobowe",

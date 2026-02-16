@@ -55,7 +55,10 @@
       "inUseError": "This category is in use on your calendar and cannot be deleted.",
       "inUseTooltip": "In use - cannot delete",
       "editTooltip": "Edit category",
-      "deleteTooltip": "Delete category"
+      "deleteTooltip": "Delete category",
+      "trainerBadge": "Trainer",
+      "orphanedBadge": "Disconnected",
+      "trainerCategoryTooltip": "Auto-created trainer activity"
     },
     "personalInfo": {
       "title": "Personal Information",

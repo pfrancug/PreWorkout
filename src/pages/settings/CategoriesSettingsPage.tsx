@@ -1,6 +1,7 @@
 import type { ActivityIconId } from '../../constants/activities';
 import type { ActivityCategory } from '../../firebase/database';
 
+import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import {
   Card,
@@ -330,9 +331,12 @@ export const CategoriesSettingsPage = () => {
               return (
                 <div
                   key={category.id}
-                  className={
-                    'flex items-center gap-3 rounded-lg border border-border p-3'
-                  }
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg border p-3',
+                    category.orphaned
+                      ? 'border-border/50 opacity-60'
+                      : 'border-border',
+                  )}
                 >
                   <div
                     className={
@@ -350,6 +354,21 @@ export const CategoriesSettingsPage = () => {
                     {category.name}
                   </span>
 
+                  {category.trainerId && !category.orphaned && (
+                    <Badge
+                      title={t('settings.categories.trainerCategoryTooltip')}
+                      variant={'secondary'}
+                    >
+                      {t('settings.categories.trainerBadge')}
+                    </Badge>
+                  )}
+
+                  {category.orphaned && (
+                    <Badge variant={'outline'}>
+                      {t('settings.categories.orphanedBadge')}
+                    </Badge>
+                  )}
+
                   <Button
                     onClick={() => startEdit(category)}
                     size={'icon'}
@@ -363,7 +382,7 @@ export const CategoriesSettingsPage = () => {
                   </Button>
 
                   <Button
-                    disabled={isUsed}
+                    disabled={isUsed || !!category.systemGenerated}
                     onClick={() => handleDelete(category.id)}
                     size={'icon'}
                     variant={'ghost'}

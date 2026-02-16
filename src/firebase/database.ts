@@ -33,6 +33,16 @@ export interface ActivityCategory {
   icon: string;
   name: string;
   color: string;
+  /** Trainer user ID – present on auto-created trainer activity categories */
+  trainerId?: string;
+  /** True for categories auto-created by the system (e.g. on trainer connect) */
+  systemGenerated?: boolean;
+  /** True when the trainer disconnects – keeps historical data intact */
+  orphaned?: boolean;
+}
+
+export interface TrainerCalendarData {
+  [date: string]: boolean;
 }
 
 export interface CalendarData {
@@ -479,6 +489,37 @@ export const subscribeToCalendarNotes = (
   return unsubscribe;
 };
 
+// Trainer Calendar (trainer-marked activity days)
+export const subscribeToTrainerCalendar = (
+  userId: string,
+  callback: (data: TrainerCalendarData | null) => void,
+): (() => void) => {
+  const trainerCalRef = ref(database, `users/${userId}/trainerCalendar`);
+  const unsubscribe = onValue(trainerCalRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as TrainerCalendarData);
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+export const toggleTrainerCalendarDay = async (
+  userId: string,
+  date: string,
+  active: boolean,
+): Promise<void> => {
+  const dayRef = ref(database, `users/${userId}/trainerCalendar/${date}`);
+
+  if (active) {
+    await set(dayRef, true);
+  } else {
+    await remove(dayRef);
+  }
+};
+
 // Activity Categories
 export const getActivityCategoriesRef = (userId: string) =>
   ref(database, `users/${userId}/activityCategories`);
@@ -841,6 +882,30 @@ export const acceptTrainerInvite = async (
   // Remove the invite code (one-time use)
   await remove(ref(database, `trainerInvites/${inviteCode.toUpperCase()}`));
 
+  // Auto-create trainer activity category for the trainee
+  try {
+    const trainerEntry = await getUserDirectoryEntry(trainerId);
+    const trainerName = trainerEntry?.displayName || 'Trainer';
+    const existingCategories = await loadActivityCategories(traineeId);
+    const categories = existingCategories ?? [];
+
+    // Only add if a trainer category doesn't already exist
+    const alreadyExists = categories.some((c) => c.trainerId === trainerId);
+    if (!alreadyExists) {
+      const trainerCategory: ActivityCategory = {
+        id: `trainer-${trainerId}`,
+        icon: 'heart-pulse',
+        name: `Training with ${trainerName}`,
+        color: 'sky',
+        trainerId,
+        systemGenerated: true,
+      };
+      await saveActivityCategories(traineeId, [...categories, trainerCategory]);
+    }
+  } catch {
+    // Non-critical – connection still succeeds even if category creation fails
+  }
+
   return { success: true };
 };
 
@@ -878,11 +943,34 @@ export const disconnectTrainer = async (
   connectionId: string,
   traineeId: string,
 ): Promise<void> => {
+  // Read the connection to find the trainerId before removing
+  const connSnap = await get(
+    ref(database, `trainerConnections/${connectionId}`),
+  );
+  const trainerId = connSnap.exists()
+    ? (connSnap.val() as ITrainerConnection).trainerId
+    : null;
+
   // Remove the connection
   await remove(ref(database, `trainerConnections/${connectionId}`));
 
   // Remove trainerId from the user
   await remove(ref(database, `users/${traineeId}/trainerId`));
+
+  // Mark trainer activity category as orphaned (keeps historical calendar data intact)
+  if (trainerId) {
+    try {
+      const categories = await loadActivityCategories(traineeId);
+      if (categories) {
+        const updated = categories.map((c) =>
+          c.trainerId === trainerId ? { ...c, orphaned: true } : c,
+        );
+        await saveActivityCategories(traineeId, updated);
+      }
+    } catch {
+      // Non-critical – disconnect still succeeds
+    }
+  }
 };
 
 /**
