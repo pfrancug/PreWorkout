@@ -12,6 +12,7 @@ import { CategoriesSettingsPage } from '@pages/settings/CategoriesSettingsPage';
 import { DataSettingsPage } from '@pages/settings/DataSettingsPage';
 import { PreferencesSettingsPage } from '@pages/settings/PreferencesSettingsPage';
 import { ProfileSettingsPage } from '@pages/settings/ProfileSettingsPage';
+import { TraineeViewPage } from '@pages/trainer/TraineeViewPage';
 import { TrainerConnectedPage } from '@pages/trainer/TrainerConnectedPage';
 import { TrainerConnectPage } from '@pages/trainer/TrainerConnectPage';
 import { TrainerInvitesPage } from '@pages/trainer/TrainerInvitesPage';
@@ -87,7 +88,21 @@ const AppRoutes = () => {
   const { dataSet } = useDataSet();
   const isMobile = useIsMobile();
 
-  const pageTitle = t(pageTitleKeys[location.pathname] || 'nav.dashboard');
+  const getPageTitleKey = () => {
+    const exact = pageTitleKeys[location.pathname];
+    if (exact) {
+      return exact;
+    }
+
+    // Dynamic routes
+    if (location.pathname.match(/^\/trainer\/[^/]+$/)) {
+      return 'nav.trainerView';
+    }
+
+    return 'nav.dashboard';
+  };
+
+  const pageTitle = t(getPageTitleKey());
 
   if (loading) {
     return <Loader />;
@@ -236,6 +251,11 @@ const AppRoutes = () => {
                 <Route
                   element={<TrainerSharingPage />}
                   path={'/trainer/sharing'}
+                />
+
+                <Route
+                  element={<TraineeViewPage />}
+                  path={'/trainer/:traineeId'}
                 />
 
                 <Route

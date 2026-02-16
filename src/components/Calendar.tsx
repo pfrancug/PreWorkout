@@ -62,12 +62,24 @@ const getFirstDayOfWeek = (year: number, month: number) => {
 const formatDateKey = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-export const Calendar = () => {
+interface CalendarProps {
+  /** Override whose data to display (defaults to current user) */
+  userId?: string;
+  /** When true, disable all editing (activity toggles, notes) */
+  readOnly?: boolean;
+}
+
+export const Calendar = ({
+  userId: propUserId,
+  readOnly = false,
+}: CalendarProps = {}) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { preferences } = useSettings();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  const targetUserId = propUserId || user?.uid;
 
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -94,14 +106,17 @@ export const Calendar = () => {
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!targetUserId) {
       return;
     }
 
-    const unsubActivities = subscribeToCalendarData(user.uid, setCalendarData);
-    const unsubNotes = subscribeToCalendarNotes(user.uid, setCalendarNotes);
+    const unsubActivities = subscribeToCalendarData(
+      targetUserId,
+      setCalendarData,
+    );
+    const unsubNotes = subscribeToCalendarNotes(targetUserId, setCalendarNotes);
     const unsubCategories = subscribeToActivityCategories(
-      user.uid,
+      targetUserId,
       setCategories,
       DEFAULT_CATEGORIES,
     );
@@ -111,7 +126,7 @@ export const Calendar = () => {
       unsubNotes();
       unsubCategories();
     };
-  }, [user]);
+  }, [targetUserId]);
 
   const todayKey = formatDateKey(
     today.getFullYear(),
@@ -214,7 +229,7 @@ export const Calendar = () => {
 
   const toggleActivity = useCallback(
     async (dateKey: string, activity: CalendarActivity) => {
-      if (!user) {
+      if (!user || readOnly) {
         return;
       }
 
@@ -229,7 +244,7 @@ export const Calendar = () => {
         toast.error(t('common.saveError'));
       }
     },
-    [user, calendarData, t],
+    [user, calendarData, t, readOnly],
   );
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -245,7 +260,7 @@ export const Calendar = () => {
 
   const handleNoteChange = useCallback(
     (dateKey: string, value: string) => {
-      if (!user) {
+      if (!user || readOnly) {
         return;
       }
 
@@ -260,7 +275,7 @@ export const Calendar = () => {
         }
       }, 500);
     },
-    [user, t],
+    [user, t, readOnly],
   );
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -474,95 +489,101 @@ export const Calendar = () => {
                 </div>
 
                 {/* Action buttons - right side */}
-                <div className={'flex shrink-0 items-center gap-1'}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type={'button'}
-                        className={
-                          'flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
-                        }
-                      >
-                        <Pencil className={'h-3.5 w-3.5'} />
-                      </button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent
-                      align={'end'}
-                      className={'space-y-1'}
-                      sideOffset={4}
-                    >
-                      {categories.map((category) => {
-                        const isActive = activities.includes(category.id);
-
-                        return (
-                          <DropdownMenuItem
-                            className={cn(isActive && 'bg-accent')}
-                            key={category.id}
-                            onClick={() => toggleActivity(dateKey, category.id)}
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <ActivityIcon
-                              className={'h-4 w-4'}
-                              iconId={category.icon}
-                              style={{
-                                color: ACTIVITY_COLOR_MAP[category.color],
-                              }}
-                            />
-
-                            <span className={'flex-1'}>{category.name}</span>
-
-                            {isActive && (
-                              <X
-                                className={'h-3.5 w-3.5 text-muted-foreground'}
-                              />
-                            )}
-                          </DropdownMenuItem>
-                        );
-                      })}
-
-                      {categories.length > 0 && <DropdownMenuSeparator />}
-
-                      <DropdownMenuItem
-                        onClick={() => navigate('/settings/categories')}
-                      >
-                        <Settings2 className={'h-4 w-4'} />
-
-                        <span>{t('calendar.manageActivities')}</span>
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-
-                      <div
-                        className={'px-2 py-1.5'}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      >
-                        <label
+                {!readOnly && (
+                  <div className={'flex shrink-0 items-center gap-1'}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type={'button'}
                           className={
-                            'mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground'
+                            'flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
                           }
                         >
-                          <StickyNote className={'h-3.5 w-3.5'} />
-                          {t('calendar.note')}
-                        </label>
+                          <Pencil className={'h-3.5 w-3.5'} />
+                        </button>
+                      </DropdownMenuTrigger>
 
-                        <input
-                          defaultValue={note}
-                          placeholder={t('calendar.notePlaceholder')}
-                          type={'text'}
-                          className={
-                            'w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50'
-                          }
-                          onChange={(e) =>
-                            handleNoteChange(dateKey, e.target.value)
-                          }
-                        />
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                      <DropdownMenuContent
+                        align={'end'}
+                        className={'space-y-1'}
+                        sideOffset={4}
+                      >
+                        {categories.map((category) => {
+                          const isActive = activities.includes(category.id);
+
+                          return (
+                            <DropdownMenuItem
+                              className={cn(isActive && 'bg-accent')}
+                              key={category.id}
+                              onSelect={(e) => e.preventDefault()}
+                              onClick={() =>
+                                toggleActivity(dateKey, category.id)
+                              }
+                            >
+                              <ActivityIcon
+                                className={'h-4 w-4'}
+                                iconId={category.icon}
+                                style={{
+                                  color: ACTIVITY_COLOR_MAP[category.color],
+                                }}
+                              />
+
+                              <span className={'flex-1'}>{category.name}</span>
+
+                              {isActive && (
+                                <X
+                                  className={
+                                    'h-3.5 w-3.5 text-muted-foreground'
+                                  }
+                                />
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
+
+                        {categories.length > 0 && <DropdownMenuSeparator />}
+
+                        <DropdownMenuItem
+                          onClick={() => navigate('/settings/categories')}
+                        >
+                          <Settings2 className={'h-4 w-4'} />
+
+                          <span>{t('calendar.manageActivities')}</span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <div
+                          className={'px-2 py-1.5'}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <label
+                            className={
+                              'mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground'
+                            }
+                          >
+                            <StickyNote className={'h-3.5 w-3.5'} />
+                            {t('calendar.note')}
+                          </label>
+
+                          <input
+                            defaultValue={note}
+                            placeholder={t('calendar.notePlaceholder')}
+                            type={'text'}
+                            className={
+                              'w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50'
+                            }
+                            onChange={(e) =>
+                              handleNoteChange(dateKey, e.target.value)
+                            }
+                          />
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -677,7 +698,7 @@ export const Calendar = () => {
                   </div>
 
                   {/* Centered + button, visible on hover */}
-                  {isCurrentMonth && isHovered && (
+                  {!readOnly && isCurrentMonth && isHovered && (
                     <div
                       className={
                         'absolute inset-0 flex items-center justify-center'

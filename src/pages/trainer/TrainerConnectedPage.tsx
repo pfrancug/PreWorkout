@@ -5,9 +5,10 @@ import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { Skeleton } from '@components/ui/skeleton';
-import { Trash2 } from 'lucide-react';
+import { ChevronRight, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useAuth } from '../../contexts/useAuth';
@@ -22,6 +23,7 @@ import {
 export const TrainerConnectedPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [connections, setConnections] = useState<ITrainerConnection[]>([]);
   const [traineesInfo, setTraineesInfo] = useState<
     Record<string, UserDirectoryEntry | null>
@@ -127,8 +129,9 @@ export const TrainerConnectedPage = () => {
                 return (
                   <div
                     key={conn.id}
+                    onClick={() => navigate(`/trainer/${conn.traineeId}`)}
                     className={
-                      'flex items-center justify-between rounded-lg border p-3'
+                      'flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent/50'
                     }
                   >
                     <div className={'flex items-center gap-3'}>
@@ -157,13 +160,21 @@ export const TrainerConnectedPage = () => {
                       </Badge>
 
                       <Button
+                        className={'cursor-pointer'}
                         disabled={removingId === conn.id}
-                        onClick={() => handleRemoveTrainee(conn)}
                         size={'sm'}
                         variant={'ghost'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveTrainee(conn);
+                        }}
                       >
                         <Trash2 className={'h-4 w-4 text-destructive'} />
                       </Button>
+
+                      <ChevronRight
+                        className={'h-4 w-4 text-muted-foreground'}
+                      />
                     </div>
                   </div>
                 );

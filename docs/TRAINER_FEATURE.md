@@ -27,11 +27,11 @@ Enable personal trainers to connect with users, supervise their progress (calend
 
 ### Phase 3: Trainer Dashboard & Supervised Views
 
-- [ ] Create Trainer Dashboard page (`/trainer`) — list of connected trainees with quick stats
-- [ ] Create Trainee View page (`/trainer/:traineeId`) — tabbed: Calendar | Diary | Payments
-- [ ] Parameterize `Calendar` component with `userId` + `readOnly` props
-- [ ] Parameterize `DataTable` / Diary for read-only trainee viewing
-- [ ] Add `useTraineeDataSet` hook variant
+- [x] Create Trainer Dashboard page (`/trainer/connected`) — list of connected trainees (clickable → trainee view)
+- [x] Create Trainee View page (`/trainer/:traineeId`) — tabbed: Calendar | Diary
+- [x] Parameterize `Calendar` component with `userId` + `readOnly` props
+- [x] Create `ReadOnlyDataTable` + `getReadOnlyColumns` for read-only trainee diary viewing
+- [x] Add `useTraineeDataSet` hook variant
 
 ### Phase 4: Training Sessions in Calendar
 

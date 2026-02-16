@@ -1,0 +1,163 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
+import { Badge } from '@components/ui/badge';
+import { Button } from '@components/ui/button';
+import { Skeleton } from '@components/ui/skeleton';
+import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { Calendar } from '../../components/Calendar';
+import { ReadOnlyDataTable } from '../../components/DataTable/ReadOnlyDataTable';
+import { useAuth } from '../../contexts/useAuth';
+import { getReadOnlyColumns } from '../../data/readOnlyColumns';
+import {
+  getUserAvatarUrl,
+  getUserDirectoryEntry,
+  type UserDirectoryEntry,
+} from '../../firebase/database';
+import { useTraineeDataSet } from '../../hooks/useTraineeDataSet';
+
+type Tab = 'calendar' | 'diary';
+
+export const TraineeViewPage = () => {
+  const { t } = useTranslation();
+  const { traineeId } = useParams<{ traineeId: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState<Tab>('calendar');
+  const [traineeInfo, setTraineeInfo] = useState<UserDirectoryEntry | null>(
+    null,
+  );
+  const [traineeAvatar, setTraineeAvatar] = useState<string | null>(null);
+  const [infoLoading, setInfoLoading] = useState(true);
+
+  const { dataSet, isLoading: diaryLoading } = useTraineeDataSet(
+    activeTab === 'diary' ? traineeId : undefined,
+  );
+
+  const columns = useMemo(() => getReadOnlyColumns(t), [t]);
+
+  useEffect(() => {
+    if (!traineeId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    Promise.all([
+      getUserDirectoryEntry(traineeId),
+      getUserAvatarUrl(traineeId),
+    ]).then(([info, avatar]) => {
+      if (cancelled) {
+        return;
+      }
+
+      setTraineeInfo(info);
+      setTraineeAvatar(avatar);
+      setInfoLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [traineeId]);
+
+  if (!user || !traineeId) {
+    return null;
+  }
+
+  const displayName =
+    traineeInfo?.displayName || t('settings.trainer.unknownUser');
+  const initials = (displayName || '?').charAt(0).toUpperCase();
+
+  const tabs: { id: Tab; labelKey: string; icon: typeof CalendarDays }[] = [
+    {
+      id: 'calendar',
+      labelKey: 'settings.trainer.tabCalendar',
+      icon: CalendarDays,
+    },
+    { id: 'diary', labelKey: 'settings.trainer.tabDiary', icon: BookOpen },
+  ];
+
+  return (
+    <div
+      className={
+        'mx-auto w-full max-w-3xl flex flex-1 flex-col gap-4 p-4 lg:gap-8 lg:p-6'
+      }
+    >
+      {/* Header */}
+      <div className={'flex items-center gap-3'}>
+        <Button
+          onClick={() => navigate('/trainer/connected')}
+          size={'icon'}
+          variant={'ghost'}
+        >
+          <ArrowLeft className={'h-4 w-4'} />
+        </Button>
+
+        {infoLoading ? (
+          <div className={'flex items-center gap-3'}>
+            <Skeleton className={'h-10 w-10 rounded-lg'} />
+            <Skeleton className={'h-6 w-40'} />
+          </div>
+        ) : (
+          <div className={'flex items-center gap-3'}>
+            <Avatar className={'h-10 w-10 rounded-lg'}>
+              <AvatarImage alt={displayName} src={traineeAvatar || undefined} />
+              <AvatarFallback className={'rounded-lg'}>
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+
+            <div>
+              <h1 className={'text-xl font-bold tracking-tight'}>
+                {displayName}
+              </h1>
+              <Badge className={'text-xs'} variant={'secondary'}>
+                {t('settings.trainer.traineeLabel')}
+              </Badge>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className={'flex gap-1 rounded-lg border border-border p-1'}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            type={'button'}
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+          >
+            <tab.icon className={'h-4 w-4'} />
+            {t(tab.labelKey)}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'calendar' && <Calendar readOnly userId={traineeId} />}
+
+      {activeTab === 'diary' && (
+        <div className={'w-full'}>
+          {diaryLoading ? (
+            <div className={'space-y-3'}>
+              <Skeleton className={'h-12 w-full'} />
+              <Skeleton className={'h-12 w-full'} />
+              <Skeleton className={'h-12 w-full'} />
+            </div>
+          ) : (
+            <ReadOnlyDataTable columns={columns} data={dataSet} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
