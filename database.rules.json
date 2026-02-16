@@ -71,7 +71,7 @@
         },
 
         "settings": {
-          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid) || root.child('users/' + auth.uid + '/trainerId').val() === $userId)",
+          ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid) || root.child('users/' + auth.uid + '/trainerId').val() === $userId)",
           ".write": "auth != null && auth.uid == $userId",
           ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('age').isString() && newData.child('age').val().length <= 3 && newData.child('height').isString() && newData.child('height').val().length <= 3 && newData.child('sex').isString() && (newData.child('sex').val() === '' || newData.child('sex').val() === 'male' || newData.child('sex').val() === 'female') && (!newData.hasChild('avatarUrl') || (newData.child('avatarUrl').isString() && newData.child('avatarUrl').val().length <= 200000))"
         },

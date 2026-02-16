@@ -1,5 +1,6 @@
 import type { UserDirectoryEntry } from '../firebase/database';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Button } from '@components/ui/button';
 import {
   Card,
@@ -36,6 +37,7 @@ import { useAuth } from '../contexts/useAuth';
 import { auth as firebaseAuth } from '../firebase/auth';
 import {
   getTrainerFlagFromDirectory,
+  getUserAvatarUrl,
   getUserMaxLimitForAdmin,
   getUserUsageStats,
   setTrainerFlagInDirectory,
@@ -47,6 +49,7 @@ interface UserWithLimits {
   uid: string;
   email: string | null;
   displayName: string | null;
+  avatarUrl: string | null;
   lastLogin: string | null;
   maxLimit: number;
   deleted?: boolean;
@@ -87,16 +90,18 @@ export const AdminPage = () => {
         const entries = await Promise.all(
           Object.entries(directory).map(async ([uid, entry]) => {
             const isDeleted = !entry.email && !entry.lastLogin;
-            const [maxLimit, stats, isTrainer] = await Promise.all([
+            const [maxLimit, stats, isTrainer, avatarUrl] = await Promise.all([
               getUserMaxLimitForAdmin(uid),
               getUserUsageStats(uid),
               getTrainerFlagFromDirectory(uid),
+              getUserAvatarUrl(uid),
             ]);
 
             return {
               uid,
               email: entry.email || null,
               displayName: entry.displayName || null,
+              avatarUrl,
               lastLogin: entry.lastLogin || null,
               deleted: isDeleted,
               maxLimit,
@@ -358,6 +363,8 @@ export const AdminPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className={'w-[50px]'} />
+
                     <TableHead>{t('admin.users.email')}</TableHead>
 
                     <TableHead>{t('admin.users.name')}</TableHead>
@@ -378,13 +385,18 @@ export const AdminPage = () => {
                       </div>
                     </TableHead>
 
-                    <TableHead>{t('admin.analytics.today')}</TableHead>
+                    <TableHead>
+                      <div className={'flex items-center gap-1'}>
+                        <Activity className={'h-3.5 w-3.5'} />
+                        <span>{t('admin.analytics.today')}</span>
+                      </div>
+                    </TableHead>
 
                     <TableHead>{t('admin.analytics.maxLimit')}</TableHead>
 
-                    <TableHead>{t('admin.users.trainer')}</TableHead>
-
                     <TableHead className={'w-[100px]'} />
+
+                    <TableHead>{t('admin.users.trainer')}</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -396,6 +408,20 @@ export const AdminPage = () => {
 
                     return (
                       <TableRow key={user.uid}>
+                        <TableCell>
+                          <Avatar className={'h-8 w-8 rounded-lg'}>
+                            <AvatarImage
+                              alt={user.displayName ?? ''}
+                              src={user.avatarUrl ?? undefined}
+                            />
+                            <AvatarFallback className={'rounded-lg text-xs'}>
+                              {(user.displayName ?? user.email ?? '?')
+                                .charAt(0)
+                                .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </TableCell>
+
                         <TableCell className={'font-mono text-sm'}>
                           {user.email ?? (
                             <span className={'text-muted-foreground italic'}>
