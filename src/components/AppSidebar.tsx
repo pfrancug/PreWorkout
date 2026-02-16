@@ -244,10 +244,7 @@ export const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>
-            <Dumbbell className={'mr-1 h-3 w-3'} />
-            {t('nav.trainer')}
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>{t('nav.trainer')}</SidebarGroupLabel>
 
           <SidebarGroupContent>
             <SidebarMenu>
