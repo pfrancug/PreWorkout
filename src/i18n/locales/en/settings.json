@@ -57,8 +57,15 @@
       "editTooltip": "Edit category",
       "deleteTooltip": "Delete category",
       "trainerBadge": "Trainer",
-      "orphanedBadge": "Disconnected",
-      "trainerCategoryTooltip": "Auto-created trainer activity"
+      "archivedBadge": "Archived",
+      "trainerCategoryTooltip": "Auto-created trainer activity",
+      "archiveTooltip": "Archive category",
+      "activeTrainerTooltip": "Cannot archive while trainer is connected",
+      "unarchiveTooltip": "Unarchive category",
+      "archiveSuccess": "Category archived.",
+      "unarchiveSuccess": "Category unarchived.",
+      "archivedTitle": "Archived",
+      "archivedDescription": "Archived categories are hidden from the calendar dropdown but their data is preserved."
     },
     "personalInfo": {
       "title": "Personal Information",

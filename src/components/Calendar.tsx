@@ -240,9 +240,15 @@ export const Calendar = ({
     return days;
   }, [weekStart, todayKey]);
 
-  // Trainer activity category (the one with trainerId set, not orphaned)
+  // Trainer activity category (the one with trainerId set, not archived)
   const trainerCategory = useMemo(
-    () => categories.find((c) => c.trainerId && !c.orphaned) ?? null,
+    () => categories.find((c) => c.trainerId && !c.archived) ?? null,
+    [categories],
+  );
+
+  // Categories available for the activity picker (excludes archived)
+  const pickableCategories = useMemo(
+    () => categories.filter((c) => !c.archived),
     [categories],
   );
 
@@ -613,7 +619,7 @@ export const Calendar = ({
                         className={'space-y-1'}
                         sideOffset={4}
                       >
-                        {categories.map((category) => {
+                        {pickableCategories.map((category) => {
                           const isActive = activities.includes(category.id);
 
                           return (
@@ -646,7 +652,9 @@ export const Calendar = ({
                           );
                         })}
 
-                        {categories.length > 0 && <DropdownMenuSeparator />}
+                        {pickableCategories.length > 0 && (
+                          <DropdownMenuSeparator />
+                        )}
 
                         <DropdownMenuItem
                           onClick={() => navigate('/settings/categories')}
@@ -869,7 +877,7 @@ export const Calendar = ({
                           className={'space-y-1'}
                           sideOffset={4}
                         >
-                          {categories.map((category) => {
+                          {pickableCategories.map((category) => {
                             const isActive = activities.includes(category.id);
 
                             return (
@@ -904,7 +912,9 @@ export const Calendar = ({
                             );
                           })}
 
-                          {categories.length > 0 && <DropdownMenuSeparator />}
+                          {pickableCategories.length > 0 && (
+                            <DropdownMenuSeparator />
+                          )}
 
                           <DropdownMenuItem
                             onClick={() => navigate('/settings/categories')}

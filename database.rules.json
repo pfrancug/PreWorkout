@@ -156,7 +156,7 @@
           },
           "items": {
             "$categoryIndex": {
-              ".validate": "newData.hasChildren(['id', 'icon', 'name', 'color']) && newData.child('id').isString() && newData.child('id').val().length <= 50 && newData.child('icon').isString() && newData.child('icon').val().length <= 50 && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('color').isString() && newData.child('color').val().length <= 20 && (!newData.child('trainerId').exists() || (newData.child('trainerId').isString() && newData.child('trainerId').val().length <= 128)) && (!newData.child('systemGenerated').exists() || newData.child('systemGenerated').isBoolean()) && (!newData.child('orphaned').exists() || newData.child('orphaned').isBoolean())"
+              ".validate": "newData.hasChildren(['id', 'icon', 'name', 'color']) && newData.child('id').isString() && newData.child('id').val().length <= 50 && newData.child('icon').isString() && newData.child('icon').val().length <= 50 && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('color').isString() && newData.child('color').val().length <= 20 && (!newData.child('trainerId').exists() || (newData.child('trainerId').isString() && newData.child('trainerId').val().length <= 128)) && (!newData.child('systemGenerated').exists() || newData.child('systemGenerated').isBoolean()) && (!newData.child('archived').exists() || newData.child('archived').isBoolean())"
             }
           },
           "$other": {

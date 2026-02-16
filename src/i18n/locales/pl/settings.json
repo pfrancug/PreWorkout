@@ -57,8 +57,15 @@
       "editTooltip": "Edytuj kategorię",
       "deleteTooltip": "Usuń kategorię",
       "trainerBadge": "Trener",
-      "orphanedBadge": "Rozłączony",
-      "trainerCategoryTooltip": "Automatycznie utworzona aktywność treningowa"
+      "archivedBadge": "Zarchiwizowana",
+      "trainerCategoryTooltip": "Automatycznie utworzona aktywność treningowa",
+      "archiveTooltip": "Archiwizuj kategorię",
+      "activeTrainerTooltip": "Nie można zarchiwizować przy aktywnym połączeniu z trenerem",
+      "unarchiveTooltip": "Przywróć kategorię",
+      "archiveSuccess": "Kategoria zarchiwizowana.",
+      "unarchiveSuccess": "Kategoria przywrócona.",
+      "archivedTitle": "Zarchiwizowane",
+      "archivedDescription": "Zarchiwizowane kategorie są ukryte w kalendarzu, ale ich dane są zachowane."
     },
     "personalInfo": {
       "title": "Dane osobowe",

@@ -17,8 +17,16 @@ import {
   PopoverTrigger,
 } from '@components/ui/popover';
 import { cn } from '@lib/utils';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+  Archive,
+  ArchiveRestore,
+  Check,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -34,6 +42,7 @@ import {
   loadCalendarData,
   saveActivityCategories,
   subscribeToActivityCategories,
+  subscribeToTraineeConnection,
 } from '../../firebase/database';
 
 export const CategoriesSettingsPage = () => {
@@ -47,6 +56,7 @@ export const CategoriesSettingsPage = () => {
   const [newIcon, setNewIcon] = useState<ActivityIconId>('dumbbell');
   const [newColor, setNewColor] = useState(ACTIVITY_COLORS[0].id);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [activeTrainerId, setActiveTrainerId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState<ActivityIconId>('dumbbell');
@@ -77,6 +87,18 @@ export const CategoriesSettingsPage = () => {
         }
       }
       setUsedActivityIds(used);
+    });
+
+    return unsub;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const unsub = subscribeToTraineeConnection(user.uid, (conn) => {
+      setActiveTrainerId(conn?.trainerId ?? null);
     });
 
     return unsub;
@@ -163,6 +185,56 @@ export const CategoriesSettingsPage = () => {
     }
   };
 
+  const handleArchive = async (categoryId: string) => {
+    if (!user) {
+      return;
+    }
+
+    const updated = categories.map((c) =>
+      c.id === categoryId ? { ...c, archived: true } : c,
+    );
+
+    try {
+      await saveActivityCategories(user.uid, updated);
+      toast.success(t('settings.categories.archiveSuccess'));
+    } catch {
+      toast.error(t('common.saveError'));
+    }
+  };
+
+  const handleUnarchive = async (categoryId: string) => {
+    if (!user) {
+      return;
+    }
+
+    const updated = categories.map((c) => {
+      if (c.id !== categoryId) {
+        return c;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { archived: _, ...rest } = c;
+
+      return rest;
+    });
+
+    try {
+      await saveActivityCategories(user.uid, updated);
+      toast.success(t('settings.categories.unarchiveSuccess'));
+    } catch {
+      toast.error(t('common.saveError'));
+    }
+  };
+
+  const activeCategories = useMemo(
+    () => categories.filter((c) => !c.archived),
+    [categories],
+  );
+
+  const archivedCategories = useMemo(
+    () => categories.filter((c) => c.archived),
+    [categories],
+  );
+
   return (
     <div
       className={
@@ -189,9 +261,9 @@ export const CategoriesSettingsPage = () => {
         </CardHeader>
 
         <CardContent className={'space-y-4'}>
-          {/* Existing categories */}
+          {/* Active categories */}
           <div className={'space-y-2'}>
-            {categories.map((category) => {
+            {activeCategories.map((category) => {
               const isUsed = usedActivityIds.has(category.id);
               const isEditing = editingId === category.id;
 
@@ -331,12 +403,9 @@ export const CategoriesSettingsPage = () => {
               return (
                 <div
                   key={category.id}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg border p-3',
-                    category.orphaned
-                      ? 'border-border/50 opacity-60'
-                      : 'border-border',
-                  )}
+                  className={
+                    'flex items-center gap-3 rounded-lg border border-border p-3'
+                  }
                 >
                   <div
                     className={
@@ -354,18 +423,12 @@ export const CategoriesSettingsPage = () => {
                     {category.name}
                   </span>
 
-                  {category.trainerId && !category.orphaned && (
+                  {category.trainerId && (
                     <Badge
                       title={t('settings.categories.trainerCategoryTooltip')}
                       variant={'secondary'}
                     >
                       {t('settings.categories.trainerBadge')}
-                    </Badge>
-                  )}
-
-                  {category.orphaned && (
-                    <Badge variant={'outline'}>
-                      {t('settings.categories.orphanedBadge')}
                     </Badge>
                   )}
 
@@ -379,6 +442,27 @@ export const CategoriesSettingsPage = () => {
                     }
                   >
                     <Pencil className={'h-4 w-4'} />
+                  </Button>
+
+                  <Button
+                    onClick={() => handleArchive(category.id)}
+                    size={'icon'}
+                    variant={'ghost'}
+                    className={
+                      'h-8 w-8 text-muted-foreground hover:text-yellow-600'
+                    }
+                    disabled={
+                      !!category.trainerId &&
+                      category.trainerId === activeTrainerId
+                    }
+                    title={
+                      category.trainerId &&
+                      category.trainerId === activeTrainerId
+                        ? t('settings.categories.activeTrainerTooltip')
+                        : t('settings.categories.archiveTooltip')
+                    }
+                  >
+                    <Archive className={'h-4 w-4'} />
                   </Button>
 
                   <Button
@@ -505,6 +589,95 @@ export const CategoriesSettingsPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Archived categories */}
+      {archivedCategories.length > 0 && (
+        <Card className={'border-dashed'}>
+          <CardHeader>
+            <CardTitle className={'flex items-center gap-2'}>
+              <Archive className={'h-5 w-5 text-muted-foreground'} />
+              {t('settings.categories.archivedTitle')}
+            </CardTitle>
+
+            <CardDescription>
+              {t('settings.categories.archivedDescription')}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className={'space-y-2'}>
+            {archivedCategories.map((category) => {
+              const isUsed = usedActivityIds.has(category.id);
+
+              return (
+                <div
+                  key={category.id}
+                  className={
+                    'flex items-center gap-3 rounded-lg border border-border/50 p-3 opacity-60'
+                  }
+                >
+                  <div
+                    className={
+                      'flex h-9 w-9 items-center justify-center rounded-lg'
+                    }
+                  >
+                    <ActivityIcon
+                      className={'h-5 w-5'}
+                      iconId={category.icon}
+                      style={{ color: ACTIVITY_COLOR_MAP[category.color] }}
+                    />
+                  </div>
+
+                  <span className={'flex-1 text-sm font-medium'}>
+                    {category.name}
+                  </span>
+
+                  <Badge variant={'outline'}>
+                    {t('settings.categories.archivedBadge')}
+                  </Badge>
+
+                  {category.trainerId && (
+                    <Badge
+                      title={t('settings.categories.trainerCategoryTooltip')}
+                      variant={'secondary'}
+                    >
+                      {t('settings.categories.trainerBadge')}
+                    </Badge>
+                  )}
+
+                  <Button
+                    onClick={() => handleUnarchive(category.id)}
+                    size={'icon'}
+                    title={t('settings.categories.unarchiveTooltip')}
+                    variant={'ghost'}
+                    className={
+                      'h-8 w-8 text-muted-foreground hover:text-primary'
+                    }
+                  >
+                    <ArchiveRestore className={'h-4 w-4'} />
+                  </Button>
+
+                  <Button
+                    disabled={isUsed || !!category.systemGenerated}
+                    onClick={() => handleDelete(category.id)}
+                    size={'icon'}
+                    variant={'ghost'}
+                    className={
+                      'h-8 w-8 text-muted-foreground hover:text-destructive'
+                    }
+                    title={
+                      isUsed
+                        ? t('settings.categories.inUseTooltip')
+                        : t('settings.categories.deleteTooltip')
+                    }
+                  >
+                    <Trash2 className={'h-4 w-4'} />
+                  </Button>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

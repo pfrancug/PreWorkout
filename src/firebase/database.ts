@@ -37,8 +37,8 @@ export interface ActivityCategory {
   trainerId?: string;
   /** True for categories auto-created by the system (e.g. on trainer connect) */
   systemGenerated?: boolean;
-  /** True when the trainer disconnects – keeps historical data intact */
-  orphaned?: boolean;
+  /** Archived categories still render in calendar history but don't appear in the activity picker */
+  archived?: boolean;
 }
 
 export interface TrainerCalendarData {
@@ -889,9 +889,25 @@ export const acceptTrainerInvite = async (
     const existingCategories = await loadActivityCategories(traineeId);
     const categories = existingCategories ?? [];
 
-    // Only add if a trainer category doesn't already exist
-    const alreadyExists = categories.some((c) => c.trainerId === trainerId);
-    if (!alreadyExists) {
+    // Check if a trainer category already exists (may be archived from previous connection)
+    const existingTrainerCat = categories.find(
+      (c) => c.trainerId === trainerId,
+    );
+    if (existingTrainerCat) {
+      // Unarchive existing category on reconnect
+      if (existingTrainerCat.archived) {
+        const updated = categories.map((c) => {
+          if (c.trainerId !== trainerId) {
+            return c;
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { archived: _, ...rest } = c;
+
+          return rest;
+        });
+        await saveActivityCategories(traineeId, updated);
+      }
+    } else {
       const trainerCategory: ActivityCategory = {
         id: `trainer-${trainerId}`,
         icon: 'heart-pulse',
@@ -957,13 +973,13 @@ export const disconnectTrainer = async (
   // Remove trainerId from the user
   await remove(ref(database, `users/${traineeId}/trainerId`));
 
-  // Mark trainer activity category as orphaned (keeps historical calendar data intact)
+  // Archive trainer activity category (keeps historical calendar data intact)
   if (trainerId) {
     try {
       const categories = await loadActivityCategories(traineeId);
       if (categories) {
         const updated = categories.map((c) =>
-          c.trainerId === trainerId ? { ...c, orphaned: true } : c,
+          c.trainerId === trainerId ? { ...c, archived: true } : c,
         );
         await saveActivityCategories(traineeId, updated);
       }
