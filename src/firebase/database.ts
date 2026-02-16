@@ -754,6 +754,7 @@ const generateInviteCode = (): string => {
  */
 export const createTrainerInvite = async (
   trainerId: string,
+  note?: string,
 ): Promise<{ inviteCode: string; connectionId: string }> => {
   const inviteCode = generateInviteCode();
 
@@ -762,16 +763,19 @@ export const createTrainerInvite = async (
   const newConnectionRef = push(connectionsRef);
   const connectionId = newConnectionRef.key!;
 
-  const connection: ITrainerConnection = {
-    id: connectionId,
+  const connectionData: Record<string, unknown> = {
     trainerId,
     traineeId: '', // Will be filled when trainee accepts
-    status: 'pending',
+    status: 'pending' as const,
     inviteCode,
     createdAt: Date.now(),
   };
 
-  await set(newConnectionRef, connection);
+  if (note) {
+    connectionData.note = note;
+  }
+
+  await set(newConnectionRef, connectionData);
 
   // Create a lookup entry for the invite code
   await set(ref(database, `trainerInvites/${inviteCode}`), {
@@ -838,6 +842,33 @@ export const acceptTrainerInvite = async (
   await remove(ref(database, `trainerInvites/${inviteCode.toUpperCase()}`));
 
   return { success: true };
+};
+
+/**
+ * Update the note on a pending invite / connection.
+ */
+export const updateConnectionNote = async (
+  connectionId: string,
+  note: string,
+): Promise<void> => {
+  await update(ref(database, `trainerConnections/${connectionId}`), { note });
+};
+
+/**
+ * Delete a pending invite (removes connection + invite lookup).
+ */
+export const deletePendingInvite = async (
+  connectionId: string,
+): Promise<void> => {
+  // Read invite code so we can clean up the lookup
+  const snap = await get(ref(database, `trainerConnections/${connectionId}`));
+  if (snap.exists()) {
+    const { inviteCode } = snap.val() as { inviteCode: string };
+    if (inviteCode) {
+      await remove(ref(database, `trainerInvites/${inviteCode}`));
+    }
+  }
+  await remove(ref(database, `trainerConnections/${connectionId}`));
 };
 
 /**
@@ -935,6 +966,19 @@ export const getUserDirectoryEntry = async (
   const snapshot = await get(ref(database, `userDirectory/${userId}`));
 
   return snapshot.exists() ? (snapshot.val() as UserDirectoryEntry) : null;
+};
+
+/**
+ * Get a user's profile avatar URL from their settings.
+ */
+export const getUserAvatarUrl = async (
+  userId: string,
+): Promise<string | null> => {
+  const snapshot = await get(
+    ref(database, `users/${userId}/settings/avatarUrl`),
+  );
+
+  return snapshot.exists() ? (snapshot.val() as string) : null;
 };
 
 /**

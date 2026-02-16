@@ -30,13 +30,17 @@ import {
   GlassWater,
   Globe,
   Home,
+  Link2,
   LogOut,
   MessageSquare,
+  Share2,
   ShieldCheck,
   SlidersHorizontal,
   Tags,
+  Ticket,
   User,
   UserRound,
+  Users,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
@@ -98,6 +102,33 @@ const settingsItems = [
     titleKey: 'nav.settingsData',
     icon: Database,
     path: '/settings/data',
+  },
+];
+
+const trainerItems = [
+  {
+    titleKey: 'nav.trainerConnect',
+    icon: Link2,
+    path: '/trainer/connect',
+    trainerOnly: false,
+  },
+  {
+    titleKey: 'nav.trainerInvites',
+    icon: Ticket,
+    path: '/trainer/invites',
+    trainerOnly: true,
+  },
+  {
+    titleKey: 'nav.trainerConnected',
+    icon: Users,
+    path: '/trainer/connected',
+    trainerOnly: true,
+  },
+  {
+    titleKey: 'nav.trainerSharing',
+    icon: Share2,
+    path: '/trainer/sharing',
+    trainerOnly: false,
   },
 ];
 
@@ -208,6 +239,38 @@ export const AppSidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            <Dumbbell className={'mr-1 h-3 w-3'} />
+            {t('nav.trainer')}
+          </SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {trainerItems
+                .filter((item) => !item.trainerOnly || isTrainer)
+                .map((item) => (
+                  <SidebarMenuItem key={item.titleKey}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isSettingsActive(item.path)}
+                      tooltip={t(item.titleKey)}
+                    >
+                      <Link
+                        onClick={() => isMobile && setOpenMobile(false)}
+                        to={item.path}
+                      >
+                        <item.icon />
+
+                        <span>{t(item.titleKey)}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

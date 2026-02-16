@@ -18,11 +18,12 @@ Enable personal trainers to connect with users, supervise their progress (calend
 
 ### Phase 2: Trainer–Trainee Connection Flow
 
-- [ ] Implement invite code generation & acceptance in `database.ts`
-- [ ] Create Trainer Settings Page (`/settings/trainer`)
+- [x] Implement invite code generation & acceptance in `database.ts`
+- [x] Create Trainer Settings Page (`/settings/trainer`)
   - Regular users: enter invite code, view/disconnect current trainer
   - Trainers: generate invite code, manage connected trainees
-- [ ] Add route and sidebar navigation
+- [x] Add route and sidebar navigation
+- [x] Add EN + PL i18n translations for trainer settings
 
 ### Phase 3: Trainer Dashboard & Supervised Views
 

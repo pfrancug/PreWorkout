@@ -20,6 +20,7 @@ export interface ITrainerConnection {
   status: TrainerConnectionStatus;
   inviteCode: string;
   createdAt: number;
+  note?: string;
 }
 
 export type PaymentMarkedBy = 'trainer' | 'trainee';
