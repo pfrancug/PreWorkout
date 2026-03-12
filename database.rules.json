@@ -6,7 +6,7 @@
     "userDirectory": {
       ".read": "auth != null && auth.token.admin === true",
       "$userId": {
-        ".read": "auth != null && (auth.uid == $userId || auth.token.trainer === true)",
+        ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true || root.child('users/' + $userId + '/trainerId').val() === auth.uid || root.child('users/' + auth.uid + '/trainerId').val() === $userId)",
         ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
         "email": {
           ".validate": "newData.isString() && newData.val().length <= 200"
@@ -28,19 +28,19 @@
     },
 
     "trainerConnections": {
-      ".read": "auth != null",
       ".indexOn": ["trainerId", "traineeId", "inviteCode"],
       "$connectionId": {
-        ".write": "auth != null && (auth.token.trainer === true || data.child('traineeId').val() === auth.uid || data.child('traineeId').val() === '' || !data.exists())",
-        ".validate": "newData.hasChildren(['trainerId', 'traineeId', 'status', 'inviteCode', 'createdAt']) && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'active' || newData.child('status').val() === 'declined' || newData.child('status').val() === 'deleted') && newData.child('inviteCode').isString() && newData.child('inviteCode').val().length <= 20 && newData.child('createdAt').isNumber() && (!newData.child('note').exists() || newData.child('note').isString())"
+        ".read": "auth != null && (data.child('trainerId').val() === auth.uid || data.child('traineeId').val() === auth.uid || auth.token.admin === true)",
+        ".write": "auth != null && (auth.token.admin === true || (auth.token.trainer === true && !data.exists() && newData.child('trainerId').val() === auth.uid && newData.child('status').val() === 'pending') || (data.child('trainerId').val() === auth.uid) || (data.child('traineeId').val() === auth.uid && newData.child('status').val() === 'active' && data.child('status').val() === 'pending') || (data.child('traineeId').val() === auth.uid && !newData.exists()))",
+        ".validate": "!newData.exists() || (newData.hasChildren(['trainerId', 'traineeId', 'status', 'inviteCode', 'createdAt']) && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'active' || newData.child('status').val() === 'declined' || newData.child('status').val() === 'deleted') && newData.child('inviteCode').isString() && newData.child('inviteCode').val().length <= 20 && newData.child('createdAt').isNumber() && (!newData.child('note').exists() || newData.child('note').isString()))"
       }
     },
 
     "trainerInvites": {
       "$inviteCode": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        ".validate": "newData.hasChildren(['trainerId', 'connectionId']) && newData.child('trainerId').isString() && newData.child('connectionId').isString()"
+        ".read": "auth != null && (auth.token.trainer === true || auth.token.admin === true)",
+        ".write": "auth != null && ((auth.token.trainer === true && (!data.exists() || data.child('trainerId').val() === auth.uid)) || (!newData.exists()) || auth.token.admin === true)",
+        ".validate": "!newData.exists() || (newData.hasChildren(['trainerId', 'connectionId']) && newData.child('trainerId').isString() && newData.child('connectionId').isString())"
       }
     },
 
@@ -49,7 +49,7 @@
         ".read": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid || auth.token.admin === true)",
         ".write": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid || auth.token.admin === true)",
         "$sessionId": {
-          ".validate": "newData.hasChildren(['connectionId', 'trainerId', 'traineeId', 'date', 'status', 'trainerConfirmed', 'traineeConfirmed', 'paymentStatus', 'createdAt', 'createdBy']) && newData.child('connectionId').isString() && newData.child('connectionId').val() === $connectionId && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('date').isString() && newData.child('date').val().length <= 10 && newData.child('status').isString() && (newData.child('status').val() === 'planned' || newData.child('status').val() === 'completed' || newData.child('status').val() === 'cancelled') && newData.child('trainerConfirmed').isBoolean() && newData.child('traineeConfirmed').isBoolean() && newData.child('paymentStatus').isString() && (newData.child('paymentStatus').val() === 'unpaid' || newData.child('paymentStatus').val() === 'pending' || newData.child('paymentStatus').val() === 'paid') && newData.child('createdAt').isNumber() && newData.child('createdBy').isString() && (newData.child('createdBy').val() === 'trainer' || newData.child('createdBy').val() === 'trainee') && (!newData.hasChild('time') || newData.child('time').val() == null || (newData.child('time').isString() && newData.child('time').val().length <= 5)) && (!newData.hasChild('paidMarkedBy') || newData.child('paidMarkedBy').val() == null || (newData.child('paidMarkedBy').isString() && (newData.child('paidMarkedBy').val() === 'trainer' || newData.child('paidMarkedBy').val() === 'trainee'))) && (!newData.hasChild('cancelledBy') || (newData.child('cancelledBy').isString() && (newData.child('cancelledBy').val() === 'trainer' || newData.child('cancelledBy').val() === 'trainee'))) && (!newData.hasChild('note') || (newData.child('note').isString() && newData.child('note').val().length <= 500)) && (!newData.hasChild('packageId') || newData.child('packageId').val() == null || (newData.child('packageId').isString() && newData.child('packageId').val().length <= 50))"
+          ".validate": "!newData.exists() || (newData.hasChildren(['connectionId', 'trainerId', 'traineeId', 'date', 'status', 'trainerConfirmed', 'traineeConfirmed', 'paymentStatus', 'createdAt', 'createdBy']) && newData.child('connectionId').isString() && newData.child('connectionId').val() === $connectionId && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('date').isString() && newData.child('date').val().length <= 10 && newData.child('status').isString() && (newData.child('status').val() === 'planned' || newData.child('status').val() === 'completed' || newData.child('status').val() === 'cancelled') && newData.child('trainerConfirmed').isBoolean() && newData.child('traineeConfirmed').isBoolean() && newData.child('paymentStatus').isString() && (newData.child('paymentStatus').val() === 'unpaid' || newData.child('paymentStatus').val() === 'pending' || newData.child('paymentStatus').val() === 'paid') && newData.child('createdAt').isNumber() && newData.child('createdBy').isString() && (newData.child('createdBy').val() === 'trainer' || newData.child('createdBy').val() === 'trainee') && (!newData.hasChild('time') || newData.child('time').val() == null || (newData.child('time').isString() && newData.child('time').val().length <= 5)) && (!newData.hasChild('paidMarkedBy') || newData.child('paidMarkedBy').val() == null || (newData.child('paidMarkedBy').isString() && (newData.child('paidMarkedBy').val() === 'trainer' || newData.child('paidMarkedBy').val() === 'trainee'))) && (!newData.hasChild('cancelledBy') || (newData.child('cancelledBy').isString() && (newData.child('cancelledBy').val() === 'trainer' || newData.child('cancelledBy').val() === 'trainee'))) && (!newData.hasChild('note') || (newData.child('note').isString() && newData.child('note').val().length <= 500)) && (!newData.hasChild('packageId') || newData.child('packageId').val() == null || (newData.child('packageId').isString() && newData.child('packageId').val().length <= 50)))"
         }
       }
     },
@@ -62,7 +62,7 @@
         "trainerId": {
           ".read": "auth != null && auth.uid == $userId",
           ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".validate": "newData.isString() && newData.val().length <= 128"
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 128)"
         },
 
         "settings": {
@@ -118,7 +118,7 @@
 
         "calendar": {
           ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
-          ".write": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
+          ".write": "auth != null && auth.uid == $userId",
           "$date": {
             ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/)",
             "$activityIndex": {
@@ -139,7 +139,7 @@
           ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           "$date": {
-            ".validate": "$date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.isBoolean()"
+            ".validate": "!newData.exists() || ($date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.isBoolean())"
           }
         },
 

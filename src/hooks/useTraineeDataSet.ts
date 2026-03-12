@@ -32,6 +32,14 @@ const fromFirebaseFormat = (data: IRowData[]): IRow[] =>
 export const useTraineeDataSet = (traineeId: string | undefined) => {
   const [dataSet, setDataSet] = useState<IRow[] | null>(null);
   const [isLoading, setIsLoading] = useState(!!traineeId);
+  const [prevTraineeId, setPrevTraineeId] = useState(traineeId);
+
+  // Adjust state during render when traineeId changes (avoids setState in effect)
+  if (traineeId !== prevTraineeId) {
+    setPrevTraineeId(traineeId);
+    setDataSet(null);
+    setIsLoading(!!traineeId);
+  }
 
   useEffect(() => {
     if (!traineeId) {

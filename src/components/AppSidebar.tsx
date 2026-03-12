@@ -387,25 +387,17 @@ export const AppSidebar = () => {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem>
-                  {isAdmin && (
-                    <>
+                {(isAdmin || isTrainer) && (
+                  <>
+                    <DropdownMenuItem disabled>
                       <UserRound />
 
-                      {'Admin'}
-                    </>
-                  )}
+                      {isAdmin ? t('nav.admin') : t('nav.trainer')}
+                    </DropdownMenuItem>
 
-                  {isTrainer && (
-                    <>
-                      <UserRound />
-
-                      {'Trainer'}
-                    </>
-                  )}
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
+                  </>
+                )}
 
                 <DropdownMenuItem onClick={() => logoutUser()}>
                   <LogOut />

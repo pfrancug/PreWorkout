@@ -875,9 +875,10 @@ export const subscribeToEnergyDrinks = (
 /** Generate a short random invite code (6 chars, alphanumeric uppercase) */
 const generateInviteCode = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I ambiguity
+  const randomValues = crypto.getRandomValues(new Uint8Array(6));
   let code = '';
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[randomValues[i] % chars.length];
   }
 
   return code;
@@ -951,24 +952,22 @@ export const acceptTrainerInvite = async (
     return { success: false, error: 'already_has_trainer' };
   }
 
-  // Verify the connection still exists and is pending
-  const connectionSnapshot = await get(
-    ref(database, `trainerConnections/${connectionId}`),
-  );
-  if (!connectionSnapshot.exists()) {
-    return { success: false, error: 'connection_not_found' };
-  }
+  // Atomically claim the connection (prevents two clients accepting concurrently)
+  const connectionRef = ref(database, `trainerConnections/${connectionId}`);
+  const { committed, snapshot: txSnapshot } = await runTransaction(
+    connectionRef,
+    (current) => {
+      if (!current || current.status !== 'pending') {
+        return; // abort
+      }
 
-  const connection = connectionSnapshot.val() as ITrainerConnection;
-  if (connection.status !== 'pending') {
+      return { ...current, traineeId, status: 'active' };
+    },
+  );
+
+  if (!committed || !txSnapshot.exists()) {
     return { success: false, error: 'invite_already_used' };
   }
-
-  // Activate the connection
-  await update(ref(database, `trainerConnections/${connectionId}`), {
-    traineeId,
-    status: 'active',
-  });
 
   // Set trainerId on the user profile
   await set(ref(database, `users/${traineeId}/trainerId`), trainerId);

@@ -392,7 +392,7 @@ export const TrainingSessions = ({
           <Badge className={'bg-primary/10 text-primary'} variant={'outline'}>
             <Package className={'mr-1 h-3 w-3'} />
             {packageInfo.get(session.id)!.index}
-            {'/\r'}
+            {'/'}
             {packageInfo.get(session.id)!.total}
           </Badge>
         )}
