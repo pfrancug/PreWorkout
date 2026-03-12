@@ -27,7 +27,6 @@ import { cn } from '@lib/utils';
 import {
   Ban,
   Calendar,
-  Check,
   CheckCheck,
   Clock,
   CreditCard,
@@ -46,7 +45,6 @@ import {
   batchRemoveFromPackage,
   cancelSession,
   completeSession,
-  confirmSession,
   deleteTrainingSession,
   groupSessionsAsPackage,
   markPackagePaid,
@@ -181,15 +179,6 @@ export const TrainingSessions = ({
       | { type: 'package'; packageId: string; sessions: ITrainingSession[] }
     )[];
   }, [filteredSessions]);
-
-  const handleConfirm = async (sessionId: string) => {
-    try {
-      await confirmSession(connectionId, sessionId);
-      toast.success(t('sessions.confirmSuccess'));
-    } catch {
-      toast.error(t('common.saveError'));
-    }
-  };
 
   const handleComplete = async (sessionId: string) => {
     try {
@@ -353,11 +342,6 @@ export const TrainingSessions = ({
     );
   };
 
-  const canConfirm = (session: ITrainingSession) =>
-    role === 'trainee' &&
-    session.status === 'planned' &&
-    !session.traineeConfirmed;
-
   const renderSessionContent = (session: ITrainingSession) => (
     <>
       {/* Checkbox for package selection */}
@@ -409,13 +393,6 @@ export const TrainingSessions = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align={'end'}>
-          {canConfirm(session) && (
-            <DropdownMenuItem onClick={() => handleConfirm(session.id)}>
-              <Check className={'mr-2 h-4 w-4'} />
-              {t('sessions.confirm')}
-            </DropdownMenuItem>
-          )}
-
           {role === 'trainer' && session.status === 'planned' && (
             <DropdownMenuItem onClick={() => handleComplete(session.id)}>
               <CheckCheck className={'mr-2 h-4 w-4'} />

@@ -17,6 +17,7 @@ import {
   loadUserSettings,
   saveUserPreferences,
   saveUserSettings,
+  updateUserDirectory,
 } from '../firebase/database';
 import {
   defaultPreferences,
@@ -139,6 +140,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         try {
           await saveUserSettings(user.uid, newSettings);
+          // Sync display name to userDirectory so trainers/trainees see the updated name
+          updateUserDirectory(
+            user.uid,
+            user.email ?? '',
+            newSettings.name,
+          ).catch(() => {});
           setState((prev) => {
             if (prev.status !== 'loaded') {
               return prev;

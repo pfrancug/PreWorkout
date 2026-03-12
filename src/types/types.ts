@@ -41,7 +41,6 @@ export interface ITrainingSession {
   time: string | null; // HH:mm
   status: TrainingSessionStatus;
   trainerConfirmed: boolean;
-  traineeConfirmed: boolean;
   paymentStatus: PaymentStatus;
   paidMarkedBy: PaymentMarkedBy | null;
   createdAt: number;

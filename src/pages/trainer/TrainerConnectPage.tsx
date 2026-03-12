@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { TrainingSessions } from '../../components/TrainingSessions';
 import { useAuth } from '../../contexts/useAuth';
 import {
   acceptTrainerInvite,
@@ -146,48 +147,56 @@ export const TrainerConnectPage = () => {
 
     if (connection) {
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.trainer.yourTrainer')}</CardTitle>
-            <CardDescription>
-              {t('settings.trainer.yourTrainerDescription')}
-            </CardDescription>
-          </CardHeader>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('settings.trainer.yourTrainer')}</CardTitle>
+              <CardDescription>
+                {t('settings.trainer.yourTrainerDescription')}
+              </CardDescription>
+            </CardHeader>
 
-          <CardContent className={'space-y-4'}>
-            <div className={'flex items-center justify-between'}>
-              <div className={'flex items-center gap-3'}>
-                <Avatar className={'h-10 w-10 rounded-lg'}>
-                  <AvatarImage
-                    alt={trainerInfo?.displayName || ''}
-                    src={trainerAvatar || undefined}
-                  />
-                  <AvatarFallback className={'rounded-lg'}>
-                    {(trainerInfo?.displayName || '?').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+            <CardContent className={'space-y-4'}>
+              <div className={'flex items-center justify-between'}>
+                <div className={'flex items-center gap-3'}>
+                  <Avatar className={'h-10 w-10 rounded-lg'}>
+                    <AvatarImage
+                      alt={trainerInfo?.displayName || ''}
+                      src={trainerAvatar || undefined}
+                    />
+                    <AvatarFallback className={'rounded-lg'}>
+                      {(trainerInfo?.displayName || '?')
+                        .charAt(0)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <p className={'font-medium'}>
-                  {trainerInfo?.displayName ||
-                    t('settings.trainer.unknownUser')}
-                </p>
+                  <p className={'font-medium'}>
+                    {trainerInfo?.displayName ||
+                      t('settings.trainer.unknownUser')}
+                  </p>
+                </div>
+
+                <Badge variant={'default'}>
+                  {t('settings.trainer.active')}
+                </Badge>
               </div>
 
-              <Badge variant={'default'}>{t('settings.trainer.active')}</Badge>
-            </div>
+              <Separator />
 
-            <Separator />
+              <Button
+                disabled={disconnecting}
+                onClick={handleDisconnect}
+                variant={'destructive'}
+              >
+                <Link2Off className={'mr-2 h-4 w-4'} />
+                {t('settings.trainer.disconnect')}
+              </Button>
+            </CardContent>
+          </Card>
 
-            <Button
-              disabled={disconnecting}
-              onClick={handleDisconnect}
-              variant={'destructive'}
-            >
-              <Link2Off className={'mr-2 h-4 w-4'} />
-              {t('settings.trainer.disconnect')}
-            </Button>
-          </CardContent>
-        </Card>
+          <TrainingSessions connectionId={connection.id} role={'trainee'} />
+        </>
       );
     }
 

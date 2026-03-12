@@ -1251,7 +1251,6 @@ export const createTrainingSession = async (
     time: time ?? null,
     status: 'planned',
     trainerConfirmed: true,
-    traineeConfirmed: false,
     paymentStatus: 'unpaid',
     paidMarkedBy: null,
     createdAt: Date.now(),
@@ -1261,20 +1260,6 @@ export const createTrainingSession = async (
   await set(newRef, session);
 
   return newRef.key!;
-};
-
-/** Trainee confirms attendance. */
-export const confirmSession = async (
-  connectionId: string,
-  sessionId: string,
-): Promise<void> => {
-  const sessionRef = ref(
-    database,
-    `trainingSessions/${connectionId}/${sessionId}`,
-  );
-  await update(sessionRef, {
-    traineeConfirmed: true,
-  });
 };
 
 export const completeSession = async (
