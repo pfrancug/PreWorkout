@@ -75,7 +75,7 @@
         "preferences": {
           ".read": "auth != null && auth.uid == $userId",
           ".write": "auth != null && auth.uid == $userId",
-          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen', 'language', 'defaultCalendarView', 'drinksSugarFilter']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean() && newData.child('language').isString() && (newData.child('language').val() === 'en' || newData.child('language').val() === 'pl') && newData.child('defaultCalendarView').isString() && (newData.child('defaultCalendarView').val() === 'month' || newData.child('defaultCalendarView').val() === 'week') && newData.child('drinksSugarFilter').isString() && (newData.child('drinksSugarFilter').val() === 'all' || newData.child('drinksSugarFilter').val() === 'sugar' || newData.child('drinksSugarFilter').val() === 'no-sugar')"
+          ".validate": "newData.hasChildren(['sidebarOpen', 'chatPanelOpen', 'language', 'defaultCalendarView', 'drinksSugarFilter']) && newData.child('sidebarOpen').isBoolean() && newData.child('chatPanelOpen').isBoolean() && newData.child('language').isString() && (newData.child('language').val() === 'en' || newData.child('language').val() === 'pl') && newData.child('defaultCalendarView').isString() && (newData.child('defaultCalendarView').val() === 'month' || newData.child('defaultCalendarView').val() === 'week') && newData.child('drinksSugarFilter').isString() && (newData.child('drinksSugarFilter').val() === 'all' || newData.child('drinksSugarFilter').val() === 'sugar' || newData.child('drinksSugarFilter').val() === 'no-sugar') && (!newData.hasChild('hideConnectionSection') || newData.child('hideConnectionSection').isBoolean())"
         },
 
         "messages": {

@@ -47,7 +47,9 @@ const fetchUserPreferences = async (
 
   const firebasePreferences = await loadUserPreferences(userId);
 
-  return firebasePreferences ?? defaultPreferences;
+  return firebasePreferences
+    ? { ...defaultPreferences, ...firebasePreferences }
+    : defaultPreferences;
 };
 
 type SettingsState =

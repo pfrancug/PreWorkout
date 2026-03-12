@@ -30,7 +30,6 @@ import {
   CheckCheck,
   Clock,
   CreditCard,
-  Dumbbell,
   Ellipsis,
   Package,
   Trash2,
@@ -452,12 +451,9 @@ export const TrainingSessions = ({
 
   return (
     <Card>
-      <CardHeader className={'flex-col'}>
+      <CardHeader>
         <div>
-          <CardTitle className={'flex items-center gap-2'}>
-            <Dumbbell className={'h-5 w-5'} />
-            {t('sessions.title')}
-          </CardTitle>
+          <CardTitle>{t('sessions.title')}</CardTitle>
           <CardDescription>{t('sessions.description')}</CardDescription>
         </div>
 
