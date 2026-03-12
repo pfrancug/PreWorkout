@@ -32,7 +32,7 @@
       ".indexOn": ["trainerId", "traineeId", "inviteCode"],
       "$connectionId": {
         ".write": "auth != null && (auth.token.trainer === true || data.child('traineeId').val() === auth.uid || data.child('traineeId').val() === '' || !data.exists())",
-        ".validate": "newData.hasChildren(['trainerId', 'traineeId', 'status', 'inviteCode', 'createdAt']) && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'active' || newData.child('status').val() === 'declined') && newData.child('inviteCode').isString() && newData.child('inviteCode').val().length <= 20 && newData.child('createdAt').isNumber() && (!newData.child('note').exists() || newData.child('note').isString())"
+        ".validate": "newData.hasChildren(['trainerId', 'traineeId', 'status', 'inviteCode', 'createdAt']) && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'active' || newData.child('status').val() === 'declined' || newData.child('status').val() === 'deleted') && newData.child('inviteCode').isString() && newData.child('inviteCode').val().length <= 20 && newData.child('createdAt').isNumber() && (!newData.child('note').exists() || newData.child('note').isString())"
       }
     },
 

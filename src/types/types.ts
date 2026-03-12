@@ -11,7 +11,11 @@ export interface IRow {
 
 // Trainer feature types
 
-export type TrainerConnectionStatus = 'pending' | 'active' | 'declined';
+export type TrainerConnectionStatus =
+  | 'pending'
+  | 'active'
+  | 'declined'
+  | 'deleted';
 
 export interface ITrainerConnection {
   id: string;

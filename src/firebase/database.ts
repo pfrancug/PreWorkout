@@ -62,6 +62,8 @@ export interface AllUserData {
   calendar: CalendarData | null;
   calendarNotes: CalendarNotes | null;
   activityCategories: ActivityCategory[] | null;
+  energyDrinks: Record<string, unknown> | null;
+  trainerCalendar: Record<string, boolean> | null;
 }
 
 const database = getDatabase(app);
@@ -197,14 +199,18 @@ export const loadUserData = async (
 /**
  * Deletes all user data from the database.
  *
- * GDPR Compliance Note:
- * - Deletes all personal identifiable information (PII)
- * - Removes PII fields from userDirectory (email, displayName, lastLogin)
+ * GDPR Compliance Note (Option A — Anonymize shared data):
+ * - Deletes all personal data (settings, diary, calendar, preferences, etc.)
+ * - Removes PII fields from userDirectory (email, displayName, lastLogin, isTrainer)
  * - Retains userDirectory/{uid}/messageSends for anonymized analytics (GDPR Article 89)
+ * - Marks trainer connections as 'deleted' so the other side keeps session history
+ * - Training sessions are preserved (dates + payment data, no PII) under anonymized UIDs
+ * - Cleans up trainerId pointers on connected trainees/trainers
  * - Once Firebase Auth account is deleted, userId becomes a pseudonymous
  *   identifier that cannot be linked back to the individual
  */
 export const deleteAllUserData = async (userId: string): Promise<void> => {
+  // 1. Delete all personal user data
   await Promise.all([
     remove(getUserSettingsRef(userId)),
     remove(getUserPreferencesRef(userId)),
@@ -214,11 +220,78 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserCalendarRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
-    // Remove only PII fields from userDirectory, keep analytics (messageSends)
+    remove(ref(database, `users/${userId}/trainerCalendar`)),
+    remove(ref(database, `users/${userId}/energyDrinks`)),
+    remove(ref(database, `users/${userId}/trainerId`)),
+    // Remove PII fields from userDirectory, keep analytics (messageSends)
     remove(ref(database, `userDirectory/${userId}/email`)),
     remove(ref(database, `userDirectory/${userId}/displayName`)),
     remove(ref(database, `userDirectory/${userId}/lastLogin`)),
+    remove(ref(database, `userDirectory/${userId}/isTrainer`)),
   ]);
+
+  // 2. Handle trainer connections — mark as 'deleted', clean up other side
+  await cleanupConnectionsForDeletedUser(userId);
+};
+
+/**
+ * Finds all trainer connections involving this user (as trainer or trainee)
+ * and marks them as 'deleted'. Also cleans up trainerId on affected trainees.
+ */
+const cleanupConnectionsForDeletedUser = async (
+  userId: string,
+): Promise<void> => {
+  const connectionsRef = ref(database, 'trainerConnections');
+
+  // Find connections where user is the trainer
+  const asTrainerSnap = await get(
+    query(connectionsRef, orderByChild('trainerId'), equalTo(userId)),
+  );
+  // Find connections where user is the trainee
+  const asTraineeSnap = await get(
+    query(connectionsRef, orderByChild('traineeId'), equalTo(userId)),
+  );
+
+  const updates: Record<string, unknown> = {};
+
+  if (asTrainerSnap.exists()) {
+    const data = asTrainerSnap.val() as Record<string, ITrainerConnection>;
+    for (const [connId, conn] of Object.entries(data)) {
+      updates[`trainerConnections/${connId}/status`] = 'deleted';
+      // Remove trainerId pointer from the trainee
+      if (conn.traineeId) {
+        updates[`users/${conn.traineeId}/trainerId`] = null;
+      }
+    }
+  }
+
+  if (asTraineeSnap.exists()) {
+    const data = asTraineeSnap.val() as Record<string, ITrainerConnection>;
+    for (const [connId] of Object.entries(data)) {
+      updates[`trainerConnections/${connId}/status`] = 'deleted';
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await update(ref(database), updates);
+  }
+
+  // Clean up any pending invites created by this user
+  const invitesRef = ref(database, 'trainerInvites');
+  const invitesSnap = await get(invitesRef);
+  if (invitesSnap.exists()) {
+    const invites = invitesSnap.val() as Record<
+      string,
+      { trainerId: string; connectionId: string }
+    >;
+    const inviteRemovals: Promise<void>[] = [];
+    for (const [code, invite] of Object.entries(invites)) {
+      if (invite.trainerId === userId) {
+        inviteRemovals.push(remove(ref(database, `trainerInvites/${code}`)));
+      }
+    }
+    await Promise.all(inviteRemovals);
+  }
 };
 
 export const importAllUserData = async (
@@ -251,6 +324,19 @@ export const importAllUserData = async (
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
   }
+  if (data.energyDrinks) {
+    promises.push(
+      set(ref(database, `users/${userId}/energyDrinks`), data.energyDrinks),
+    );
+  }
+  if (data.trainerCalendar) {
+    promises.push(
+      set(
+        ref(database, `users/${userId}/trainerCalendar`),
+        data.trainerCalendar,
+      ),
+    );
+  }
 
   await Promise.all(promises);
 };
@@ -265,6 +351,8 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     calendar,
     calendarNotes,
     activityCategories,
+    energyDrinksSnap,
+    trainerCalendarSnap,
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
@@ -274,6 +362,8 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     loadCalendarData(userId),
     loadCalendarNotes(userId),
     loadActivityCategories(userId),
+    get(ref(database, `users/${userId}/energyDrinks`)),
+    get(ref(database, `users/${userId}/trainerCalendar`)),
   ]);
 
   return {
@@ -285,6 +375,10 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     calendar,
     calendarNotes,
     activityCategories,
+    energyDrinks: energyDrinksSnap.exists() ? energyDrinksSnap.val() : null,
+    trainerCalendar: trainerCalendarSnap.exists()
+      ? trainerCalendarSnap.val()
+      : null,
   };
 };
 

@@ -21,6 +21,8 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     'calendar',
     'calendarNotes',
     'activityCategories',
+    'energyDrinks',
+    'trainerCalendar',
   ]);
 
   for (const key of Object.keys(d)) {
