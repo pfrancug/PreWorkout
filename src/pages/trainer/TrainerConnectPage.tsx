@@ -18,7 +18,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { TrainingSessions } from '../../components/TrainingSessions';
 import { useAuth } from '../../contexts/useAuth';
 import {
   acceptTrainerInvite,
@@ -194,8 +193,6 @@ export const TrainerConnectPage = () => {
               </Button>
             </CardContent>
           </Card>
-
-          <TrainingSessions connectionId={connection.id} role={'trainee'} />
         </>
       );
     }

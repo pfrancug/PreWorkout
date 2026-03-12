@@ -1287,6 +1287,8 @@ export const cancelSession = async (
   await update(sessionRef, {
     status: 'cancelled',
     cancelledBy,
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
   });
 };
 

@@ -16,6 +16,7 @@ import { TraineeViewPage } from '@pages/trainer/TraineeViewPage';
 import { TrainerConnectedPage } from '@pages/trainer/TrainerConnectedPage';
 import { TrainerConnectPage } from '@pages/trainer/TrainerConnectPage';
 import { TrainerInvitesPage } from '@pages/trainer/TrainerInvitesPage';
+import { TrainerSessionsPage } from '@pages/trainer/TrainerSessionsPage';
 import { TrainerSharingPage } from '@pages/trainer/TrainerSharingPage';
 import { MessageSquare } from 'lucide-react';
 import { useEffect } from 'react';
@@ -72,7 +73,8 @@ const pageTitleKeys: Record<string, string> = {
   '/settings/categories': 'nav.settingsCategories',
   '/settings/preferences': 'nav.settingsPreferences',
   '/settings/data': 'nav.settingsData',
-  '/trainer/connect': 'nav.trainerConnect',
+  '/trainer/connection': 'nav.trainerConnect',
+  '/trainer/sessions': 'nav.trainerSessions',
   '/trainer/invites': 'nav.trainerInvites',
   '/trainer/connected': 'nav.trainerConnected',
   '/trainer/sharing': 'nav.trainerSharing',
@@ -235,7 +237,12 @@ const AppRoutes = () => {
 
                 <Route
                   element={<TrainerConnectPage />}
-                  path={'/trainer/connect'}
+                  path={'/trainer/connection'}
+                />
+
+                <Route
+                  element={<TrainerSessionsPage />}
+                  path={'/trainer/sessions'}
                 />
 
                 <Route
@@ -263,14 +270,19 @@ const AppRoutes = () => {
                   element={
                     <Navigate
                       replace
-                      to={`/trainer/connect${window.location.hash}`}
+                      to={`/trainer/connection${window.location.hash}`}
                     />
                   }
                 />
 
                 <Route
-                  element={<Navigate replace to={'/trainer/connect'} />}
+                  element={<Navigate replace to={'/trainer/connection'} />}
                   path={'/settings/trainer'}
+                />
+
+                <Route
+                  element={<Navigate replace to={'/trainer/connection'} />}
+                  path={'/trainer/connect'}
                 />
 
                 <Route element={<AdminPage />} path={'/admin'} />

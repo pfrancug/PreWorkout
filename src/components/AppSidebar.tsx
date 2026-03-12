@@ -23,6 +23,7 @@ import { useSidebar } from '@components/ui/sidebar-context';
 import {
   BookOpen,
   Calculator,
+  CalendarClock,
   CalendarDays,
   ChevronsUpDown,
   Database,
@@ -42,12 +43,14 @@ import {
   UserRound,
   Users,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import { logoutUser } from '../firebase/auth';
+import { subscribeToTraineeConnection } from '../firebase/database';
 
 const menuItems = [
   {
@@ -105,30 +108,37 @@ const settingsItems = [
   },
 ];
 
-const trainerItems = [
+const traineesItems = [
   {
-    titleKey: 'nav.trainerConnect',
-    icon: Link2,
-    path: '/trainer/connect',
-    trainerOnly: false,
+    titleKey: 'nav.trainerConnected',
+    icon: Users,
+    path: '/trainer/connected',
   },
   {
     titleKey: 'nav.trainerInvites',
     icon: Ticket,
     path: '/trainer/invites',
-    trainerOnly: true,
+  },
+];
+
+const connectionItems = [
+  {
+    titleKey: 'nav.trainerConnect',
+    icon: Link2,
+    path: '/trainer/connection',
+    connectionOnly: false,
   },
   {
-    titleKey: 'nav.trainerConnected',
-    icon: Users,
-    path: '/trainer/connected',
-    trainerOnly: true,
+    titleKey: 'nav.trainerSessions',
+    icon: CalendarClock,
+    path: '/trainer/sessions',
+    connectionOnly: true,
   },
   {
     titleKey: 'nav.trainerSharing',
     icon: Share2,
     path: '/trainer/sharing',
-    trainerOnly: false,
+    connectionOnly: true,
   },
 ];
 
@@ -137,7 +147,18 @@ export const AppSidebar = () => {
   const location = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
   const { user, isAdmin, isTrainer } = useAuth();
-  const { settings, changeLanguage } = useSettings();
+  const { settings, preferences, changeLanguage } = useSettings();
+  const [hasConnection, setHasConnection] = useState(false);
+
+  useEffect(() => {
+    if (!user || isTrainer) {
+      return;
+    }
+
+    return subscribeToTraineeConnection(user.uid, (conn) => {
+      setHasConnection(conn !== null);
+    });
+  }, [user, isTrainer]);
 
   const displayName = settings.name || t('nav.anonymous');
   const email = user?.email || '';
@@ -243,14 +264,13 @@ export const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t('nav.trainer')}</SidebarGroupLabel>
+        {isTrainer && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('nav.trainees')}</SidebarGroupLabel>
 
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {trainerItems
-                .filter((item) => !item.trainerOnly || isTrainer)
-                .map((item) => (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {traineesItems.map((item) => (
                   <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton
                       asChild
@@ -268,9 +288,41 @@ export const AppSidebar = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {!preferences.hideConnectionSection && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('nav.trainer')}</SidebarGroupLabel>
+
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {connectionItems
+                  .filter((item) => !item.connectionOnly || hasConnection)
+                  .map((item) => (
+                    <SidebarMenuItem key={item.titleKey}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isSettingsActive(item.path)}
+                        tooltip={t(item.titleKey)}
+                      >
+                        <Link
+                          onClick={() => isMobile && setOpenMobile(false)}
+                          to={item.path}
+                        >
+                          <item.icon />
+
+                          <span>{t(item.titleKey)}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         {isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>{t('nav.administration')}</SidebarGroupLabel>

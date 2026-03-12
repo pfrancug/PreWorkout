@@ -34,6 +34,12 @@
         "all": "Wszystkie",
         "sugar": "Z cukrem",
         "noSugar": "Bez cukru"
+      },
+      "menu": {
+        "title": "Menu",
+        "description": "Dostosuj które sekcje pojawiają się w menu bocznym.",
+        "hideConnection": "Ukryj sekcję Połączenie",
+        "hideConnectionDescription": "Ukryj grupę menu Połączenie (Połączenie, Sesje, Udostępnianie) z paska bocznego."
       }
     },
     "data": {
@@ -131,6 +137,8 @@
       "connectedPageDescription": "Przeglądaj i zarządzaj aktualnie połączonymi podopiecznymi.",
       "sharingPageTitle": "Udostępnianie danych",
       "sharingPageDescription": "Konfiguruj jakie dane są udostępniane trenerowi lub podopiecznym.",
+      "sessionsPageTitle": "Sesje treningowe",
+      "sessionsPageDescription": "Przeglądaj i zarządzaj sesjami treningowymi z trenerem.",
       "sharingComingSoon": "Ustawienia udostępniania danych wkrótce.",
       "tabCalendar": "Kalendarz",
       "tabDiary": "Dziennik",

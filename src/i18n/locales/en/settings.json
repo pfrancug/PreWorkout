@@ -34,6 +34,12 @@
         "all": "All",
         "sugar": "With Sugar",
         "noSugar": "Sugar Free"
+      },
+      "menu": {
+        "title": "Menu",
+        "description": "Customize which sections appear in the sidebar menu.",
+        "hideConnection": "Hide Connection section",
+        "hideConnectionDescription": "Hide the Connection menu group (Connection, Sessions, Sharing) from the sidebar."
       }
     },
     "data": {
@@ -131,6 +137,8 @@
       "connectedPageDescription": "View and manage your currently connected trainees.",
       "sharingPageTitle": "Data Sharing",
       "sharingPageDescription": "Configure what data is shared with your trainer or trainees.",
+      "sessionsPageTitle": "Training Sessions",
+      "sessionsPageDescription": "View and manage your training sessions with your trainer.",
       "sharingComingSoon": "Data sharing settings coming soon.",
       "tabCalendar": "Calendar",
       "tabDiary": "Diary",
