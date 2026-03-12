@@ -43,16 +43,33 @@ export const TrainerConnectedPage = () => {
       setConnections(conns);
       setLoading(false);
 
-      conns.forEach((conn) => {
-        if (conn.traineeId) {
-          getUserDirectoryEntry(conn.traineeId).then((info) => {
-            setTraineesInfo((prev) => ({ ...prev, [conn.traineeId]: info }));
+      const activeTraineeIds = new Set(
+        conns.filter((c) => c.traineeId).map((c) => c.traineeId),
+      );
+
+      // Only fetch info for traineeIds we haven't cached yet
+      for (const traineeId of activeTraineeIds) {
+        setTraineesInfo((prev) => {
+          if (traineeId in prev) {
+            return prev;
+          }
+          getUserDirectoryEntry(traineeId).then((info) => {
+            setTraineesInfo((p) => ({ ...p, [traineeId]: info }));
           });
-          getUserAvatarUrl(conn.traineeId).then((url) => {
-            setTraineesAvatars((prev) => ({ ...prev, [conn.traineeId]: url }));
+
+          return prev;
+        });
+        setTraineesAvatars((prev) => {
+          if (traineeId in prev) {
+            return prev;
+          }
+          getUserAvatarUrl(traineeId).then((url) => {
+            setTraineesAvatars((p) => ({ ...p, [traineeId]: url }));
           });
-        }
-      });
+
+          return prev;
+        });
+      }
     });
 
     return unsubscribe;
@@ -160,6 +177,7 @@ export const TrainerConnectedPage = () => {
                       </Badge>
 
                       <Button
+                        aria-label={t('settings.trainer.removeTrainee')}
                         className={'cursor-pointer'}
                         disabled={removingId === conn.id}
                         size={'sm'}

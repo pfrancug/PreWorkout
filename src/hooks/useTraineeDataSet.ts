@@ -31,15 +31,7 @@ const fromFirebaseFormat = (data: IRowData[]): IRow[] =>
  */
 export const useTraineeDataSet = (traineeId: string | undefined) => {
   const [dataSet, setDataSet] = useState<IRow[] | null>(null);
-  const [isLoading, setIsLoading] = useState(!!traineeId);
-  const [prevTraineeId, setPrevTraineeId] = useState(traineeId);
-
-  // Adjust state during render when traineeId changes (avoids setState in effect)
-  if (traineeId !== prevTraineeId) {
-    setPrevTraineeId(traineeId);
-    setDataSet(null);
-    setIsLoading(!!traineeId);
-  }
+  const [loadedForId, setLoadedForId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!traineeId) {
@@ -54,7 +46,7 @@ export const useTraineeDataSet = (traineeId: string | undefined) => {
       }
 
       setDataSet(data ? fromFirebaseFormat(data) : null);
-      setIsLoading(false);
+      setLoadedForId(traineeId);
     });
 
     return () => {
@@ -62,5 +54,9 @@ export const useTraineeDataSet = (traineeId: string | undefined) => {
     };
   }, [traineeId]);
 
-  return { dataSet, isLoading };
+  // Derive loading / visible data without synchronous setState
+  const isLoading = !!traineeId && loadedForId !== traineeId;
+  const visibleData = traineeId && loadedForId === traineeId ? dataSet : null;
+
+  return { dataSet: visibleData, isLoading };
 };

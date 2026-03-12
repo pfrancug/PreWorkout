@@ -43,6 +43,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import {
+  batchRemoveFromPackage,
   cancelSession,
   completeSession,
   confirmSession,
@@ -53,7 +54,6 @@ import {
   markSessionPaid,
   markSessionUnpaid,
   reactivateSession,
-  removeFromPackage,
   subscribeToTrainingSessions,
   toggleTrainerCalendarDay,
 } from '../firebase/database';
@@ -261,9 +261,10 @@ export const TrainingSessions = ({
 
   const handleUngroupPackage = async (packageSessions: ITrainingSession[]) => {
     try {
-      for (const s of packageSessions) {
-        await removeFromPackage(connectionId, s.id);
-      }
+      await batchRemoveFromPackage(
+        connectionId,
+        packageSessions.map((s) => s.id),
+      );
       toast.success(t('sessions.removedFromPackage'));
     } catch {
       toast.error(t('common.saveError'));

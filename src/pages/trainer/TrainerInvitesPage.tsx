@@ -91,11 +91,17 @@ const InviteCard = ({
           {connection.inviteCode}
         </div>
 
-        <Button onClick={handleCopy} size={'icon'} variant={'outline'}>
+        <Button
+          aria-label={t('common.copy')}
+          onClick={handleCopy}
+          size={'icon'}
+          variant={'outline'}
+        >
           <ClipboardCopy className={'h-4 w-4'} />
         </Button>
 
         <Button
+          aria-label={t('common.delete')}
           disabled={deleting}
           onClick={handleDelete}
           size={'icon'}

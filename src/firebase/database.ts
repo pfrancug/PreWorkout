@@ -1263,7 +1263,7 @@ export const createTrainingSession = async (
   return newRef.key!;
 };
 
-/** Trainee confirms attendance → session becomes completed. */
+/** Trainee confirms attendance. */
 export const confirmSession = async (
   connectionId: string,
   sessionId: string,
@@ -1393,6 +1393,18 @@ export const removeFromPackage = async (
   await update(ref(database, `trainingSessions/${connectionId}/${sessionId}`), {
     packageId: null,
   });
+};
+
+/** Remove multiple sessions from their packages in a single write. */
+export const batchRemoveFromPackage = async (
+  connectionId: string,
+  sessionIds: string[],
+): Promise<void> => {
+  const updates: Record<string, null> = {};
+  for (const id of sessionIds) {
+    updates[`trainingSessions/${connectionId}/${id}/packageId`] = null;
+  }
+  await update(ref(database), updates);
 };
 
 /** Mark all sessions in a package as paid. */

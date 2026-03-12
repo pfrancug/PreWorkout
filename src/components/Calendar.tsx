@@ -752,6 +752,7 @@ export const Calendar = ({
                   !isTrainerDay && (
                     <div className={'flex shrink-0 items-center'}>
                       <button
+                        aria-label={t('calendar.toggleTrainerSession')}
                         onClick={() => toggleTrainerActivity(dateKey)}
                         title={t('calendar.toggleTrainerSession')}
                         type={'button'}
@@ -1037,6 +1038,7 @@ export const Calendar = ({
                         }
                       >
                         <button
+                          aria-label={t('calendar.toggleTrainerSession')}
                           onClick={() => toggleTrainerActivity(dateKey)}
                           title={t('calendar.toggleTrainerSession')}
                           type={'button'}

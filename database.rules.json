@@ -61,8 +61,8 @@
 
         "trainerId": {
           ".read": "auth != null && auth.uid == $userId",
-          ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 128)"
+          ".write": "auth != null && (auth.token.admin === true || (auth.uid == $userId) || (!newData.exists() && data.val() === auth.uid))",
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 128 && root.child('userDirectory/' + newData.val() + '/isTrainer').val() === true)"
         },
 
         "settings": {
