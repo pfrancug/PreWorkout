@@ -184,6 +184,10 @@ export const AdminPage = () => {
       setTogglingTrainer(uid);
       try {
         const token = await firebaseAuth.currentUser?.getIdToken();
+        if (!token) {
+          throw new Error('Not authenticated');
+        }
+
         const response = await fetch('/api/admin/set-trainer', {
           method: 'POST',
           headers: {

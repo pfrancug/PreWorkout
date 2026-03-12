@@ -271,9 +271,15 @@ export const Calendar = ({
     return days;
   }, [weekStart, todayKey]);
 
-  // Trainer activity category (the one with trainerId set, not archived)
+  // Trainer activity category (the one with trainerId set, not archived) — used for new toggles
   const trainerCategory = useMemo(
     () => categories.find((c) => c.trainerId && !c.archived) ?? null,
+    [categories],
+  );
+
+  // Any trainer category (including archived) — used to render historical trainer days
+  const trainerCategoryForDisplay = useMemo(
+    () => categories.find((c) => !!c.trainerId) ?? null,
     [categories],
   );
 
@@ -327,16 +333,16 @@ export const Calendar = ({
   const getActivitiesForDay = useCallback(
     (dateKey: string): CalendarActivity[] => {
       const regular = calendarData?.[dateKey] ?? [];
-      if (trainerCategory && trainerCalendar?.[dateKey]) {
+      if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
         // Inject trainer activity if not already in the regular list
-        if (!regular.includes(trainerCategory.id)) {
-          return [...regular, trainerCategory.id];
+        if (!regular.includes(trainerCategoryForDisplay.id)) {
+          return [...regular, trainerCategoryForDisplay.id];
         }
       }
 
       return regular;
     },
-    [calendarData, trainerCalendar, trainerCategory],
+    [calendarData, trainerCalendar, trainerCategoryForDisplay],
   );
 
   /** Add trainer-marked activity on a day (writes to trainerCalendar node + training session) */

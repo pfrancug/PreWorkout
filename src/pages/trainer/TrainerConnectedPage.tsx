@@ -15,9 +15,8 @@ import { useAuth } from '../../contexts/useAuth';
 import {
   disconnectTrainer,
   getUserAvatarUrl,
-  getUserDirectoryEntry,
+  getUserDisplayName,
   subscribeToTrainerConnections,
-  type UserDirectoryEntry,
 } from '../../firebase/database';
 
 export const TrainerConnectedPage = () => {
@@ -26,7 +25,7 @@ export const TrainerConnectedPage = () => {
   const navigate = useNavigate();
   const [connections, setConnections] = useState<ITrainerConnection[]>([]);
   const [traineesInfo, setTraineesInfo] = useState<
-    Record<string, UserDirectoryEntry | null>
+    Record<string, string | null>
   >({});
   const [traineesAvatars, setTraineesAvatars] = useState<
     Record<string, string | null>
@@ -53,8 +52,8 @@ export const TrainerConnectedPage = () => {
           if (traineeId in prev) {
             return prev;
           }
-          getUserDirectoryEntry(traineeId).then((info) => {
-            setTraineesInfo((p) => ({ ...p, [traineeId]: info }));
+          getUserDisplayName(traineeId).then((name) => {
+            setTraineesInfo((p) => ({ ...p, [traineeId]: name }));
           });
 
           return prev;
@@ -154,7 +153,7 @@ export const TrainerConnectedPage = () => {
                     <div className={'flex items-center gap-3'}>
                       <Avatar className={'h-8 w-8 rounded-lg'}>
                         <AvatarImage
-                          alt={info?.displayName || ''}
+                          alt={info || ''}
                           src={
                             (conn.traineeId &&
                               traineesAvatars[conn.traineeId]) ||
@@ -162,12 +161,12 @@ export const TrainerConnectedPage = () => {
                           }
                         />
                         <AvatarFallback className={'rounded-lg'}>
-                          {(info?.displayName || '?').charAt(0).toUpperCase()}
+                          {(info || '?').charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
 
                       <p className={'font-medium'}>
-                        {info?.displayName || t('settings.trainer.unknownUser')}
+                        {info || t('settings.trainer.unknownUser')}
                       </p>
                     </div>
 

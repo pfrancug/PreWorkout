@@ -892,7 +892,30 @@ export const createTrainerInvite = async (
   trainerId: string,
   note?: string,
 ): Promise<{ inviteCode: string; connectionId: string }> => {
-  const inviteCode = generateInviteCode();
+  // Reserve a unique invite code via transaction (retry on collision)
+  let inviteCode = '';
+  let reserved = false;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    inviteCode = generateInviteCode();
+    const inviteRef = ref(database, `trainerInvites/${inviteCode}`);
+    const { committed } = await runTransaction(inviteRef, (current) => {
+      if (current !== null) {
+        return; // abort — code already taken
+      }
+
+      // Placeholder; will be overwritten below with the real connectionId
+      return { trainerId, connectionId: '' };
+    });
+
+    if (committed) {
+      reserved = true;
+      break;
+    }
+  }
+
+  if (!reserved) {
+    throw new Error('Failed to generate unique invite code');
+  }
 
   // Create the connection record
   const connectionsRef = ref(database, 'trainerConnections');
@@ -913,7 +936,7 @@ export const createTrainerInvite = async (
 
   await set(newConnectionRef, connectionData);
 
-  // Create a lookup entry for the invite code
+  // Update the invite with the real connectionId
   await set(ref(database, `trainerInvites/${inviteCode}`), {
     trainerId,
     connectionId,
@@ -977,8 +1000,7 @@ export const acceptTrainerInvite = async (
 
   // Auto-create trainer activity category for the trainee
   try {
-    const trainerEntry = await getUserDirectoryEntry(trainerId);
-    const trainerName = trainerEntry?.displayName || 'Trainer';
+    const trainerName = (await getUserDisplayName(trainerId)) || 'Trainer';
     const existingCategories = await loadActivityCategories(traineeId);
     const categories = existingCategories ?? [];
 
@@ -1163,6 +1185,21 @@ export const getUserDirectoryEntry = async (
   const snapshot = await get(ref(database, `userDirectory/${userId}`));
 
   return snapshot.exists() ? (snapshot.val() as UserDirectoryEntry) : null;
+};
+
+/**
+ * Get a user's display name from the directory.
+ * Uses a field-level read so connected trainers/trainees can access it
+ * without exposing email/lastLogin.
+ */
+export const getUserDisplayName = async (
+  userId: string,
+): Promise<string | null> => {
+  const snapshot = await get(
+    ref(database, `userDirectory/${userId}/displayName`),
+  );
+
+  return snapshot.exists() ? (snapshot.val() as string) : null;
 };
 
 /**

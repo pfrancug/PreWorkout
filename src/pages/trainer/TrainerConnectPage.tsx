@@ -23,9 +23,8 @@ import {
   acceptTrainerInvite,
   disconnectTrainer,
   getUserAvatarUrl,
-  getUserDirectoryEntry,
+  getUserDisplayName,
   subscribeToTraineeConnection,
-  type UserDirectoryEntry,
 } from '../../firebase/database';
 
 export const TrainerConnectPage = () => {
@@ -35,9 +34,7 @@ export const TrainerConnectPage = () => {
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [connection, setConnection] = useState<ITrainerConnection | null>(null);
-  const [trainerInfo, setTrainerInfo] = useState<UserDirectoryEntry | null>(
-    null,
-  );
+  const [trainerName, setTrainerName] = useState<string | null>(null);
   const [trainerAvatar, setTrainerAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -60,10 +57,10 @@ export const TrainerConnectPage = () => {
       setLoading(false);
 
       if (conn) {
-        getUserDirectoryEntry(conn.trainerId).then(setTrainerInfo);
+        getUserDisplayName(conn.trainerId).then(setTrainerName);
         getUserAvatarUrl(conn.trainerId).then(setTrainerAvatar);
       } else {
-        setTrainerInfo(null);
+        setTrainerName(null);
         setTrainerAvatar(null);
       }
     });
@@ -160,19 +157,16 @@ export const TrainerConnectPage = () => {
                 <div className={'flex items-center gap-3'}>
                   <Avatar className={'h-10 w-10 rounded-lg'}>
                     <AvatarImage
-                      alt={trainerInfo?.displayName || ''}
+                      alt={trainerName || ''}
                       src={trainerAvatar || undefined}
                     />
                     <AvatarFallback className={'rounded-lg'}>
-                      {(trainerInfo?.displayName || '?')
-                        .charAt(0)
-                        .toUpperCase()}
+                      {(trainerName || '?').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
 
                   <p className={'font-medium'}>
-                    {trainerInfo?.displayName ||
-                      t('settings.trainer.unknownUser')}
+                    {trainerName || t('settings.trainer.unknownUser')}
                   </p>
                 </div>
 

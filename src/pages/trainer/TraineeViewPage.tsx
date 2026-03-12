@@ -14,9 +14,8 @@ import { useAuth } from '../../contexts/useAuth';
 import { getReadOnlyColumns } from '../../data/readOnlyColumns';
 import {
   getUserAvatarUrl,
-  getUserDirectoryEntry,
+  getUserDisplayName,
   subscribeToTrainerConnections,
-  type UserDirectoryEntry,
 } from '../../firebase/database';
 import { useTraineeDataSet } from '../../hooks/useTraineeDataSet';
 
@@ -29,9 +28,7 @@ export const TraineeViewPage = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
-  const [traineeInfo, setTraineeInfo] = useState<UserDirectoryEntry | null>(
-    null,
-  );
+  const [traineeName, setTraineeName] = useState<string | null>(null);
   const [traineeAvatar, setTraineeAvatar] = useState<string | null>(null);
   const [infoLoading, setInfoLoading] = useState(true);
   const [connectionId, setConnectionId] = useState<string | null>(null);
@@ -50,14 +47,14 @@ export const TraineeViewPage = () => {
     let cancelled = false;
 
     Promise.all([
-      getUserDirectoryEntry(traineeId),
+      getUserDisplayName(traineeId),
       getUserAvatarUrl(traineeId),
-    ]).then(([info, avatar]) => {
+    ]).then(([name, avatar]) => {
       if (cancelled) {
         return;
       }
 
-      setTraineeInfo(info);
+      setTraineeName(name);
       setTraineeAvatar(avatar);
       setInfoLoading(false);
     });
@@ -87,8 +84,7 @@ export const TraineeViewPage = () => {
     return null;
   }
 
-  const displayName =
-    traineeInfo?.displayName || t('settings.trainer.unknownUser');
+  const displayName = traineeName || t('settings.trainer.unknownUser');
   const initials = (displayName || '?').charAt(0).toUpperCase();
 
   const tabs: { id: Tab; labelKey: string; icon: typeof CalendarDays }[] = [
