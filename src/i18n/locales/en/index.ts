@@ -8,6 +8,7 @@ import dashboard from './dashboard.json';
 import diary from './diary.json';
 import legal from './legal.json';
 import monster from './monster.json';
+import sessions from './sessions.json';
 import settings from './settings.json';
 
 export const en = {
@@ -20,6 +21,7 @@ export const en = {
   ...chat,
   ...calculator,
   ...monster,
+  ...sessions,
   ...settings,
   ...legal,
 };

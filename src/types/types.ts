@@ -25,12 +25,24 @@ export interface ITrainerConnection {
 
 export type PaymentMarkedBy = 'trainer' | 'trainee';
 
-export interface IPaymentSession {
-  date: string; // YYYY-MM-DD
-  markedPaidBy: PaymentMarkedBy;
-  confirmedByTrainer: boolean;
-}
+export type TrainingSessionStatus = 'planned' | 'completed' | 'cancelled';
+export type PaymentStatus = 'unpaid' | 'pending' | 'paid';
 
-export interface IMonthlyPayments {
-  sessions: IPaymentSession[];
+export interface ITrainingSession {
+  id: string;
+  connectionId: string;
+  trainerId: string;
+  traineeId: string;
+  date: string; // YYYY-MM-DD
+  time: string | null; // HH:mm
+  status: TrainingSessionStatus;
+  trainerConfirmed: boolean;
+  traineeConfirmed: boolean;
+  paymentStatus: PaymentStatus;
+  paidMarkedBy: PaymentMarkedBy | null;
+  createdAt: number;
+  createdBy: PaymentMarkedBy;
+  cancelledBy?: PaymentMarkedBy;
+  note?: string;
+  packageId?: string | null;
 }

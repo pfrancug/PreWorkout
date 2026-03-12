@@ -2,23 +2,25 @@ import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Skeleton } from '@components/ui/skeleton';
-import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react';
+import { ArrowLeft, BookOpen, CalendarDays, Dumbbell } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Calendar } from '../../components/Calendar';
 import { ReadOnlyDataTable } from '../../components/DataTable/ReadOnlyDataTable';
+import { TrainingSessions } from '../../components/TrainingSessions';
 import { useAuth } from '../../contexts/useAuth';
 import { getReadOnlyColumns } from '../../data/readOnlyColumns';
 import {
   getUserAvatarUrl,
   getUserDirectoryEntry,
+  subscribeToTrainerConnections,
   type UserDirectoryEntry,
 } from '../../firebase/database';
 import { useTraineeDataSet } from '../../hooks/useTraineeDataSet';
 
-type Tab = 'calendar' | 'diary';
+type Tab = 'calendar' | 'diary' | 'sessions';
 
 export const TraineeViewPage = () => {
   const { t } = useTranslation();
@@ -32,6 +34,7 @@ export const TraineeViewPage = () => {
   );
   const [traineeAvatar, setTraineeAvatar] = useState<string | null>(null);
   const [infoLoading, setInfoLoading] = useState(true);
+  const [connectionId, setConnectionId] = useState<string | null>(null);
 
   const { dataSet, isLoading: diaryLoading } = useTraineeDataSet(
     activeTab === 'diary' ? traineeId : undefined,
@@ -64,6 +67,22 @@ export const TraineeViewPage = () => {
     };
   }, [traineeId]);
 
+  // Look up the active connection with this trainee
+  useEffect(() => {
+    if (!user || !traineeId) {
+      return;
+    }
+
+    const unsub = subscribeToTrainerConnections(user.uid, (connections) => {
+      const active = connections.find(
+        (c) => c.traineeId === traineeId && c.status === 'active',
+      );
+      setConnectionId(active?.id ?? null);
+    });
+
+    return unsub;
+  }, [user, traineeId]);
+
   if (!user || !traineeId) {
     return null;
   }
@@ -79,6 +98,11 @@ export const TraineeViewPage = () => {
       icon: CalendarDays,
     },
     { id: 'diary', labelKey: 'settings.trainer.tabDiary', icon: BookOpen },
+    {
+      id: 'sessions',
+      labelKey: 'settings.trainer.tabSessions',
+      icon: Dumbbell,
+    },
   ];
 
   return (
@@ -144,7 +168,12 @@ export const TraineeViewPage = () => {
 
       {/* Tab content */}
       {activeTab === 'calendar' && (
-        <Calendar allowTrainerToggle readOnly userId={traineeId} />
+        <Calendar
+          allowTrainerToggle
+          readOnly
+          connectionId={connectionId ?? undefined}
+          userId={traineeId}
+        />
       )}
 
       {activeTab === 'diary' && (
@@ -159,6 +188,10 @@ export const TraineeViewPage = () => {
             <ReadOnlyDataTable columns={columns} data={dataSet} />
           )}
         </div>
+      )}
+
+      {activeTab === 'sessions' && connectionId && (
+        <TrainingSessions connectionId={connectionId} role={'trainer'} />
       )}
     </div>
   );

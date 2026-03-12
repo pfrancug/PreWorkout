@@ -44,17 +44,12 @@
       }
     },
 
-    "trainingPayments": {
+    "trainingSessions": {
       "$connectionId": {
-        ".read": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid)",
-        ".write": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid)",
-        "$yearMonth": {
-          ".validate": "$yearMonth.matches(/^\\d{4}-\\d{2}$/)",
-          "sessions": {
-            "$sessionIndex": {
-              ".validate": "newData.hasChildren(['date', 'markedPaidBy', 'confirmedByTrainer']) && newData.child('date').isString() && newData.child('date').val().length <= 10 && newData.child('markedPaidBy').isString() && (newData.child('markedPaidBy').val() === 'trainer' || newData.child('markedPaidBy').val() === 'trainee') && newData.child('confirmedByTrainer').isBoolean()"
-            }
-          }
+        ".read": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid || auth.token.admin === true)",
+        ".write": "auth != null && (root.child('trainerConnections/' + $connectionId + '/trainerId').val() === auth.uid || root.child('trainerConnections/' + $connectionId + '/traineeId').val() === auth.uid || auth.token.admin === true)",
+        "$sessionId": {
+          ".validate": "newData.hasChildren(['connectionId', 'trainerId', 'traineeId', 'date', 'status', 'trainerConfirmed', 'traineeConfirmed', 'paymentStatus', 'createdAt', 'createdBy']) && newData.child('connectionId').isString() && newData.child('connectionId').val() === $connectionId && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('date').isString() && newData.child('date').val().length <= 10 && newData.child('status').isString() && (newData.child('status').val() === 'planned' || newData.child('status').val() === 'completed' || newData.child('status').val() === 'cancelled') && newData.child('trainerConfirmed').isBoolean() && newData.child('traineeConfirmed').isBoolean() && newData.child('paymentStatus').isString() && (newData.child('paymentStatus').val() === 'unpaid' || newData.child('paymentStatus').val() === 'pending' || newData.child('paymentStatus').val() === 'paid') && newData.child('createdAt').isNumber() && newData.child('createdBy').isString() && (newData.child('createdBy').val() === 'trainer' || newData.child('createdBy').val() === 'trainee') && (!newData.hasChild('time') || newData.child('time').val() == null || (newData.child('time').isString() && newData.child('time').val().length <= 5)) && (!newData.hasChild('paidMarkedBy') || newData.child('paidMarkedBy').val() == null || (newData.child('paidMarkedBy').isString() && (newData.child('paidMarkedBy').val() === 'trainer' || newData.child('paidMarkedBy').val() === 'trainee'))) && (!newData.hasChild('cancelledBy') || (newData.child('cancelledBy').isString() && (newData.child('cancelledBy').val() === 'trainer' || newData.child('cancelledBy').val() === 'trainee'))) && (!newData.hasChild('note') || (newData.child('note').isString() && newData.child('note').val().length <= 500)) && (!newData.hasChild('packageId') || newData.child('packageId').val() == null || (newData.child('packageId').isString() && newData.child('packageId').val().length <= 50))"
         }
       }
     },

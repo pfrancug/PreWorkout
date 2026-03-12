@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { TrainingSessions } from '../../components/TrainingSessions';
 import { useAuth } from '../../contexts/useAuth';
 import {
   acceptTrainerInvite,
@@ -182,6 +183,10 @@ const TraineeView = ({ userId }: { userId: string }) => {
             <Link2Off className={'mr-2 h-4 w-4'} />
             {t('settings.trainer.disconnect')}
           </Button>
+
+          <Separator />
+
+          <TrainingSessions connectionId={connection.id} role={'trainee'} />
         </CardContent>
       </Card>
     );

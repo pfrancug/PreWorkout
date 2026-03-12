@@ -2,7 +2,7 @@ import type {
   UserPreferences,
   UserSettings,
 } from '../contexts/SettingsContext';
-import type { ITrainerConnection } from '../types/types';
+import type { ITrainerConnection, ITrainingSession } from '../types/types';
 import type { Message } from '@components/Chat';
 
 import {
@@ -1111,4 +1111,225 @@ export const getTrainerFlagFromDirectory = async (
   );
 
   return snapshot.exists() ? (snapshot.val() as boolean) : false;
+};
+
+// ── Training Sessions ──────────────────────────────────────────────
+
+export const subscribeToTrainingSessions = (
+  connectionId: string,
+  callback: (sessions: ITrainingSession[]) => void,
+): (() => void) => {
+  const sessionsRef = ref(database, `trainingSessions/${connectionId}`);
+
+  const unsubscribe = onValue(sessionsRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val() as Record<string, ITrainingSession>;
+      const sessions = Object.entries(data).map(([id, val]) => ({
+        ...val,
+        id,
+      }));
+      sessions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
+      callback(sessions);
+    } else {
+      callback([]);
+    }
+  });
+
+  return unsubscribe;
+};
+
+export const createTrainingSession = async (
+  connectionId: string,
+  trainerId: string,
+  traineeId: string,
+  date: string,
+  time?: string | null,
+): Promise<string> => {
+  const sessionsRef = ref(database, `trainingSessions/${connectionId}`);
+  const newRef = push(sessionsRef);
+
+  const session: Omit<ITrainingSession, 'id'> = {
+    connectionId,
+    trainerId,
+    traineeId,
+    date,
+    time: time ?? null,
+    status: 'planned',
+    trainerConfirmed: true,
+    traineeConfirmed: false,
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
+    createdAt: Date.now(),
+    createdBy: 'trainer',
+  };
+
+  await set(newRef, session);
+
+  return newRef.key!;
+};
+
+/** Trainee confirms attendance → session becomes completed. */
+export const confirmSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    traineeConfirmed: true,
+  });
+};
+
+export const completeSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    status: 'completed',
+  });
+};
+
+export const cancelSession = async (
+  connectionId: string,
+  sessionId: string,
+  cancelledBy: 'trainer' | 'trainee',
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    status: 'cancelled',
+    cancelledBy,
+  });
+};
+
+export const reactivateSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    status: 'planned',
+    cancelledBy: null,
+  });
+};
+
+export const updateSessionTime = async (
+  connectionId: string,
+  sessionId: string,
+  time: string | null,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, { time });
+};
+
+/** Trainer marks session as paid (immediate, no confirmation needed). */
+export const markSessionPaid = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    paymentStatus: 'paid',
+    paidMarkedBy: 'trainer',
+  });
+};
+
+/** Trainer marks session as unpaid (revert a payment). */
+export const markSessionUnpaid = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
+  });
+};
+
+export const deleteTrainingSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  await remove(ref(database, `trainingSessions/${connectionId}/${sessionId}`));
+};
+
+/** Group sessions into a package (shared packageId). */
+export const groupSessionsAsPackage = async (
+  connectionId: string,
+  sessionIds: string[],
+): Promise<string> => {
+  const packageId = push(
+    ref(database, `trainingSessions/${connectionId}`),
+  ).key!;
+  const updates: Record<string, string> = {};
+  for (const sid of sessionIds) {
+    updates[`trainingSessions/${connectionId}/${sid}/packageId`] = packageId;
+  }
+  await update(ref(database), updates);
+
+  return packageId;
+};
+
+/** Remove a session from its package. */
+export const removeFromPackage = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  await update(ref(database, `trainingSessions/${connectionId}/${sessionId}`), {
+    packageId: null,
+  });
+};
+
+/** Mark all sessions in a package as paid. */
+export const markPackagePaid = async (
+  connectionId: string,
+  packageId: string,
+  sessions: ITrainingSession[],
+): Promise<void> => {
+  const inPackage = sessions.filter((s) => s.packageId === packageId);
+  const updates: Record<string, unknown> = {};
+  for (const s of inPackage) {
+    updates[`trainingSessions/${connectionId}/${s.id}/paymentStatus`] = 'paid';
+    updates[`trainingSessions/${connectionId}/${s.id}/paidMarkedBy`] =
+      'trainer';
+  }
+  await update(ref(database), updates);
+};
+
+/** Mark all sessions in a package as unpaid. */
+export const markPackageUnpaid = async (
+  connectionId: string,
+  packageId: string,
+  sessions: ITrainingSession[],
+): Promise<void> => {
+  const inPackage = sessions.filter((s) => s.packageId === packageId);
+  const updates: Record<string, unknown> = {};
+  for (const s of inPackage) {
+    updates[`trainingSessions/${connectionId}/${s.id}/paymentStatus`] =
+      'unpaid';
+    updates[`trainingSessions/${connectionId}/${s.id}/paidMarkedBy`] = null;
+  }
+  await update(ref(database), updates);
 };
