@@ -46,18 +46,23 @@ export const TraineeViewPage = () => {
 
     let cancelled = false;
 
-    Promise.all([
-      getUserDisplayName(traineeId),
-      getUserAvatarUrl(traineeId),
-    ]).then(([name, avatar]) => {
-      if (cancelled) {
-        return;
-      }
+    Promise.all([getUserDisplayName(traineeId), getUserAvatarUrl(traineeId)])
+      .then(([name, avatar]) => {
+        if (cancelled) {
+          return;
+        }
 
-      setTraineeName(name);
-      setTraineeAvatar(avatar);
-      setInfoLoading(false);
-    });
+        setTraineeName(name);
+        setTraineeAvatar(avatar);
+      })
+      .catch(() => {
+        // Silently ignore — name/avatar are non-critical
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setInfoLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;

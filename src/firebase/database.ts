@@ -703,6 +703,14 @@ export const updateUserDirectory = async (
   });
 };
 
+/** Update only the display name in userDirectory (for settings sync). */
+export const updateUserDisplayName = async (
+  userId: string,
+  displayName: string,
+): Promise<void> => {
+  await update(ref(database, `userDirectory/${userId}`), { displayName });
+};
+
 // Admin functions
 export const subscribeToUserDirectory = (
   callback: (data: Record<string, UserDirectoryEntry> | null) => void,
@@ -934,13 +942,20 @@ export const createTrainerInvite = async (
     connectionData.note = note;
   }
 
-  await set(newConnectionRef, connectionData);
+  try {
+    await set(newConnectionRef, connectionData);
 
-  // Update the invite with the real connectionId
-  await set(ref(database, `trainerInvites/${inviteCode}`), {
-    trainerId,
-    connectionId,
-  });
+    // Update the invite with the real connectionId
+    await set(ref(database, `trainerInvites/${inviteCode}`), {
+      trainerId,
+      connectionId,
+    });
+  } catch (err) {
+    // Clean up orphaned records on failure
+    await remove(ref(database, `trainerInvites/${inviteCode}`)).catch(() => {});
+    await remove(newConnectionRef).catch(() => {});
+    throw err;
+  }
 
   return { inviteCode, connectionId };
 };

@@ -148,7 +148,7 @@ export const AppSidebar = () => {
   const { isMobile, setOpenMobile } = useSidebar();
   const { user, isAdmin, isTrainer } = useAuth();
   const { settings, preferences, changeLanguage } = useSettings();
-  const [hasConnection, setHasConnection] = useState(false);
+  const [connectedRaw, setConnectedRaw] = useState(false);
 
   useEffect(() => {
     if (!user || isTrainer) {
@@ -156,9 +156,12 @@ export const AppSidebar = () => {
     }
 
     return subscribeToTraineeConnection(user.uid, (conn) => {
-      setHasConnection(conn !== null);
+      setConnectedRaw(conn !== null);
     });
   }, [user, isTrainer]);
+
+  // Derive: trainers never show connection items; reset when user/role changes
+  const hasConnection = !isTrainer && !!user && connectedRaw;
 
   const displayName = settings.name || t('nav.anonymous');
   const email = user?.email || '';

@@ -348,7 +348,7 @@ export const Calendar = ({
   /** Add trainer-marked activity on a day (writes to trainerCalendar node + training session) */
   const toggleTrainerActivity = useCallback(
     async (dateKey: string) => {
-      if (!targetUserId || !trainerCategory) {
+      if (!targetUserId || !trainerCategory || !connectionId || !user) {
         return;
       }
 
@@ -365,14 +365,12 @@ export const Calendar = ({
 
       try {
         await toggleTrainerCalendarDay(targetUserId, dateKey, true);
-        if (connectionId && user) {
-          await createTrainingSession(
-            connectionId,
-            trainerCategory.trainerId!,
-            targetUserId,
-            dateKey,
-          );
-        }
+        await createTrainingSession(
+          connectionId,
+          trainerCategory.trainerId!,
+          targetUserId,
+          dateKey,
+        );
       } catch {
         toast.error(t('common.saveError'));
       }

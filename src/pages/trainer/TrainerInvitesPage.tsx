@@ -37,6 +37,14 @@ const InviteCard = ({
   const [deleting, setDeleting] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Sync note from props when the subscription delivers a new value
+  // (e.g. edited on another device), but only if no local edit is pending
+  useEffect(() => {
+    if (!debounceRef.current) {
+      setNote(connection.note || '');
+    }
+  }, [connection.note]);
+
   const handleNoteChange = useCallback(
     (value: string) => {
       setNote(value);
