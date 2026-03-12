@@ -40,14 +40,21 @@ export const useTraineeDataSet = (traineeId: string | undefined) => {
 
     let cancelled = false;
 
-    loadUserData(traineeId).then((data) => {
-      if (cancelled) {
-        return;
-      }
+    loadUserData(traineeId)
+      .then((data) => {
+        if (cancelled) {
+          return;
+        }
 
-      setDataSet(data ? fromFirebaseFormat(data) : null);
-      setLoadedForId(traineeId);
-    });
+        setDataSet(data ? fromFirebaseFormat(data) : null);
+        setLoadedForId(traineeId);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDataSet(null);
+          setLoadedForId(traineeId);
+        }
+      });
 
     return () => {
       cancelled = true;

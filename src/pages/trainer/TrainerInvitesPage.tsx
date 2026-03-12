@@ -55,6 +55,7 @@ const InviteCard = ({
 
       debounceRef.current = setTimeout(() => {
         updateConnectionNote(connection.id, value);
+        debounceRef.current = null;
       }, 600);
     },
     [connection.id],

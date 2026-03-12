@@ -268,7 +268,8 @@ const cleanupConnectionsForDeletedUser = async (
   if (asTraineeSnap.exists()) {
     const data = asTraineeSnap.val() as Record<string, ITrainerConnection>;
     for (const [connId] of Object.entries(data)) {
-      updates[`trainerConnections/${connId}/status`] = 'deleted';
+      // Trainee rules only allow delete (not status update), so remove entirely
+      updates[`trainerConnections/${connId}`] = null;
     }
   }
 
@@ -900,6 +901,11 @@ export const createTrainerInvite = async (
   trainerId: string,
   note?: string,
 ): Promise<{ inviteCode: string; connectionId: string }> => {
+  // Create the connection record first so we have a stable connectionId
+  const connectionsRef = ref(database, 'trainerConnections');
+  const newConnectionRef = push(connectionsRef);
+  const connectionId = newConnectionRef.key!;
+
   // Reserve a unique invite code via transaction (retry on collision)
   let inviteCode = '';
   let reserved = false;
@@ -911,8 +917,8 @@ export const createTrainerInvite = async (
         return; // abort — code already taken
       }
 
-      // Placeholder; will be overwritten below with the real connectionId
-      return { trainerId, connectionId: '' };
+      // Write final shape atomically — no placeholder window
+      return { trainerId, connectionId };
     });
 
     if (committed) {
@@ -924,11 +930,6 @@ export const createTrainerInvite = async (
   if (!reserved) {
     throw new Error('Failed to generate unique invite code');
   }
-
-  // Create the connection record
-  const connectionsRef = ref(database, 'trainerConnections');
-  const newConnectionRef = push(connectionsRef);
-  const connectionId = newConnectionRef.key!;
 
   const connectionData: Record<string, unknown> = {
     trainerId,
@@ -944,16 +945,9 @@ export const createTrainerInvite = async (
 
   try {
     await set(newConnectionRef, connectionData);
-
-    // Update the invite with the real connectionId
-    await set(ref(database, `trainerInvites/${inviteCode}`), {
-      trainerId,
-      connectionId,
-    });
   } catch (err) {
-    // Clean up orphaned records on failure
+    // Clean up the reserved invite on failure
     await remove(ref(database, `trainerInvites/${inviteCode}`)).catch(() => {});
-    await remove(newConnectionRef).catch(() => {});
     throw err;
   }
 
@@ -1089,7 +1083,7 @@ export const disconnectTrainer = async (
   connectionId: string,
   traineeId: string,
 ): Promise<void> => {
-  // Read the connection to find the trainerId before removing
+  // Read the connection to find the trainerId before soft-deleting
   const connSnap = await get(
     ref(database, `trainerConnections/${connectionId}`),
   );
@@ -1097,8 +1091,10 @@ export const disconnectTrainer = async (
     ? (connSnap.val() as ITrainerConnection).trainerId
     : null;
 
-  // Remove the connection
-  await remove(ref(database, `trainerConnections/${connectionId}`));
+  // Soft-delete: preserve node so trainingSessions rules still resolve
+  await update(ref(database, `trainerConnections/${connectionId}`), {
+    status: 'deleted',
+  });
 
   // Remove trainerId from the user
   await remove(ref(database, `users/${traineeId}/trainerId`));

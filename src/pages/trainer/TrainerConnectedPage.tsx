@@ -52,21 +52,24 @@ export const TrainerConnectedPage = () => {
           if (traineeId in prev) {
             return prev;
           }
+
+          // Write placeholder to prevent duplicate fetches
           getUserDisplayName(traineeId).then((name) => {
             setTraineesInfo((p) => ({ ...p, [traineeId]: name }));
           });
 
-          return prev;
+          return { ...prev, [traineeId]: null };
         });
         setTraineesAvatars((prev) => {
           if (traineeId in prev) {
             return prev;
           }
+
           getUserAvatarUrl(traineeId).then((url) => {
             setTraineesAvatars((p) => ({ ...p, [traineeId]: url }));
           });
 
-          return prev;
+          return { ...prev, [traineeId]: null };
         });
       }
     });

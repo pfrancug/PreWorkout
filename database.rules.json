@@ -19,7 +19,7 @@
           ".validate": "newData.isString() && newData.val().length <= 30"
         },
         "isTrainer": {
-          ".read": "auth != null",
+          ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
           ".validate": "newData.isBoolean()"
         },
         "messageSends": {
@@ -34,7 +34,7 @@
       ".indexOn": ["trainerId", "traineeId", "inviteCode"],
       "$connectionId": {
         ".read": "auth != null && (data.child('trainerId').val() === auth.uid || data.child('traineeId').val() === auth.uid || auth.token.admin === true)",
-        ".write": "auth != null && (auth.token.admin === true || (auth.token.trainer === true && !data.exists() && newData.child('trainerId').val() === auth.uid && newData.child('status').val() === 'pending') || (data.child('trainerId').val() === auth.uid && (!newData.exists() || (newData.child('trainerId').val() === data.child('trainerId').val() && newData.child('traineeId').val() === data.child('traineeId').val() && newData.child('inviteCode').val() === data.child('inviteCode').val() && newData.child('createdAt').val() === data.child('createdAt').val()))) || (newData.child('traineeId').val() === auth.uid && data.child('status').val() === 'pending' && newData.child('status').val() === 'active' && newData.child('trainerId').val() === data.child('trainerId').val() && newData.child('inviteCode').val() === data.child('inviteCode').val() && newData.child('createdAt').val() === data.child('createdAt').val()) || (data.child('traineeId').val() === auth.uid && !newData.exists()))",
+        ".write": "auth != null && (auth.token.admin === true || (auth.token.trainer === true && !data.exists() && newData.child('trainerId').val() === auth.uid && newData.child('status').val() === 'pending') || (data.child('trainerId').val() === auth.uid && (!newData.exists() || (newData.child('trainerId').val() === data.child('trainerId').val() && newData.child('traineeId').val() === data.child('traineeId').val() && newData.child('inviteCode').val() === data.child('inviteCode').val() && newData.child('createdAt').val() === data.child('createdAt').val()))) || (newData.child('traineeId').val() === auth.uid && data.child('status').val() === 'pending' && newData.child('status').val() === 'active' && newData.child('trainerId').val() === data.child('trainerId').val() && newData.child('inviteCode').val() === data.child('inviteCode').val() && newData.child('createdAt').val() === data.child('createdAt').val()) || (data.child('traineeId').val() === auth.uid && (!newData.exists() || (newData.child('status').val() === 'deleted' && newData.child('trainerId').val() === data.child('trainerId').val() && newData.child('traineeId').val() === data.child('traineeId').val() && newData.child('inviteCode').val() === data.child('inviteCode').val() && newData.child('createdAt').val() === data.child('createdAt').val()))))",
         ".validate": "!newData.exists() || (newData.hasChildren(['trainerId', 'traineeId', 'status', 'inviteCode', 'createdAt']) && newData.child('trainerId').isString() && newData.child('traineeId').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'active' || newData.child('status').val() === 'declined' || newData.child('status').val() === 'deleted') && newData.child('inviteCode').isString() && newData.child('inviteCode').val().length <= 20 && newData.child('createdAt').isNumber() && (!newData.child('note').exists() || newData.child('note').isString()))"
       }
     },
@@ -69,7 +69,7 @@
         },
 
         "settings": {
-          ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid) || root.child('users/' + auth.uid + '/trainerId').val() === $userId)",
+          ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && auth.uid == $userId",
           ".validate": "newData.hasChildren(['name', 'age', 'height', 'sex']) && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('age').isString() && newData.child('age').val().length <= 3 && newData.child('height').isString() && newData.child('height').val().length <= 3 && newData.child('sex').isString() && (newData.child('sex').val() === '' || newData.child('sex').val() === 'male' || newData.child('sex').val() === 'female') && (!newData.hasChild('avatarUrl') || (newData.child('avatarUrl').isString() && newData.child('avatarUrl').val().length <= 200000))"
         },
