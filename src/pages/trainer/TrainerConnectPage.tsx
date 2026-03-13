@@ -57,8 +57,12 @@ export const TrainerConnectPage = () => {
       setLoading(false);
 
       if (conn) {
-        getUserDisplayName(conn.trainerId).then(setTrainerName);
-        getUserAvatarUrl(conn.trainerId).then(setTrainerAvatar);
+        getUserDisplayName(conn.trainerId)
+          .then(setTrainerName)
+          .catch(() => {});
+        getUserAvatarUrl(conn.trainerId)
+          .then(setTrainerAvatar)
+          .catch(() => {});
       } else {
         setTrainerName(null);
         setTrainerAvatar(null);

@@ -1062,19 +1062,32 @@ export const updateConnectionNote = async (
 
 /**
  * Delete a pending invite (removes connection + invite lookup).
+ * Only hard-deletes truly pending connections; non-pending are soft-deleted.
  */
 export const deletePendingInvite = async (
   connectionId: string,
 ): Promise<void> => {
-  // Read invite code so we can clean up the lookup
   const snap = await get(ref(database, `trainerConnections/${connectionId}`));
-  if (snap.exists()) {
-    const { inviteCode } = snap.val() as { inviteCode: string };
-    if (inviteCode) {
-      await remove(ref(database, `trainerInvites/${inviteCode}`));
-    }
+  if (!snap.exists()) {
+    return;
   }
-  await remove(ref(database, `trainerConnections/${connectionId}`));
+
+  const { inviteCode, status } = snap.val() as {
+    inviteCode?: string;
+    status?: string;
+  };
+
+  if (inviteCode) {
+    await remove(ref(database, `trainerInvites/${inviteCode}`));
+  }
+
+  if (status === 'pending') {
+    await remove(ref(database, `trainerConnections/${connectionId}`));
+  } else {
+    await update(ref(database, `trainerConnections/${connectionId}`), {
+      status: 'deleted',
+    });
+  }
 };
 
 /**

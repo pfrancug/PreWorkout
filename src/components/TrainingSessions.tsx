@@ -142,11 +142,12 @@ export const TrainingSessions = ({
   }, [sessions]);
 
   // Organize sessions into display groups: packaged sessions grouped together, standalone sessions as-is
+  type DisplayItem =
+    | { type: 'single'; session: ITrainingSession }
+    | { type: 'package'; packageId: string; sessions: ITrainingSession[] };
+
   const displayItems = useMemo(() => {
-    const items:
-      | { type: 'single'; session: ITrainingSession }[]
-      | { type: 'package'; packageId: string; sessions: ITrainingSession[] }[] =
-      [];
+    const items: DisplayItem[] = [];
     const seenPackages = new Set<string>();
     for (const s of filteredSessions) {
       if (s.packageId && !seenPackages.has(s.packageId)) {
@@ -154,29 +155,20 @@ export const TrainingSessions = ({
         const pkgSessions = filteredSessions.filter(
           (fs) => fs.packageId === s.packageId,
         );
-        (
-          items as {
-            type: 'package';
-            packageId: string;
-            sessions: ITrainingSession[];
-          }[]
-        ).push({
+        items.push({
           type: 'package',
           packageId: s.packageId,
           sessions: pkgSessions,
         });
       } else if (!s.packageId) {
-        (items as { type: 'single'; session: ITrainingSession }[]).push({
+        items.push({
           type: 'single',
           session: s,
         });
       }
     }
 
-    return items as (
-      | { type: 'single'; session: ITrainingSession }
-      | { type: 'package'; packageId: string; sessions: ITrainingSession[] }
-    )[];
+    return items;
   }, [filteredSessions]);
 
   const handleComplete = async (sessionId: string) => {

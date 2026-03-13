@@ -277,10 +277,10 @@ export const Calendar = ({
     [categories],
   );
 
-  // Any trainer category (including archived) — used to render historical trainer days
+  // Any trainer category (prefer active, fall back to archived) — used to render historical trainer days
   const trainerCategoryForDisplay = useMemo(
-    () => categories.find((c) => !!c.trainerId) ?? null,
-    [categories],
+    () => trainerCategory ?? categories.find((c) => !!c.trainerId) ?? null,
+    [categories, trainerCategory],
   );
 
   // Map training sessions by date for quick lookup

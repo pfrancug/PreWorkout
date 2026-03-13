@@ -90,31 +90,47 @@ export const AdminPage = () => {
         const entries = await Promise.all(
           Object.entries(directory).map(async ([uid, entry]) => {
             const isDeleted = !entry.email && !entry.lastLogin;
-            const [maxLimit, stats, isTrainer, avatarUrl] = await Promise.all([
-              getUserMaxLimitForAdmin(uid),
-              getUserUsageStats(uid),
-              getTrainerFlagFromDirectory(uid),
-              getUserAvatarUrl(uid),
-            ]);
+            try {
+              const [maxLimit, stats, isTrainer, avatarUrl] = await Promise.all(
+                [
+                  getUserMaxLimitForAdmin(uid),
+                  getUserUsageStats(uid),
+                  getTrainerFlagFromDirectory(uid),
+                  getUserAvatarUrl(uid),
+                ],
+              );
 
-            return {
-              uid,
-              email: entry.email || null,
-              displayName: entry.displayName || null,
-              avatarUrl,
-              lastLogin: entry.lastLogin || null,
-              deleted: isDeleted,
-              maxLimit,
-              isTrainer,
-              stats: stats
-                ? {
-                    todayMessages: stats.todayMessages,
-                    totalMessages: stats.totalMessages,
-                    averageDaily: Math.round(stats.averageDaily * 10) / 10,
-                    allTimeTotal: stats.allTimeTotal,
-                  }
-                : null,
-            };
+              return {
+                uid,
+                email: entry.email || null,
+                displayName: entry.displayName || null,
+                avatarUrl,
+                lastLogin: entry.lastLogin || null,
+                deleted: isDeleted,
+                maxLimit,
+                isTrainer,
+                stats: stats
+                  ? {
+                      todayMessages: stats.todayMessages,
+                      totalMessages: stats.totalMessages,
+                      averageDaily: Math.round(stats.averageDaily * 10) / 10,
+                      allTimeTotal: stats.allTimeTotal,
+                    }
+                  : null,
+              };
+            } catch {
+              return {
+                uid,
+                email: entry.email || null,
+                displayName: entry.displayName || null,
+                avatarUrl: null,
+                lastLogin: entry.lastLogin || null,
+                deleted: isDeleted,
+                maxLimit: -1,
+                isTrainer: false,
+                stats: null,
+              };
+            }
           }),
         );
 

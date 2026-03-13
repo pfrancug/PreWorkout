@@ -54,9 +54,11 @@ export const TrainerConnectedPage = () => {
           }
 
           // Write placeholder to prevent duplicate fetches
-          getUserDisplayName(traineeId).then((name) => {
-            setTraineesInfo((p) => ({ ...p, [traineeId]: name }));
-          });
+          getUserDisplayName(traineeId)
+            .then((name) => {
+              setTraineesInfo((p) => ({ ...p, [traineeId]: name }));
+            })
+            .catch(() => {});
 
           return { ...prev, [traineeId]: null };
         });
@@ -65,9 +67,11 @@ export const TrainerConnectedPage = () => {
             return prev;
           }
 
-          getUserAvatarUrl(traineeId).then((url) => {
-            setTraineesAvatars((p) => ({ ...p, [traineeId]: url }));
-          });
+          getUserAvatarUrl(traineeId)
+            .then((url) => {
+              setTraineesAvatars((p) => ({ ...p, [traineeId]: url }));
+            })
+            .catch(() => {});
 
           return { ...prev, [traineeId]: null };
         });
