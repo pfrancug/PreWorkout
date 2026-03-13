@@ -100,17 +100,24 @@ export const TrainingSessions = ({
   }, [sessions, filterMonth, showCancelled]);
 
   const stats = useMemo(() => {
-    const target = filterMonth === 'all' ? sessions : filteredSessions;
-    const completed = target.filter((s) => s.status === 'completed').length;
-    const planned = target.filter((s) => s.status === 'planned').length;
-    const cancelled = target.filter((s) => s.status === 'cancelled').length;
-    const paid = target.filter((s) => s.paymentStatus === 'paid').length;
-    const unpaid = target.filter(
+    const completed = filteredSessions.filter(
+      (s) => s.status === 'completed',
+    ).length;
+    const planned = filteredSessions.filter(
+      (s) => s.status === 'planned',
+    ).length;
+    const cancelled = filteredSessions.filter(
+      (s) => s.status === 'cancelled',
+    ).length;
+    const paid = filteredSessions.filter(
+      (s) => s.paymentStatus === 'paid',
+    ).length;
+    const unpaid = filteredSessions.filter(
       (s) => s.status !== 'cancelled' && s.paymentStatus !== 'paid',
     ).length;
 
     return { completed, planned, cancelled, paid, unpaid };
-  }, [sessions, filteredSessions, filterMonth]);
+  }, [filteredSessions]);
 
   const packageInfo = useMemo(() => {
     const map = new Map<
@@ -148,23 +155,25 @@ export const TrainingSessions = ({
 
   const displayItems = useMemo(() => {
     const items: DisplayItem[] = [];
-    const seenPackages = new Set<string>();
+    const packageGroups = new Map<string, ITrainingSession[]>();
+    const packageInsertIndex = new Map<string, number>();
+
     for (const s of filteredSessions) {
-      if (s.packageId && !seenPackages.has(s.packageId)) {
-        seenPackages.add(s.packageId);
-        const pkgSessions = filteredSessions.filter(
-          (fs) => fs.packageId === s.packageId,
-        );
-        items.push({
-          type: 'package',
-          packageId: s.packageId,
-          sessions: pkgSessions,
-        });
-      } else if (!s.packageId) {
-        items.push({
-          type: 'single',
-          session: s,
-        });
+      if (s.packageId) {
+        let group = packageGroups.get(s.packageId);
+        if (!group) {
+          group = [];
+          packageGroups.set(s.packageId, group);
+          packageInsertIndex.set(s.packageId, items.length);
+          items.push({
+            type: 'package',
+            packageId: s.packageId,
+            sessions: group,
+          });
+        }
+        group.push(s);
+      } else {
+        items.push({ type: 'single', session: s });
       }
     }
 

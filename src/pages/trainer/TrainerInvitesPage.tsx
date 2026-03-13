@@ -54,7 +54,7 @@ const InviteCard = ({
       }
 
       debounceRef.current = setTimeout(() => {
-        updateConnectionNote(connection.id, value);
+        updateConnectionNote(connection.id, value).catch(() => {});
         debounceRef.current = null;
       }, 600);
     },
@@ -125,6 +125,7 @@ const InviteCard = ({
       </div>
 
       <Input
+        maxLength={500}
         onChange={(e) => handleNoteChange(e.target.value)}
         placeholder={t('settings.trainer.notePlaceholder')}
         value={note}
