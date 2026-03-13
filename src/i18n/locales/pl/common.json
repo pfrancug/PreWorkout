@@ -8,7 +8,9 @@
     "loading": "Ładowanie...",
     "error": "Błąd",
     "saveError": "Nie udało się zapisać zmian. Spróbuj ponownie.",
-    "success": "Sukces"
+    "success": "Sukces",
+    "yes": "Tak",
+    "no": "Nie"
   },
   "app": {
     "name": "PreWorkout",

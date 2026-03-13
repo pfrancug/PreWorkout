@@ -296,7 +296,7 @@ export const AppSidebar = () => {
           </SidebarGroup>
         )}
 
-        {!preferences.hideConnectionSection && (
+        {!preferences.hideConnectionSection && !isTrainer && (
           <SidebarGroup>
             <SidebarGroupLabel>{t('nav.trainer')}</SidebarGroupLabel>
 

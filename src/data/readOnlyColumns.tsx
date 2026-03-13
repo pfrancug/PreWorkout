@@ -94,7 +94,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
 
       return (
         <Badge variant={completed ? 'default' : 'secondary'}>
-          {completed ? t('common.yes', 'Yes') : t('common.no', 'No')}
+          {completed ? t('common.yes') : t('common.no')}
         </Badge>
       );
     },

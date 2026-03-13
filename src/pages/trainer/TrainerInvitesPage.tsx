@@ -69,10 +69,14 @@ const InviteCard = ({
     };
   }, []);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const url = `${window.location.origin}/invite#${connection.inviteCode}`;
-    navigator.clipboard.writeText(url);
-    toast.success(t('settings.trainer.copied'));
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t('settings.trainer.copied'));
+    } catch {
+      toast.error(t('common.error'));
+    }
   };
 
   const handleDelete = async () => {

@@ -223,6 +223,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(ref(database, `users/${userId}/trainerCalendar`)),
     remove(ref(database, `users/${userId}/energyDrinks`)),
     remove(ref(database, `users/${userId}/trainerId`)),
+    remove(ref(database, `users/${userId}/trainerConnectionId`)),
     // Remove PII fields from userDirectory, keep analytics (messageSends)
     remove(ref(database, `userDirectory/${userId}/email`)),
     remove(ref(database, `userDirectory/${userId}/displayName`)),
@@ -258,9 +259,10 @@ const cleanupConnectionsForDeletedUser = async (
     const data = asTrainerSnap.val() as Record<string, ITrainerConnection>;
     for (const [connId, conn] of Object.entries(data)) {
       updates[`trainerConnections/${connId}/status`] = 'deleted';
-      // Remove trainerId pointer from the trainee
+      // Remove trainerId + trainerConnectionId pointers from the trainee
       if (conn.traineeId) {
         updates[`users/${conn.traineeId}/trainerId`] = null;
+        updates[`users/${conn.traineeId}/trainerConnectionId`] = null;
       }
     }
   }
@@ -268,8 +270,8 @@ const cleanupConnectionsForDeletedUser = async (
   if (asTraineeSnap.exists()) {
     const data = asTraineeSnap.val() as Record<string, ITrainerConnection>;
     for (const [connId] of Object.entries(data)) {
-      // Trainee rules only allow delete (not status update), so remove entirely
-      updates[`trainerConnections/${connId}`] = null;
+      // Soft-delete so the trainer keeps session history
+      updates[`trainerConnections/${connId}/status`] = 'deleted';
     }
   }
 
@@ -279,18 +281,14 @@ const cleanupConnectionsForDeletedUser = async (
 
   // Clean up any pending invites created by this user
   const invitesRef = ref(database, 'trainerInvites');
-  const invitesSnap = await get(invitesRef);
+  const invitesSnap = await get(
+    query(invitesRef, orderByChild('trainerId'), equalTo(userId)),
+  );
   if (invitesSnap.exists()) {
-    const invites = invitesSnap.val() as Record<
-      string,
-      { trainerId: string; connectionId: string }
-    >;
     const inviteRemovals: Promise<void>[] = [];
-    for (const [code, invite] of Object.entries(invites)) {
-      if (invite.trainerId === userId) {
-        inviteRemovals.push(remove(ref(database, `trainerInvites/${code}`)));
-      }
-    }
+    invitesSnap.forEach((childSnap) => {
+      inviteRemovals.push(remove(childSnap.ref));
+    });
     await Promise.all(inviteRemovals);
   }
 };
@@ -1001,8 +999,11 @@ export const acceptTrainerInvite = async (
     return { success: false, error: 'invite_already_used' };
   }
 
-  // Set trainerId on the user profile
-  await set(ref(database, `users/${traineeId}/trainerId`), trainerId);
+  // Set trainerId + trainerConnectionId atomically (validate requires both)
+  await update(ref(database), {
+    [`users/${traineeId}/trainerId`]: trainerId,
+    [`users/${traineeId}/trainerConnectionId`]: connectionId,
+  });
 
   // Remove the invite code (one-time use)
   await remove(ref(database, `trainerInvites/${inviteCode.toUpperCase()}`));
@@ -1096,8 +1097,11 @@ export const disconnectTrainer = async (
     status: 'deleted',
   });
 
-  // Remove trainerId from the user
-  await remove(ref(database, `users/${traineeId}/trainerId`));
+  // Remove trainerId + trainerConnectionId from the user
+  await update(ref(database), {
+    [`users/${traineeId}/trainerId`]: null,
+    [`users/${traineeId}/trainerConnectionId`]: null,
+  });
 
   // Archive trainer activity category (keeps historical calendar data intact)
   if (trainerId) {
