@@ -1,0 +1,65 @@
+---
+applyTo: 'src/firebase/**'
+description: 'Use when working on Firebase database operations, refs, subscriptions, or data type conversions (IRow ↔ IRowData).'
+---
+
+# Firebase Data Layer
+
+## Ref Helpers
+
+All database paths go through `get*Ref()` functions. Path pattern: `users/{userId}/{section}`.
+
+```ts
+export const getUserSettingsRef = (userId: string) =>
+  ref(database, `users/${userId}/settings`);
+```
+
+## CRUD Naming
+
+| Operation | Prefix       | Example                                                               |
+| --------- | ------------ | --------------------------------------------------------------------- |
+| Read once | `load*`      | `loadUserSettings(userId)`                                            |
+| Write     | `save*`      | `saveUserSettings(userId, settings)`                                  |
+| Realtime  | `subscribe*` | `subscribeToCalendarEntries(userId, cb)` — returns unsubscribe fn     |
+| Create    | `create*`    | `createCalendarEntry(userId, date, data)` — uses `push()` for auto-ID |
+| Delete    | `delete*`    | `deleteCalendarEntry(userId, date, entryId)`                          |
+| Update    | `update*`    | `updateCalendarEntryNote(userId, date, entryId, note)`                |
+
+## Type Conversion
+
+Client uses `Date` objects (`IRow`); Firebase stores ISO date strings (`IRowData`). Convert at the boundary — never store `Date` objects in Firebase.
+
+```ts
+// Client → Firebase: toLocalDateString(date) → 'YYYY-MM-DD'
+// Firebase → Client: new Date(`${dateStr}T00:00:00`) — local timezone
+```
+
+Always convert dates in **local timezone** to avoid UTC date shifts.
+
+## Subscriptions
+
+Return an unsubscribe function. Caller is responsible for cleanup (typically in `useEffect` return).
+
+```ts
+export const subscribeToCalendarEntries = (
+  userId: string,
+  callback: (data: CalendarEntries | null) => void,
+): (() => void) => {
+  const entriesRef = getUserCalendarEntriesRef(userId);
+  const unsubscribe = onValue(entriesRef, (snapshot) => {
+    callback(snapshot.exists() ? snapshot.val() : null);
+  });
+
+  return unsubscribe;
+};
+```
+
+## Calendar Entries
+
+- Nested by date: `calendarEntries/{date}/{entryId}`
+- Use `push()` for auto-generated entry IDs
+- `CalendarEntry` has `type: 'activity' | 'custom'` — activity entries reference an `activityId`, custom entries carry inline `name`/`icon`/`color`
+
+## Activity Categories
+
+Stored as `{ _initialized: true, items: ActivityCategory[] | null }` — the `_initialized` flag prevents re-seeding defaults after the user intentionally empties the list.
