@@ -202,10 +202,10 @@ export const CategoriesSettingsPage = () => {
       if (c.id !== categoryId) {
         return c;
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { archived: _, ...rest } = c;
+      const copy = { ...c };
+      delete copy.archived;
 
-      return rest;
+      return copy;
     });
 
     try {

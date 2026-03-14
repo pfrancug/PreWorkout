@@ -1160,10 +1160,10 @@ export const acceptTrainerInvite = async (
           if (c.trainerId !== trainerId) {
             return c;
           }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { archived: _, ...rest } = c;
+          const copy = { ...c };
+          delete copy.archived;
 
-          return rest;
+          return copy;
         });
         await saveActivityCategories(traineeId, updated);
       }

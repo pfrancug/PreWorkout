@@ -642,8 +642,7 @@ const AddView = ({
       });
     } else if (data.saveToActivities) {
       const newCategory: ActivityCategory = {
-        // eslint-disable-next-line react-hooks/purity
-        id: `custom-${Date.now()}`,
+        id: `custom-${crypto.randomUUID()}`,
         name: data.name!.trim(),
         icon: data.icon,
         color: data.color,

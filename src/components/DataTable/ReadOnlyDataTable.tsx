@@ -37,7 +37,6 @@ export const ReadOnlyDataTable = ({ columns, data }: Props) => {
 
   const tableData = data ?? EMPTY_ARRAY;
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table works correctly without React Compiler memoization
   const table = useReactTable({
     data: tableData,
     columns,

@@ -31,6 +31,7 @@ export default defineConfig([
     plugins: { react, 'simple-import-sort': simpleImportSort },
     rules: {
       '@typescript-eslint/consistent-type-imports': 'warn',
+      'react-hooks/incompatible-library': 'off',
       curly: ['warn', 'all'],
       'func-style': ['warn', 'expression'],
       'padding-line-between-statements': [
