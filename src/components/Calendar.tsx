@@ -366,6 +366,11 @@ export const Calendar = ({
         return;
       }
 
+      if (trainerToggleInFlight.current.has(dateKey)) {
+        return;
+      }
+      trainerToggleInFlight.current.add(dateKey);
+
       try {
         await toggleTrainerCalendarDay(targetUserId, dateKey, true);
         await createTrainingSession(
@@ -376,6 +381,8 @@ export const Calendar = ({
         );
       } catch {
         toast.error(t('common.saveError'));
+      } finally {
+        trainerToggleInFlight.current.delete(dateKey);
       }
     },
     [
@@ -389,6 +396,7 @@ export const Calendar = ({
     ],
   );
 
+  const trainerToggleInFlight = useRef(new Set<string>());
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Cleanup debounce timer on unmount

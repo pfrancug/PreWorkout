@@ -151,7 +151,7 @@
 
         "trainerCalendar": {
           ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
-          ".write": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
+          ".write": "auth != null && ((auth.uid == $userId && !newData.exists()) || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           "$date": {
             ".validate": "!newData.exists() || ($date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.isBoolean())"
           }
