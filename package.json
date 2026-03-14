@@ -17,6 +17,11 @@
   "dependencies": {
     "@ai-sdk/google": "3.0.51",
     "@ai-sdk/xai": "3.0.71",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
     "@tanstack/react-table": "8.21.3",
     "ai": "6.0.116",
     "class-variance-authority": "0.7.1",

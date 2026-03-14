@@ -8,7 +8,7 @@ Replace the custom `Calendar` component in `CalendarPage.tsx` with [FullCalendar
 
 ## Phase 1 — Install FullCalendar
 
-- [ ] Install npm packages:
+- [x] Install npm packages:
   ```
   @fullcalendar/react
   @fullcalendar/core
@@ -21,7 +21,7 @@ Replace the custom `Calendar` component in `CalendarPage.tsx` with [FullCalendar
 
 ## Phase 2 — TypeScript Types
 
-- [ ] Add to `src/types/types.ts`:
+- [x] Add to `src/types/types.ts`:
   - `FCEventType = 'activity' | 'trainingSession' | 'trainerDay'`
   - `FullCalendarEventMeta` interface for FullCalendar `extendedProps` (holds `type`, `categoryId`, `category`, `session`)
 
@@ -29,11 +29,11 @@ Replace the custom `Calendar` component in `CalendarPage.tsx` with [FullCalendar
 
 ## Phase 3 — Slate Theme CSS
 
-- [ ] Create `src/styles/fullcalendar-slate.css`:
+- [x] Create `src/styles/fullcalendar-slate.css`:
   - Override `--fc-*` CSS variables using the app's existing CSS vars (`--border`, `--card`, `--primary`, `--foreground`, `--muted`, etc.)
   - Add `.dark` class overrides for dark mode
   - Target vars: `--fc-border-color`, `--fc-button-bg-color`, `--fc-button-hover-bg-color`, `--fc-today-bg-color`, `--fc-neutral-bg-color`, `--fc-list-event-hover-bg-color`, `--fc-page-bg-color`, `--fc-event-bg-color`, `--fc-event-border-color`, `--fc-event-text-color`
-- [ ] Import `fullcalendar-slate.css` in `src/main.tsx` after FullCalendar's default CSS imports
+- [x] Import `fullcalendar-slate.css` in `src/main.tsx` after FullCalendar's default CSS imports
 
 ---
 

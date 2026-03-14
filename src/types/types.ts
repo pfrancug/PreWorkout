@@ -1,3 +1,5 @@
+import type { ActivityCategory } from '../firebase/database';
+
 export interface IRow {
   id: number;
   date: Date;
@@ -48,4 +50,15 @@ export interface ITrainingSession {
   cancelledBy?: PaymentMarkedBy;
   note?: string;
   packageId?: string | null;
+}
+
+// FullCalendar event types
+
+export type FCEventType = 'activity' | 'trainingSession' | 'trainerDay';
+
+export interface FullCalendarEventMeta {
+  type: FCEventType;
+  categoryId?: string;
+  category?: ActivityCategory;
+  session?: ITrainingSession;
 }
