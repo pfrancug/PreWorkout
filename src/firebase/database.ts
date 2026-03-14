@@ -982,20 +982,13 @@ export const acceptTrainerInvite = async (
     return { success: false, error: 'already_has_trainer' };
   }
 
-  // Atomically claim the connection (prevents two clients accepting concurrently)
+  // Claim the connection — security rules enforce that only a pending
+  // connection can transition to active with the caller's traineeId,
+  // so a race between two trainees is prevented server-side.
   const connectionRef = ref(database, `trainerConnections/${connectionId}`);
-  const { committed, snapshot: txSnapshot } = await runTransaction(
-    connectionRef,
-    (current) => {
-      if (!current || current.status !== 'pending') {
-        return; // abort
-      }
-
-      return { ...current, traineeId, status: 'active' };
-    },
-  );
-
-  if (!committed || !txSnapshot.exists()) {
+  try {
+    await update(connectionRef, { traineeId, status: 'active' });
+  } catch {
     return { success: false, error: 'invite_already_used' };
   }
 
