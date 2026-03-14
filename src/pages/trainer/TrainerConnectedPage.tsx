@@ -152,11 +152,12 @@ export const TrainerConnectedPage = () => {
                   : null;
 
                 return (
-                  <div
+                  <button
                     key={conn.id}
                     onClick={() => navigate(`/trainer/${conn.traineeId}`)}
+                    type={'button'}
                     className={
-                      'flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent/50'
+                      'flex w-full items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors hover:bg-accent/50 text-left'
                     }
                   >
                     <div className={'flex items-center gap-3'}>
@@ -202,7 +203,7 @@ export const TrainerConnectedPage = () => {
                         className={'h-4 w-4 text-muted-foreground'}
                       />
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

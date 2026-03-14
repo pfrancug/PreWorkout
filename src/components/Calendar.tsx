@@ -359,7 +359,8 @@ export const Calendar = ({
       const inRegular = (calendarData?.[dateKey] ?? []).includes(
         trainerCategory.id,
       );
-      const isActive = isTrainerMarked || inRegular;
+      const hasSession = sessionsByDate.has(dateKey);
+      const isActive = isTrainerMarked || inRegular || hasSession;
 
       // Only allow adding — removal is done from sessions panel
       if (isActive) {
@@ -393,6 +394,7 @@ export const Calendar = ({
       t,
       connectionId,
       user,
+      sessionsByDate,
     ],
   );
 
@@ -569,7 +571,8 @@ export const Calendar = ({
             const isTrainerDay =
               trainerCalendar?.[dateKey] === true ||
               (!!trainerCategory &&
-                (calendarData?.[dateKey] ?? []).includes(trainerCategory.id));
+                (calendarData?.[dateKey] ?? []).includes(trainerCategory.id)) ||
+              sessionsByDate.has(dateKey);
 
             return (
               <div
@@ -819,7 +822,10 @@ export const Calendar = ({
               const isTrainerDay =
                 trainerCalendar?.[dateKey] === true ||
                 (!!trainerCategory &&
-                  (calendarData?.[dateKey] ?? []).includes(trainerCategory.id));
+                  (calendarData?.[dateKey] ?? []).includes(
+                    trainerCategory.id,
+                  )) ||
+                sessionsByDate.has(dateKey);
 
               return (
                 <div
