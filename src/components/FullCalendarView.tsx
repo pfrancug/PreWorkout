@@ -1,12 +1,12 @@
 import type {
   ActivityCategory,
+  ActivityNotes,
   CalendarData,
   CalendarNotes,
   TrainerCalendarData,
 } from '../firebase/database';
 import type { FullCalendarEventMeta, ITrainingSession } from '../types/types';
 import type {
-  DayCellContentArg,
   EventClickArg,
   EventContentArg,
   EventInput,
@@ -31,9 +31,11 @@ import {
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import {
+  saveActivityNote,
   saveCalendarDay,
   saveCalendarNote,
   subscribeToActivityCategories,
+  subscribeToActivityNotes,
   subscribeToCalendarData,
   subscribeToCalendarNotes,
   subscribeToTraineeConnection,
@@ -62,9 +64,15 @@ export const FullCalendarView = () => {
     [],
   );
   const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [activityNotes, setActivityNotes] = useState<ActivityNotes | null>(
+    null,
+  );
   const [modalDate, setModalDate] = useState<string | null>(null);
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const activityNoteTimersRef = useRef<
+    Map<string, ReturnType<typeof setTimeout>>
+  >(new Map());
 
   // Auto-detect active trainer connection
   useEffect(() => {
@@ -94,12 +102,17 @@ export const FullCalendarView = () => {
       user.uid,
       setTrainerCalendar,
     );
+    const unsubActivityNotes = subscribeToActivityNotes(
+      user.uid,
+      setActivityNotes,
+    );
 
     return () => {
       unsubData();
       unsubNotes();
       unsubCategories();
       unsubTrainerCal();
+      unsubActivityNotes();
     };
   }, [user]);
 
@@ -116,12 +129,14 @@ export const FullCalendarView = () => {
     return unsub;
   }, [connectionId]);
 
-  // Clear pending note save when selected date changes or component unmounts
+  // Clear pending note saves when selected date changes or component unmounts
   useEffect(() => {
     return () => {
       if (noteTimerRef.current) {
         clearTimeout(noteTimerRef.current);
       }
+      activityNoteTimersRef.current.forEach(clearTimeout);
+      activityNoteTimersRef.current.clear();
     };
   }, [modalDate]);
 
@@ -215,9 +230,30 @@ export const FullCalendarView = () => {
       });
     }
 
+    // Day note events
+    for (const [dateKey, noteText] of Object.entries(calendarNotes ?? {})) {
+      if (!noteText) {
+        continue;
+      }
+      result.push({
+        id: `note-${dateKey}`,
+        title: noteText,
+        start: dateKey,
+        allDay: true,
+        backgroundColor: '#6b72800f',
+        borderColor: '#6b728060',
+        textColor: '#6b7280',
+        extendedProps: {
+          type: 'note',
+          dateKey,
+        } as FullCalendarEventMeta,
+      });
+    }
+
     return result;
   }, [
     calendarData,
+    calendarNotes,
     trainerCalendar,
     categories,
     trainingSessions,
@@ -235,6 +271,13 @@ export const FullCalendarView = () => {
     const meta = arg.event.extendedProps as FullCalendarEventMeta;
     if (meta.type === 'activity' && arg.event.start) {
       setModalDate(formatDateKey(arg.event.start));
+    } else if (meta.type === 'note') {
+      const dateKey =
+        (meta.dateKey as string | undefined) ??
+        (arg.event.start ? formatDateKey(arg.event.start) : null);
+      if (dateKey) {
+        setModalDate(dateKey);
+      }
     }
     // Training session events are read-only; no modal opened
   }, []);
@@ -274,6 +317,31 @@ export const FullCalendarView = () => {
           toast.error(t('common.saveError'));
         }
       }, 500);
+    },
+    [user, modalDate, t],
+  );
+
+  const handleActivityNoteChange = useCallback(
+    (activityId: string, value: string) => {
+      if (!user || !modalDate) {
+        return;
+      }
+      const existing = activityNoteTimersRef.current.get(activityId);
+      if (existing) {
+        clearTimeout(existing);
+      }
+      activityNoteTimersRef.current.set(
+        activityId,
+        setTimeout(async () => {
+          try {
+            await saveActivityNote(user.uid, modalDate, activityId, value);
+          } catch {
+            toast.error(t('common.saveError'));
+          } finally {
+            activityNoteTimersRef.current.delete(activityId);
+          }
+        }, 500),
+      );
     },
     [user, modalDate, t],
   );
@@ -323,30 +391,25 @@ export const FullCalendarView = () => {
         );
       }
 
+      if (meta.type === 'note') {
+        return (
+          <div className={'flex items-center gap-1 overflow-hidden px-1'}>
+            <StickyNote
+              className={'h-3.5 w-3.5 shrink-0'}
+              style={{ color: '#6b7280' }}
+            />
+            <span className={'truncate text-xs leading-none'}>
+              {arg.event.title}
+            </span>
+          </div>
+        );
+      }
+
       return (
         <div className={'overflow-hidden px-1 text-xs'}>{arg.event.title}</div>
       );
     },
     [t],
-  );
-
-  const renderDayCellContent = useCallback(
-    (arg: DayCellContentArg) => {
-      const dateKey = formatDateKey(arg.date);
-      const hasNote = !!calendarNotes?.[dateKey];
-
-      return (
-        <div className={'flex w-full items-center justify-between'}>
-          <span>{arg.dayNumberText}</span>
-          {hasNote && (
-            <StickyNote
-              className={'h-3 w-3 text-muted-foreground opacity-60'}
-            />
-          )}
-        </div>
-      );
-    },
-    [calendarNotes],
   );
 
   // ── Derived modal state ────────────────────────────────────────────────────
@@ -359,6 +422,11 @@ export const FullCalendarView = () => {
   const modalNote = useMemo(
     () => (modalDate ? (calendarNotes?.[modalDate] ?? '') : ''),
     [modalDate, calendarNotes],
+  );
+
+  const modalActivityNotes = useMemo(
+    () => (modalDate ? (activityNotes?.[modalDate] ?? {}) : {}),
+    [modalDate, activityNotes],
   );
 
   const initialView =
@@ -376,7 +444,6 @@ export const FullCalendarView = () => {
         <FullCalendar
           nowIndicator
           dateClick={handleDateClick}
-          dayCellContent={renderDayCellContent}
           dayMaxEvents={3}
           eventClick={handleEventClick}
           eventContent={renderEventContent}
@@ -397,9 +464,11 @@ export const FullCalendarView = () => {
       {modalDate && (
         <ActivityNoteModal
           activities={modalActivities}
+          activityNotes={modalActivityNotes}
           categories={pickableCategories}
           date={modalDate}
           note={modalNote}
+          onActivityNoteChange={handleActivityNoteChange}
           onClose={() => setModalDate(null)}
           onNoteChange={handleNoteChange}
           onToggleActivity={handleToggleActivity}

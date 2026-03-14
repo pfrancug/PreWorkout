@@ -19,9 +19,12 @@ interface ActivityNoteModalProps {
   activities: string[];
   /** Current note text */
   note: string;
+  /** Per-activity notes keyed by activityId */
+  activityNotes: Record<string, string>;
   onToggleActivity: (activityId: string) => Promise<void>;
   /** Called on every keystroke; caller is responsible for debouncing */
   onNoteChange: (value: string) => void;
+  onActivityNoteChange: (activityId: string, value: string) => void;
   onClose: () => void;
 }
 
@@ -30,8 +33,10 @@ export const ActivityNoteModal = ({
   categories,
   activities,
   note,
+  activityNotes,
   onToggleActivity,
   onNoteChange,
+  onActivityNoteChange,
   onClose,
 }: ActivityNoteModalProps) => {
   const { t, i18n } = useTranslation();
@@ -60,44 +65,61 @@ export const ActivityNoteModal = ({
         </SheetHeader>
 
         {/* Activities */}
-        <div className={'space-y-3'}>
+        <div className={'space-y-2'}>
           <p className={'text-sm font-medium'}>
             {t('calendar.editActivities')}
           </p>
 
           {categories.length > 0 ? (
-            <div className={'flex flex-wrap gap-2'}>
+            <div className={'space-y-1'}>
               {categories.map((category) => {
                 const isActive = activities.includes(category.id);
                 const color = ACTIVITY_COLOR_MAP[category.color] ?? '#888';
 
                 return (
-                  <button
-                    key={category.id}
-                    onClick={() => onToggleActivity(category.id)}
-                    type={'button'}
-                    className={cn(
-                      'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
-                      isActive
-                        ? 'border-transparent'
-                        : 'border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
-                    )}
-                    style={
-                      isActive
-                        ? {
-                            backgroundColor: `${color}26`,
-                            borderColor: color,
-                            color,
+                  <div key={category.id}>
+                    <button
+                      onClick={() => onToggleActivity(category.id)}
+                      type={'button'}
+                      className={cn(
+                        'flex w-full cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors',
+                        isActive
+                          ? 'border-transparent'
+                          : 'border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
+                      )}
+                      style={
+                        isActive
+                          ? {
+                              backgroundColor: `${color}26`,
+                              borderColor: color,
+                              color,
+                            }
+                          : undefined
+                      }
+                    >
+                      <ActivityIcon
+                        className={'h-4 w-4 shrink-0'}
+                        iconId={category.icon}
+                      />
+                      <span className={'flex-1 text-left'}>
+                        {category.name}
+                      </span>
+                    </button>
+                    {isActive && (
+                      <div className={'mt-1.5 pl-3'}>
+                        <Textarea
+                          className={'resize-none text-sm'}
+                          defaultValue={activityNotes[category.id] ?? ''}
+                          key={`${date}-${category.id}`}
+                          placeholder={t('calendar.activityNotePlaceholder')}
+                          rows={2}
+                          onChange={(e) =>
+                            onActivityNoteChange(category.id, e.target.value)
                           }
-                        : undefined
-                    }
-                  >
-                    <ActivityIcon
-                      className={'h-4 w-4'}
-                      iconId={category.icon}
-                    />
-                    {category.name}
-                  </button>
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -120,7 +142,9 @@ export const ActivityNoteModal = ({
 
         {/* Note */}
         <div className={'space-y-2'}>
-          <label className={'text-sm font-medium'}>{t('calendar.note')}</label>
+          <label className={'text-sm font-medium'}>
+            {t('calendar.dayNote')}
+          </label>
           <Textarea
             className={'resize-none text-sm'}
             defaultValue={note}

@@ -54,11 +54,17 @@ export interface ITrainingSession {
 
 // FullCalendar event types
 
-export type FCEventType = 'activity' | 'trainingSession' | 'trainerDay';
+export type FCEventType =
+  | 'activity'
+  | 'trainingSession'
+  | 'trainerDay'
+  | 'note';
 
 export interface FullCalendarEventMeta {
   type: FCEventType;
   categoryId?: string;
   category?: ActivityCategory;
   session?: ITrainingSession;
+  /** Used by note events to carry the YYYY-MM-DD key */
+  dateKey?: string;
 }

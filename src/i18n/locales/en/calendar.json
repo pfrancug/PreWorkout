@@ -26,6 +26,8 @@
     "weekView": "Week",
     "trainerActivity": "Trainer session",
     "toggleTrainerSession": "Toggle trainer session",
-    "editActivities": "Activities"
+    "editActivities": "Activities",
+    "dayNote": "Day note",
+    "activityNotePlaceholder": "Note for this activity..."
   }
 }

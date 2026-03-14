@@ -53,6 +53,10 @@ export interface CalendarNotes {
   [date: string]: string;
 }
 
+export type ActivityNotes = {
+  [date: string]: { [activityId: string]: string };
+};
+
 export interface AllUserData {
   settings: UserSettings | null;
   preferences: UserPreferences | null;
@@ -64,6 +68,7 @@ export interface AllUserData {
   activityCategories: ActivityCategory[] | null;
   energyDrinks: Record<string, unknown> | null;
   trainerCalendar: Record<string, boolean> | null;
+  activityNotes: ActivityNotes | null;
 }
 
 const database = getDatabase(app);
@@ -219,6 +224,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserLimitsRef(userId)),
     remove(getUserCalendarRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
+    remove(getUserActivityNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
     remove(ref(database, `users/${userId}/trainerCalendar`)),
     remove(ref(database, `users/${userId}/energyDrinks`)),
@@ -323,6 +329,9 @@ export const importAllUserData = async (
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
   }
+  if (data.activityNotes) {
+    promises.push(set(getUserActivityNotesRef(userId), data.activityNotes));
+  }
   if (data.energyDrinks) {
     promises.push(
       set(ref(database, `users/${userId}/energyDrinks`), data.energyDrinks),
@@ -352,6 +361,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     activityCategories,
     energyDrinksSnap,
     trainerCalendarSnap,
+    activityNotesSnap,
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
@@ -363,6 +373,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     loadActivityCategories(userId),
     get(ref(database, `users/${userId}/energyDrinks`)),
     get(ref(database, `users/${userId}/trainerCalendar`)),
+    get(getUserActivityNotesRef(userId)),
   ]);
 
   return {
@@ -377,6 +388,9 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     energyDrinks: energyDrinksSnap.exists() ? energyDrinksSnap.val() : null,
     trainerCalendar: trainerCalendarSnap.exists()
       ? trainerCalendarSnap.val()
+      : null,
+    activityNotes: activityNotesSnap.exists()
+      ? (activityNotesSnap.val() as ActivityNotes)
       : null,
   };
 };
@@ -574,6 +588,43 @@ export const subscribeToCalendarNotes = (
   const unsubscribe = onValue(notesRef, (snapshot) => {
     if (snapshot.exists()) {
       callback(snapshot.val() as CalendarNotes);
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+// Activity Notes (per-category notes per day)
+export const getUserActivityNotesRef = (userId: string) =>
+  ref(database, `users/${userId}/activityNotes`);
+
+export const saveActivityNote = async (
+  userId: string,
+  date: string,
+  activityId: string,
+  note: string,
+): Promise<void> => {
+  const noteRef = ref(
+    database,
+    `users/${userId}/activityNotes/${date}/${activityId}`,
+  );
+  if (!note.trim()) {
+    await remove(noteRef);
+  } else {
+    await set(noteRef, note.trim());
+  }
+};
+
+export const subscribeToActivityNotes = (
+  userId: string,
+  callback: (data: ActivityNotes | null) => void,
+): (() => void) => {
+  const notesRef = getUserActivityNotesRef(userId);
+  const unsubscribe = onValue(notesRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as ActivityNotes);
     } else {
       callback(null);
     }
