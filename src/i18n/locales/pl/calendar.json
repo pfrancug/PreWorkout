@@ -56,6 +56,10 @@
     "orCustom": "lub wpisz własną nazwę",
     "orFromLibrary": "lub wybierz z biblioteki",
     "dontSave": "Nie zapisuj w aktywnościach",
-    "addDayNote": "Dodaj notatkę dnia"
+    "addDayNote": "Dodaj notatkę dnia",
+    "validation": {
+      "selectActivityOrName": "Wybierz aktywność lub wpisz nazwę",
+      "addStartEndTime": "Dodaj czas rozpoczęcia i zakończenia"
+    }
   }
 }

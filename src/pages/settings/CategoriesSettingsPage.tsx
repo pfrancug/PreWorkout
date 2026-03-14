@@ -33,7 +33,7 @@ import {
 } from '../../constants/activities';
 import { useAuth } from '../../contexts/useAuth';
 import {
-  loadCalendarData,
+  loadCalendarEntries,
   saveActivityCategories,
   subscribeToActivityCategories,
   subscribeToTraineeConnection,
@@ -67,16 +67,18 @@ export const CategoriesSettingsPage = () => {
       DEFAULT_CATEGORIES,
     );
 
-    // Load calendar data to determine which categories are in use
-    loadCalendarData(user.uid).then((calendarData) => {
-      if (!calendarData) {
+    // Load calendar entries to determine which categories are in use
+    loadCalendarEntries(user.uid).then((entries) => {
+      if (!entries) {
         return;
       }
 
       const used = new Set<string>();
-      for (const activities of Object.values(calendarData)) {
-        for (const activity of activities) {
-          used.add(activity);
+      for (const dateEntries of Object.values(entries)) {
+        for (const entry of Object.values(dateEntries)) {
+          if (entry.type === 'activity' && entry.activityId) {
+            used.add(entry.activityId);
+          }
         }
       }
       setUsedActivityIds(used);

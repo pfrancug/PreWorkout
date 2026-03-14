@@ -26,8 +26,6 @@ export interface MessageLimitConfig {
   max: number;
 }
 
-export type CalendarActivity = string;
-
 export interface ActivityCategory {
   id: string;
   icon: string;
@@ -43,10 +41,6 @@ export interface ActivityCategory {
 
 export interface TrainerCalendarData {
   [date: string]: boolean;
-}
-
-export interface CalendarData {
-  [date: string]: CalendarActivity[];
 }
 
 export interface CalendarNotes {
@@ -82,7 +76,8 @@ export interface AllUserData {
   messages: Message[] | null;
   data: IRowData[] | null;
   limits: MessageLimitConfig | null;
-  /** Unified calendar entries (replaces the old `calendar` + `activityNotes` paths) */
+  /** Unified calendar entries (legacy `calendar` + `activityNotes` paths
+   *  were migrated via migrate-to-calendar-entries) */
   calendarEntries: CalendarEntries | null;
   calendarNotes: CalendarNotes | null;
   activityCategories: ActivityCategory[] | null;
@@ -243,9 +238,9 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserLimitsRef(userId)),
     remove(getUserCalendarEntriesRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
-    // Legacy paths — safe to remove even if already migrated
-    remove(getUserCalendarRef(userId)),
-    remove(getUserActivityNotesRef(userId)),
+    // Legacy paths (migrated via migrate-to-calendar-entries) — kept for safety
+    remove(ref(database, `users/${userId}/calendar`)),
+    remove(ref(database, `users/${userId}/activityNotes`)),
     remove(getActivityCategoriesRef(userId)),
     remove(ref(database, `users/${userId}/trainerCalendar`)),
     remove(ref(database, `users/${userId}/energyDrinks`)),
@@ -343,6 +338,32 @@ export const importAllUserData = async (
   }
   if (data.calendarEntries) {
     promises.push(set(getUserCalendarEntriesRef(userId), data.calendarEntries));
+  } else {
+    // Backward compat: legacy exports stored activities under `calendar` (string arrays).
+    // Convert on import so old backups are not silently dropped.
+    const legacyCalendar = (data as unknown as Record<string, unknown>)
+      .calendar as Record<string, string[]> | undefined;
+    if (legacyCalendar) {
+      const converted: CalendarEntries = {};
+      for (const [date, ids] of Object.entries(legacyCalendar)) {
+        if (!Array.isArray(ids)) {
+          continue;
+        }
+        converted[date] = {};
+        for (const activityId of ids) {
+          const id = crypto.randomUUID();
+          converted[date][id] = {
+            id,
+            type: 'activity',
+            activityId,
+            time: null,
+          };
+        }
+      }
+      if (Object.keys(converted).length > 0) {
+        promises.push(set(getUserCalendarEntriesRef(userId), converted));
+      }
+    }
   }
   if (data.calendarNotes) {
     promises.push(set(getUserCalendarNotesRef(userId), data.calendarNotes));
@@ -367,6 +388,8 @@ export const importAllUserData = async (
   await Promise.all(promises);
 };
 
+// NOTE: loadAllUserData only reads calendarEntries (not legacy `calendar`).
+// Migration has been completed via migrate-to-calendar-entries — no fallback needed.
 export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
   const [
     settings,
@@ -500,53 +523,6 @@ export const getRemainingMessages = async (userId: string): Promise<number> => {
   return Math.max(0, max - count);
 };
 
-// Calendar
-export const getUserCalendarRef = (userId: string) =>
-  ref(database, `users/${userId}/calendar`);
-
-export const loadCalendarData = async (
-  userId: string,
-): Promise<CalendarData | null> => {
-  const calendarRef = getUserCalendarRef(userId);
-  const snapshot = await get(calendarRef);
-
-  if (snapshot.exists()) {
-    return snapshot.val() as CalendarData;
-  }
-
-  return null;
-};
-
-export const saveCalendarDay = async (
-  userId: string,
-  date: string,
-  activities: CalendarActivity[],
-): Promise<void> => {
-  const dayRef = ref(database, `users/${userId}/calendar/${date}`);
-
-  if (activities.length === 0) {
-    await remove(dayRef);
-  } else {
-    await set(dayRef, activities);
-  }
-};
-
-export const subscribeToCalendarData = (
-  userId: string,
-  callback: (data: CalendarData | null) => void,
-): (() => void) => {
-  const calendarRef = getUserCalendarRef(userId);
-  const unsubscribe = onValue(calendarRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val() as CalendarData);
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
-};
-
 // Calendar Notes
 export const getUserCalendarNotesRef = (userId: string) =>
   ref(database, `users/${userId}/calendarNotes`);
@@ -594,11 +570,7 @@ export const subscribeToCalendarNotes = (
   return unsubscribe;
 };
 
-// Activity Notes (per-category notes per day)
-export const getUserActivityNotesRef = (userId: string) =>
-  ref(database, `users/${userId}/activityNotes`);
-
-// Calendar Entries (unified: replaces `calendar` + `activityNotes`)
+// Calendar Entries (migration completed via migrate-to-calendar-entries)
 export const getUserCalendarEntriesRef = (userId: string) =>
   ref(database, `users/${userId}/calendarEntries`);
 
@@ -671,6 +643,15 @@ export const subscribeToCalendarEntries = (
     callback(snapshot.exists() ? (snapshot.val() as CalendarEntries) : null);
   });
 };
+
+export const loadCalendarEntries = async (
+  userId: string,
+): Promise<CalendarEntries | null> => {
+  const snapshot = await get(getUserCalendarEntriesRef(userId));
+
+  return snapshot.exists() ? (snapshot.val() as CalendarEntries) : null;
+};
+
 export const subscribeToTrainerCalendar = (
   userId: string,
   callback: (data: TrainerCalendarData | null) => void,

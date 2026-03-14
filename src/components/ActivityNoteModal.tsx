@@ -3,6 +3,7 @@ import type { SubmitHandler } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@lib/utils';
+import i18next from 'i18next';
 import { ArrowLeft, ChevronDown, Clock, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -47,13 +48,21 @@ const addEventSchema = z
     timeEnd: z.string().optional(),
     note: z.string().max(500).optional(),
   })
-  .refine((d) => !!d.activityId || !!d.name?.trim(), {
-    message: 'Select an activity or enter a name',
-    path: ['activityId'],
-  })
-  .refine((d) => d.allDay || (!!d.time && !!d.timeEnd), {
-    message: 'Add start and end time',
-    path: ['time'],
+  .superRefine((d, ctx) => {
+    if (!d.activityId && !d.name?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: i18next.t('calendar.validation.selectActivityOrName'),
+        path: ['activityId'],
+      });
+    }
+    if (!d.allDay && (!d.time || !d.timeEnd)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: i18next.t('calendar.validation.addStartEndTime'),
+        path: ['time'],
+      });
+    }
   });
 
 type AddEventFormData = z.infer<typeof addEventSchema>;
@@ -65,9 +74,14 @@ const editEntrySchema = z
     timeEnd: z.string().optional(),
     allDay: z.boolean(),
   })
-  .refine((d) => d.allDay || (!!d.time && !!d.timeEnd), {
-    message: 'Add start and end time',
-    path: ['time'],
+  .superRefine((d, ctx) => {
+    if (!d.allDay && (!d.time || !d.timeEnd)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: i18next.t('calendar.validation.addStartEndTime'),
+        path: ['time'],
+      });
+    }
   });
 type EditEntryFormData = z.infer<typeof editEntrySchema>;
 

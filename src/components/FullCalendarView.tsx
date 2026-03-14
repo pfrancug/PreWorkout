@@ -115,6 +115,8 @@ export const FullCalendarView = ({
   }, [connectionIdProp, isOwnCalendar, user]);
 
   // Calendar data subscriptions
+  // Only reads calendarEntries (legacy `calendar` path was migrated via
+  // migrate-to-calendar-entries — no fallback needed).
   useEffect(() => {
     if (!targetUserId) {
       return;

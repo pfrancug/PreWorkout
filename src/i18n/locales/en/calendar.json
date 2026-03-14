@@ -56,6 +56,10 @@
     "orCustom": "or type a custom name",
     "orFromLibrary": "or pick from library",
     "dontSave": "Don't save to activities",
-    "addDayNote": "Add day note"
+    "addDayNote": "Add day note",
+    "validation": {
+      "selectActivityOrName": "Select an activity or enter a name",
+      "addStartEndTime": "Add start and end time"
+    }
   }
 }

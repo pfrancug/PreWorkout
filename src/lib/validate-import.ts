@@ -18,7 +18,8 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     'messages',
     'data',
     'limits',
-    'calendar',
+    'calendar', // legacy — accepted for backward compat with old exports
+    'calendarEntries',
     'calendarNotes',
     'activityCategories',
     'energyDrinks',
@@ -147,7 +148,7 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     }
   }
 
-  // Validate calendar
+  // Validate calendar (legacy format — accepted for backward compat with old exports)
   if (d.calendar != null) {
     if (typeof d.calendar !== 'object') {
       return false;
@@ -163,6 +164,35 @@ export const validateImportData = (data: unknown): data is AllUserData => {
       }
       for (const a of activities) {
         if (typeof a !== 'string') {
+          return false;
+        }
+      }
+    }
+  }
+
+  // Validate calendarEntries
+  if (d.calendarEntries != null) {
+    if (typeof d.calendarEntries !== 'object') {
+      return false;
+    }
+    for (const [date, entries] of Object.entries(
+      d.calendarEntries as Record<string, unknown>,
+    )) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+      }
+      if (typeof entries !== 'object' || entries === null) {
+        return false;
+      }
+      for (const entry of Object.values(entries as Record<string, unknown>)) {
+        if (typeof entry !== 'object' || entry === null) {
+          return false;
+        }
+        const e = entry as Record<string, unknown>;
+        if (typeof e.id !== 'string') {
+          return false;
+        }
+        if (e.type !== 'activity' && e.type !== 'custom') {
           return false;
         }
       }
