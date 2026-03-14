@@ -302,6 +302,12 @@ export const FullCalendarView = () => {
   }, []);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
+    // Close the "+N more" popover when clicking an event inside it
+    arg.el
+      .closest('.fc-popover')
+      ?.querySelector<HTMLButtonElement>('.fc-popover-close')
+      ?.click();
+
     const meta = arg.event.extendedProps as FullCalendarEventMeta;
     if (meta.type === 'entry' && arg.event.start) {
       const date = formatDateKey(arg.event.start);
