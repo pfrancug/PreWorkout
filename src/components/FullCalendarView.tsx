@@ -1,12 +1,14 @@
 import type {
   ActivityCategory,
-  ActivityNotes,
-  CalendarData,
+  CalendarEntries,
+  CalendarEntry,
   CalendarNotes,
   TrainerCalendarData,
 } from '../firebase/database';
 import type { FullCalendarEventMeta, ITrainingSession } from '../types/types';
+import type { TimePreset } from './ActivityNoteModal';
 import type {
+  DateSelectArg,
   EventClickArg,
   EventContentArg,
   EventInput,
@@ -19,7 +21,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { cn } from '@lib/utils';
-import { Dumbbell, StickyNote } from 'lucide-react';
+import { Dumbbell, Pencil, StickyNote } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -31,16 +33,17 @@ import {
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import {
-  saveActivityNote,
-  saveCalendarDay,
+  createCalendarEntry,
+  deleteCalendarEntry,
+  saveActivityCategories,
   saveCalendarNote,
   subscribeToActivityCategories,
-  subscribeToActivityNotes,
-  subscribeToCalendarData,
+  subscribeToCalendarEntries,
   subscribeToCalendarNotes,
   subscribeToTraineeConnection,
   subscribeToTrainerCalendar,
   subscribeToTrainingSessions,
+  updateCalendarEntryNote,
 } from '../firebase/database';
 import { ActivityIcon } from './ActivityIcon';
 import { ActivityNoteModal } from './ActivityNoteModal';
@@ -53,7 +56,8 @@ export const FullCalendarView = () => {
   const { user } = useAuth();
   const { preferences } = useSettings();
 
-  const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
+  const [calendarEntries, setCalendarEntries] =
+    useState<CalendarEntries | null>(null);
   const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
     null,
   );
@@ -64,15 +68,15 @@ export const FullCalendarView = () => {
     [],
   );
   const [connectionId, setConnectionId] = useState<string | null>(null);
-  const [activityNotes, setActivityNotes] = useState<ActivityNotes | null>(
+  const [modalDate, setModalDate] = useState<string | null>(null);
+  const [modalTimePreset, setModalTimePreset] = useState<TimePreset | null>(
     null,
   );
-  const [modalDate, setModalDate] = useState<string | null>(null);
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const activityNoteTimersRef = useRef<
-    Map<string, ReturnType<typeof setTimeout>>
-  >(new Map());
+  const entryNoteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   // Auto-detect active trainer connection
   useEffect(() => {
@@ -91,7 +95,10 @@ export const FullCalendarView = () => {
     if (!user) {
       return;
     }
-    const unsubData = subscribeToCalendarData(user.uid, setCalendarData);
+    const unsubEntries = subscribeToCalendarEntries(
+      user.uid,
+      setCalendarEntries,
+    );
     const unsubNotes = subscribeToCalendarNotes(user.uid, setCalendarNotes);
     const unsubCategories = subscribeToActivityCategories(
       user.uid,
@@ -102,17 +109,12 @@ export const FullCalendarView = () => {
       user.uid,
       setTrainerCalendar,
     );
-    const unsubActivityNotes = subscribeToActivityNotes(
-      user.uid,
-      setActivityNotes,
-    );
 
     return () => {
-      unsubData();
+      unsubEntries();
       unsubNotes();
       unsubCategories();
       unsubTrainerCal();
-      unsubActivityNotes();
     };
   }, [user]);
 
@@ -135,8 +137,8 @@ export const FullCalendarView = () => {
       if (noteTimerRef.current) {
         clearTimeout(noteTimerRef.current);
       }
-      activityNoteTimersRef.current.forEach(clearTimeout);
-      activityNoteTimersRef.current.clear();
+      entryNoteTimersRef.current.forEach(clearTimeout);
+      entryNoteTimersRef.current.clear();
     };
   }, [modalDate]);
 
@@ -160,43 +162,72 @@ export const FullCalendarView = () => {
   const events = useMemo((): EventInput[] => {
     const result: EventInput[] = [];
 
-    // Activity events (merged from calendarData + trainerCalendar)
     const allDates = new Set([
-      ...Object.keys(calendarData ?? {}),
+      ...Object.keys(calendarEntries ?? {}),
       ...Object.keys(trainerCalendar ?? {}),
     ]);
 
     for (const dateKey of allDates) {
-      const regular = calendarData?.[dateKey] ?? [];
-      const activityIds = [...regular];
+      const dayEntries = calendarEntries?.[dateKey]
+        ? Object.values(calendarEntries[dateKey])
+        : [];
 
-      // Inject trainer category if the day is marked in trainerCalendar
-      if (
-        trainerCategoryForDisplay &&
-        trainerCalendar?.[dateKey] &&
-        !activityIds.includes(trainerCategoryForDisplay.id)
-      ) {
-        activityIds.push(trainerCategoryForDisplay.id);
+      // Virtual trainer-day event (only if not already logged as an entry)
+      if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
+        const alreadyLogged = dayEntries.some(
+          (e) =>
+            e.type === 'activity' &&
+            e.activityId === trainerCategoryForDisplay.id,
+        );
+        if (!alreadyLogged) {
+          const color =
+            ACTIVITY_COLOR_MAP[trainerCategoryForDisplay.color] ?? '#888';
+          result.push({
+            id: `trainer-${dateKey}`,
+            title: trainerCategoryForDisplay.name,
+            start: dateKey,
+            allDay: true,
+            backgroundColor: `${color}26`,
+            borderColor: color,
+            textColor: color,
+            extendedProps: {
+              type: 'entry',
+              entry: {
+                id: `trainer-${dateKey}`,
+                type: 'activity',
+                activityId: trainerCategoryForDisplay.id,
+                time: null,
+              } satisfies CalendarEntry,
+              category: trainerCategoryForDisplay,
+            } as FullCalendarEventMeta,
+          });
+        }
       }
 
-      for (const activityId of activityIds) {
-        const category = categories.find((c) => c.id === activityId);
-        if (!category) {
-          continue;
-        }
+      for (const entry of dayEntries) {
+        const category =
+          entry.type === 'activity'
+            ? categories.find((c) => c.id === entry.activityId)
+            : undefined;
+        const color = category
+          ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
+          : '#94a3b8';
+        const title =
+          entry.type === 'activity'
+            ? (category?.name ?? entry.activityId ?? 'Activity')
+            : (entry.name ?? 'Custom');
 
-        const color = ACTIVITY_COLOR_MAP[category.color] ?? '#888';
         result.push({
-          id: `activity-${dateKey}-${activityId}`,
-          title: category.name,
-          start: dateKey,
-          allDay: true,
+          id: `entry-${dateKey}-${entry.id}`,
+          title,
+          start: entry.time ? `${dateKey}T${entry.time}:00` : dateKey,
+          allDay: !entry.time,
           backgroundColor: `${color}26`,
           borderColor: color,
           textColor: color,
           extendedProps: {
-            type: 'activity',
-            categoryId: activityId,
+            type: 'entry',
+            entry,
             category,
           } as FullCalendarEventMeta,
         });
@@ -252,7 +283,7 @@ export const FullCalendarView = () => {
 
     return result;
   }, [
-    calendarData,
+    calendarEntries,
     calendarNotes,
     trainerCalendar,
     categories,
@@ -269,7 +300,7 @@ export const FullCalendarView = () => {
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const meta = arg.event.extendedProps as FullCalendarEventMeta;
-    if (meta.type === 'activity' && arg.event.start) {
+    if (meta.type === 'entry' && arg.event.start) {
       setModalDate(formatDateKey(arg.event.start));
     } else if (meta.type === 'note') {
       const dateKey =
@@ -282,24 +313,76 @@ export const FullCalendarView = () => {
     // Training session events are read-only; no modal opened
   }, []);
 
-  const handleToggleActivity = useCallback(
-    async (activityId: string) => {
+  const handleSelect = useCallback((arg: DateSelectArg) => {
+    setModalDate(formatDateKey(arg.start));
+    setModalTimePreset({ startStr: arg.startStr, allDay: arg.allDay });
+  }, []);
+
+  const handleAddEntry = useCallback(
+    async (entryData: Omit<CalendarEntry, 'id'>) => {
       if (!user || !modalDate) {
         return;
       }
-
-      const current = calendarData?.[modalDate] ?? [];
-      const updated = current.includes(activityId)
-        ? current.filter((a) => a !== activityId)
-        : [...current, activityId];
-
       try {
-        await saveCalendarDay(user.uid, modalDate, updated);
+        await createCalendarEntry(user.uid, modalDate, entryData);
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, modalDate, calendarData, t],
+    [user, modalDate, t],
+  );
+
+  const handleDeleteEntry = useCallback(
+    async (entryId: string) => {
+      if (!user || !modalDate) {
+        return;
+      }
+      try {
+        await deleteCalendarEntry(user.uid, modalDate, entryId);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
+    },
+    [user, modalDate, t],
+  );
+
+  const handleUpdateEntryNote = useCallback(
+    (entryId: string, value: string) => {
+      if (!user || !modalDate) {
+        return;
+      }
+      const existing = entryNoteTimersRef.current.get(entryId);
+      if (existing) {
+        clearTimeout(existing);
+      }
+      entryNoteTimersRef.current.set(
+        entryId,
+        setTimeout(async () => {
+          try {
+            await updateCalendarEntryNote(user.uid, modalDate, entryId, value);
+          } catch {
+            toast.error(t('common.saveError'));
+          } finally {
+            entryNoteTimersRef.current.delete(entryId);
+          }
+        }, 500),
+      );
+    },
+    [user, modalDate, t],
+  );
+
+  const handleSaveNewCategory = useCallback(
+    async (newCategory: ActivityCategory) => {
+      if (!user) {
+        return;
+      }
+      try {
+        await saveActivityCategories(user.uid, [...categories, newCategory]);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
+    },
+    [user, categories, t],
   );
 
   const handleNoteChange = useCallback(
@@ -321,49 +404,32 @@ export const FullCalendarView = () => {
     [user, modalDate, t],
   );
 
-  const handleActivityNoteChange = useCallback(
-    (activityId: string, value: string) => {
-      if (!user || !modalDate) {
-        return;
-      }
-      const existing = activityNoteTimersRef.current.get(activityId);
-      if (existing) {
-        clearTimeout(existing);
-      }
-      activityNoteTimersRef.current.set(
-        activityId,
-        setTimeout(async () => {
-          try {
-            await saveActivityNote(user.uid, modalDate, activityId, value);
-          } catch {
-            toast.error(t('common.saveError'));
-          } finally {
-            activityNoteTimersRef.current.delete(activityId);
-          }
-        }, 500),
-      );
-    },
-    [user, modalDate, t],
-  );
-
   // ── Custom renderers ───────────────────────────────────────────────────────
 
   const renderEventContent = useCallback(
     (arg: EventContentArg) => {
       const meta = arg.event.extendedProps as FullCalendarEventMeta;
 
-      if (meta.type === 'activity' && meta.category) {
-        const color = ACTIVITY_COLOR_MAP[meta.category.color] ?? '#888';
+      if (meta.type === 'entry') {
+        const entry = meta.entry;
+        const category = meta.category;
+        const color = category
+          ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
+          : '#94a3b8';
 
         return (
           <div className={'flex items-center gap-1 overflow-hidden px-1'}>
-            <ActivityIcon
-              className={'h-3.5 w-3.5 shrink-0'}
-              iconId={meta.category.icon}
-              style={{ color }}
-            />
+            {entry?.type === 'activity' && category ? (
+              <ActivityIcon
+                className={'h-3.5 w-3.5 shrink-0'}
+                iconId={category.icon}
+                style={{ color }}
+              />
+            ) : (
+              <Pencil className={'h-3.5 w-3.5 shrink-0'} style={{ color }} />
+            )}
             <span className={'truncate text-xs leading-none'}>
-              {meta.category.name}
+              {arg.event.title}
             </span>
           </div>
         );
@@ -414,19 +480,17 @@ export const FullCalendarView = () => {
 
   // ── Derived modal state ────────────────────────────────────────────────────
 
-  const modalActivities = useMemo(
-    () => (modalDate ? (calendarData?.[modalDate] ?? []) : []),
-    [modalDate, calendarData],
-  );
+  const modalEntries = useMemo((): CalendarEntry[] => {
+    if (!modalDate || !calendarEntries?.[modalDate]) {
+      return [];
+    }
+
+    return Object.values(calendarEntries[modalDate]);
+  }, [modalDate, calendarEntries]);
 
   const modalNote = useMemo(
     () => (modalDate ? (calendarNotes?.[modalDate] ?? '') : ''),
     [modalDate, calendarNotes],
-  );
-
-  const modalActivityNotes = useMemo(
-    () => (modalDate ? (activityNotes?.[modalDate] ?? {}) : {}),
-    [modalDate, activityNotes],
   );
 
   const initialView =
@@ -443,6 +507,7 @@ export const FullCalendarView = () => {
       >
         <FullCalendar
           nowIndicator
+          selectable
           dateClick={handleDateClick}
           dayMaxEvents={3}
           eventClick={handleEventClick}
@@ -453,6 +518,7 @@ export const FullCalendarView = () => {
           locale={i18n.language}
           locales={[plLocale]}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          select={handleSelect}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
@@ -463,15 +529,20 @@ export const FullCalendarView = () => {
 
       {modalDate && (
         <ActivityNoteModal
-          activities={modalActivities}
-          activityNotes={modalActivityNotes}
           categories={pickableCategories}
           date={modalDate}
+          entries={modalEntries}
           note={modalNote}
-          onActivityNoteChange={handleActivityNoteChange}
-          onClose={() => setModalDate(null)}
+          onAddEntry={handleAddEntry}
+          onDeleteEntry={handleDeleteEntry}
           onNoteChange={handleNoteChange}
-          onToggleActivity={handleToggleActivity}
+          onSaveNewCategory={handleSaveNewCategory}
+          onUpdateEntryNote={handleUpdateEntryNote}
+          timePreset={modalTimePreset}
+          onClose={() => {
+            setModalDate(null);
+            setModalTimePreset(null);
+          }}
         />
       )}
     </>

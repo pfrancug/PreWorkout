@@ -2,6 +2,7 @@ import type {
   ActivityCategory,
   CalendarActivity,
   CalendarData,
+  CalendarEntries,
   CalendarNotes,
   TrainerCalendarData,
 } from '../firebase/database';
@@ -46,7 +47,7 @@ import {
   saveCalendarDay,
   saveCalendarNote,
   subscribeToActivityCategories,
-  subscribeToCalendarData,
+  subscribeToCalendarEntries,
   subscribeToCalendarNotes,
   subscribeToTraineeConnection,
   subscribeToTrainerCalendar,
@@ -98,7 +99,8 @@ export const Calendar = ({
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
+  const [calendarEntries, setCalendarEntries] =
+    useState<CalendarEntries | null>(null);
   const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
     null,
   );
@@ -145,9 +147,9 @@ export const Calendar = ({
       return;
     }
 
-    const unsubActivities = subscribeToCalendarData(
+    const unsubActivities = subscribeToCalendarEntries(
       targetUserId,
-      setCalendarData,
+      setCalendarEntries,
     );
     const unsubNotes = subscribeToCalendarNotes(targetUserId, setCalendarNotes);
     const unsubCategories = subscribeToActivityCategories(
@@ -171,6 +173,24 @@ export const Calendar = ({
       unsubSessions?.();
     };
   }, [targetUserId, connectionId]);
+
+  // Derive CalendarData from entries for display (activity-type entries only)
+  const calendarData = useMemo((): CalendarData | null => {
+    if (!calendarEntries) {
+      return null;
+    }
+    const result: CalendarData = {};
+    for (const [date, entries] of Object.entries(calendarEntries)) {
+      const ids = Object.values(entries)
+        .filter((e) => e.type === 'activity' && !!e.activityId)
+        .map((e) => e.activityId!);
+      if (ids.length > 0) {
+        result[date] = ids;
+      }
+    }
+
+    return result;
+  }, [calendarEntries]);
 
   const todayKey = formatDateKey(
     today.getFullYear(),

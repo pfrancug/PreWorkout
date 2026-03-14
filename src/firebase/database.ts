@@ -57,18 +57,35 @@ export type ActivityNotes = {
   [date: string]: { [activityId: string]: string };
 };
 
+export interface CalendarEntry {
+  id: string;
+  type: 'activity' | 'custom';
+  /** activityId of a known category; required when type = 'activity' */
+  activityId?: string;
+  /** Display name; required when type = 'custom' */
+  name?: string;
+  /** HH:mm, or null for all-day */
+  time: string | null;
+  /** Optional note for this occurrence */
+  note?: string;
+}
+
+export type CalendarEntries = {
+  [date: string]: { [entryId: string]: CalendarEntry };
+};
+
 export interface AllUserData {
   settings: UserSettings | null;
   preferences: UserPreferences | null;
   messages: Message[] | null;
   data: IRowData[] | null;
   limits: MessageLimitConfig | null;
-  calendar: CalendarData | null;
+  /** Unified calendar entries (replaces the old `calendar` + `activityNotes` paths) */
+  calendarEntries: CalendarEntries | null;
   calendarNotes: CalendarNotes | null;
   activityCategories: ActivityCategory[] | null;
   energyDrinks: Record<string, unknown> | null;
   trainerCalendar: Record<string, boolean> | null;
-  activityNotes: ActivityNotes | null;
 }
 
 const database = getDatabase(app);
@@ -222,8 +239,10 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserMessagesRef(userId)),
     remove(getUserDataRef(userId)),
     remove(getUserLimitsRef(userId)),
-    remove(getUserCalendarRef(userId)),
+    remove(getUserCalendarEntriesRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
+    // Legacy paths — safe to remove even if already migrated
+    remove(getUserCalendarRef(userId)),
     remove(getUserActivityNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
     remove(ref(database, `users/${userId}/trainerCalendar`)),
@@ -320,17 +339,14 @@ export const importAllUserData = async (
   if (data.limits) {
     promises.push(set(getUserLimitsRef(userId), { max: data.limits.max }));
   }
-  if (data.calendar) {
-    promises.push(set(getUserCalendarRef(userId), data.calendar));
+  if (data.calendarEntries) {
+    promises.push(set(getUserCalendarEntriesRef(userId), data.calendarEntries));
   }
   if (data.calendarNotes) {
     promises.push(set(getUserCalendarNotesRef(userId), data.calendarNotes));
   }
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
-  }
-  if (data.activityNotes) {
-    promises.push(set(getUserActivityNotesRef(userId), data.activityNotes));
   }
   if (data.energyDrinks) {
     promises.push(
@@ -356,24 +372,22 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     messages,
     data,
     limits,
-    calendar,
+    calendarEntriesSnap,
     calendarNotes,
     activityCategories,
     energyDrinksSnap,
     trainerCalendarSnap,
-    activityNotesSnap,
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
     loadUserMessages(userId),
     loadUserData(userId),
     loadMessageLimitConfig(userId),
-    loadCalendarData(userId),
+    get(getUserCalendarEntriesRef(userId)),
     loadCalendarNotes(userId),
     loadActivityCategories(userId),
     get(ref(database, `users/${userId}/energyDrinks`)),
     get(ref(database, `users/${userId}/trainerCalendar`)),
-    get(getUserActivityNotesRef(userId)),
   ]);
 
   return {
@@ -382,15 +396,14 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     messages,
     data,
     limits,
-    calendar,
+    calendarEntries: calendarEntriesSnap.exists()
+      ? (calendarEntriesSnap.val() as CalendarEntries)
+      : null,
     calendarNotes,
     activityCategories,
     energyDrinks: energyDrinksSnap.exists() ? energyDrinksSnap.val() : null,
     trainerCalendar: trainerCalendarSnap.exists()
       ? trainerCalendarSnap.val()
-      : null,
-    activityNotes: activityNotesSnap.exists()
-      ? (activityNotesSnap.val() as ActivityNotes)
       : null,
   };
 };
@@ -633,7 +646,61 @@ export const subscribeToActivityNotes = (
   return unsubscribe;
 };
 
-// Trainer Calendar (trainer-marked activity days)
+// Calendar Entries (unified: replaces `calendar` + `activityNotes`)
+export const getUserCalendarEntriesRef = (userId: string) =>
+  ref(database, `users/${userId}/calendarEntries`);
+
+export const createCalendarEntry = async (
+  userId: string,
+  date: string,
+  entryData: Omit<CalendarEntry, 'id'>,
+): Promise<CalendarEntry> => {
+  const dateRef = ref(database, `users/${userId}/calendarEntries/${date}`);
+  const newRef = push(dateRef);
+  const id = newRef.key!;
+  const entry: CalendarEntry = { ...entryData, id };
+  await set(newRef, entry);
+
+  return entry;
+};
+
+export const deleteCalendarEntry = async (
+  userId: string,
+  date: string,
+  entryId: string,
+): Promise<void> => {
+  await remove(
+    ref(database, `users/${userId}/calendarEntries/${date}/${entryId}`),
+  );
+};
+
+export const updateCalendarEntryNote = async (
+  userId: string,
+  date: string,
+  entryId: string,
+  note: string,
+): Promise<void> => {
+  const noteRef = ref(
+    database,
+    `users/${userId}/calendarEntries/${date}/${entryId}/note`,
+  );
+  if (!note.trim()) {
+    await remove(noteRef);
+  } else {
+    await set(noteRef, note.trim());
+  }
+};
+
+export const subscribeToCalendarEntries = (
+  userId: string,
+  callback: (data: CalendarEntries | null) => void,
+): (() => void) => {
+  const entriesRef = getUserCalendarEntriesRef(userId);
+
+  return onValue(entriesRef, (snapshot) => {
+    callback(snapshot.exists() ? (snapshot.val() as CalendarEntries) : null);
+  });
+};
 export const subscribeToTrainerCalendar = (
   userId: string,
   callback: (data: TrainerCalendarData | null) => void,

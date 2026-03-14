@@ -28,6 +28,18 @@
     "toggleTrainerSession": "Przełącz sesję z trenerem",
     "editActivities": "Aktywności",
     "dayNote": "Notatka dnia",
-    "activityNotePlaceholder": "Notatka do tej aktywności..."
+    "activityNotePlaceholder": "Notatka do tego wpisu...",
+    "loggedEvents": "Zalogowane aktywności",
+    "noEventsLogged": "Brak wpisów na ten dzień",
+    "addEvent": "Dodaj wpis",
+    "fromLibrary": "Z biblioteki",
+    "customEvent": "Własny",
+    "eventNamePlaceholder": "np. Poranny jogging",
+    "saveToActivities": "Zapisz w moich aktywnościach",
+    "allDay": "Cały dzień",
+    "addToCalendar": "Dodaj do kalendarza",
+    "iconLabel": "Ikona",
+    "colorLabel": "Kolor",
+    "allActivitiesLogged": "Wszystkie aktywności zostały już dziś zalogowane"
   }
 }

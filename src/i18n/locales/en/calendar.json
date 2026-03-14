@@ -28,6 +28,18 @@
     "toggleTrainerSession": "Toggle trainer session",
     "editActivities": "Activities",
     "dayNote": "Day note",
-    "activityNotePlaceholder": "Note for this activity..."
+    "activityNotePlaceholder": "Note for this occurrence...",
+    "loggedEvents": "Logged events",
+    "noEventsLogged": "Nothing logged yet",
+    "addEvent": "Add event",
+    "fromLibrary": "From library",
+    "customEvent": "Custom",
+    "eventNamePlaceholder": "e.g. Morning jog",
+    "saveToActivities": "Save to my activities",
+    "allDay": "All day",
+    "addToCalendar": "Add to calendar",
+    "iconLabel": "Icon",
+    "colorLabel": "Color",
+    "allActivitiesLogged": "All your activities are already logged today"
   }
 }
