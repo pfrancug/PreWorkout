@@ -381,6 +381,12 @@ export const Calendar = ({
           dateKey,
         );
       } catch {
+        // Roll back calendar marker if session creation failed
+        try {
+          await toggleTrainerCalendarDay(targetUserId, dateKey, false);
+        } catch {
+          // Ignore rollback failure
+        }
         toast.error(t('common.saveError'));
       } finally {
         trainerToggleInFlight.current.delete(dateKey);

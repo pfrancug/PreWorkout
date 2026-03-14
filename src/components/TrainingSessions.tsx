@@ -192,11 +192,18 @@ export const TrainingSessions = ({
   const handleCancel = async (session: ITrainingSession) => {
     try {
       await cancelSession(connectionId, session.id, role);
-      // Sync: remove calendar marker so it disappears from trainee's calendar
-      await toggleTrainerCalendarDay(session.traineeId, session.date, false);
-      toast.success(t('sessions.cancelSuccess'));
     } catch {
       toast.error(t('common.saveError'));
+
+      return;
+    }
+
+    toast.success(t('sessions.cancelSuccess'));
+    // Best-effort: remove calendar marker so it disappears from trainee's calendar
+    try {
+      await toggleTrainerCalendarDay(session.traineeId, session.date, false);
+    } catch {
+      // Cancellation already succeeded; don't confuse the user
     }
   };
 

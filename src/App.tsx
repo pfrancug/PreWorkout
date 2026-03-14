@@ -61,6 +61,16 @@ const ChatPanel = ({ dataset }: { dataset: IRow[] | null }) => {
   return <Chat dataset={dataset} />;
 };
 
+const TrainerRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isTrainer } = useAuth();
+
+  if (!isTrainer) {
+    return <Navigate replace to={'/'} />;
+  }
+
+  return <>{children}</>;
+};
+
 const pageTitleKeys: Record<string, string> = {
   '/': 'nav.dashboard',
   '/dashboard': 'nav.dashboard',
@@ -246,13 +256,21 @@ const AppRoutes = () => {
                 />
 
                 <Route
-                  element={<TrainerInvitesPage />}
                   path={'/trainer/invites'}
+                  element={
+                    <TrainerRoute>
+                      <TrainerInvitesPage />
+                    </TrainerRoute>
+                  }
                 />
 
                 <Route
-                  element={<TrainerConnectedPage />}
                   path={'/trainer/connected'}
+                  element={
+                    <TrainerRoute>
+                      <TrainerConnectedPage />
+                    </TrainerRoute>
+                  }
                 />
 
                 <Route
@@ -261,8 +279,12 @@ const AppRoutes = () => {
                 />
 
                 <Route
-                  element={<TraineeViewPage />}
                   path={'/trainer/:traineeId'}
+                  element={
+                    <TrainerRoute>
+                      <TraineeViewPage />
+                    </TrainerRoute>
+                  }
                 />
 
                 <Route
