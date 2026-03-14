@@ -41,7 +41,12 @@ const handler = async (
     isTrainer: boolean;
   };
 
-  if (!targetUid || typeof isTrainer !== 'boolean') {
+  if (
+    typeof targetUid !== 'string' ||
+    targetUid.length === 0 ||
+    targetUid.length > 128 ||
+    typeof isTrainer !== 'boolean'
+  ) {
     res.status(400).json({ error: 'Invalid request body' });
     return;
   }
