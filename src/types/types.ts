@@ -41,6 +41,7 @@ export interface ITrainingSession {
   traineeId: string;
   date: string; // YYYY-MM-DD
   time: string | null; // HH:mm
+  timeEnd?: string | null; // HH:mm
   status: TrainingSessionStatus;
   trainerConfirmed: boolean;
   paymentStatus: PaymentStatus;

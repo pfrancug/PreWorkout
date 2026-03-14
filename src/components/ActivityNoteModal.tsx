@@ -27,9 +27,10 @@ export interface TimePreset {
 }
 
 export type DrawerView =
-  | { view: 'day'; date: string }
+  | { view: 'day'; date: string; timePreset?: TimePreset | null }
   | { view: 'event'; date: string; entryId: string }
   | { view: 'add'; date: string; timePreset: TimePreset | null }
+  | { view: 'add-training'; date: string; timePreset?: TimePreset | null }
   | { view: 'note'; date: string };
 
 // -- Zod schema --------------------------------------------------------------
@@ -86,7 +87,12 @@ interface ActivityNoteModalProps {
   /** When true, disable all editing (view-only mode) */
   readOnly?: boolean;
   /** When provided, show a trainer toggle button in the day view */
-  onTrainerToggle?: (dateKey: string) => void;
+  onTrainerToggle?: (
+    dateKey: string,
+    time: string | null,
+    timeEnd: string | null,
+    note: string,
+  ) => Promise<void>;
   onNavigate: (next: DrawerView) => void;
   onClose: () => void;
   onNoteChange: (value: string) => void;
@@ -110,9 +116,15 @@ interface DayViewProps {
   entries: CalendarEntry[];
   note: string;
   readOnly?: boolean;
-  onTrainerToggle?: (dateKey: string) => void;
+  onTrainerToggle?: (
+    dateKey: string,
+    time: string | null,
+    timeEnd: string | null,
+    note: string,
+  ) => Promise<void>;
   onNavigateToEvent: (entryId: string) => void;
   onNavigateToAdd: () => void;
+  onNavigateToAddTraining: () => void;
   onNavigateToNote: () => void;
 }
 
@@ -125,6 +137,7 @@ const DayView = ({
   onTrainerToggle,
   onNavigateToEvent,
   onNavigateToAdd,
+  onNavigateToAddTraining,
   onNavigateToNote,
 }: DayViewProps) => {
   const { t, i18n } = useTranslation();
@@ -190,7 +203,9 @@ const DayView = ({
               const isTrainerEntry =
                 entry.id.startsWith('trainer-') ||
                 entry.id.startsWith('session-');
-              const isClickable = !readOnly || isTrainerEntry;
+              const isClickable = isTrainerEntry
+                ? !!onTrainerToggle
+                : !readOnly;
 
               return (
                 <div
@@ -275,7 +290,7 @@ const DayView = ({
         {onTrainerToggle && (
           <Button
             className={'flex-1'}
-            onClick={() => onTrainerToggle(date)}
+            onClick={onNavigateToAddTraining}
             variant={'outline'}
           >
             {t('calendar.addPersonalTraining')}
@@ -419,6 +434,8 @@ const EventView = ({
     register,
     handleSubmit,
     control,
+    getValues,
+    setValue: setEventValue,
     formState: { errors },
   } = useForm<EditEntryFormData>({
     resolver: zodResolver(editEntrySchema),
@@ -533,7 +550,13 @@ const EventView = ({
               <Checkbox
                 checked={field.value}
                 id={'editAllDay'}
-                onCheckedChange={field.onChange}
+                onCheckedChange={(v) => {
+                  field.onChange(!!v);
+                  if (!v && !getValues('time') && !getValues('timeEnd')) {
+                    setEventValue('time', '13:00');
+                    setEventValue('timeEnd', '14:00');
+                  }
+                }}
               />
             )}
           />
@@ -612,6 +635,7 @@ const AddView = ({
 
   const {
     control,
+    getValues,
     handleSubmit,
     register,
     setValue,
@@ -624,8 +648,8 @@ const AddView = ({
       icon: 'dumbbell',
       color: 'slate',
       allDay: false,
-      time: '12:00',
-      timeEnd: '13:00',
+      time: '13:00',
+      timeEnd: '14:00',
     },
   });
 
@@ -668,9 +692,9 @@ const AddView = ({
       return;
     }
     if (timePreset.allDay) {
-      setValue('allDay', true);
-      setValue('time', '12:00');
-      setValue('timeEnd', '13:00');
+      setValue('allDay', false);
+      setValue('time', '13:00');
+      setValue('timeEnd', '14:00');
     } else {
       setValue('allDay', false);
       if (timePreset.startStr.length >= 16) {
@@ -778,7 +802,13 @@ const AddView = ({
                   checked={field.value && canSaveToActivities}
                   disabled={!canSaveToActivities}
                   id={'saveToActivities'}
-                  onCheckedChange={(v) => field.onChange(!!v)}
+                  onCheckedChange={(v) => {
+                    field.onChange(!!v);
+                    if (!v && !getValues('time') && !getValues('timeEnd')) {
+                      setValue('time', '13:00');
+                      setValue('timeEnd', '14:00');
+                    }
+                  }}
                 />
               )}
             />
@@ -938,6 +968,159 @@ const AddView = ({
   );
 };
 
+// -- Add Training View (trainer-only) ----------------------------------------
+
+interface AddTrainingViewProps {
+  date: string;
+  timePreset?: TimePreset | null;
+  onBack: () => void;
+  onSave: (
+    dateKey: string,
+    time: string | null,
+    timeEnd: string | null,
+    note: string,
+  ) => Promise<void>;
+}
+
+const AddTrainingView = ({
+  date,
+  timePreset,
+  onBack,
+  onSave,
+}: AddTrainingViewProps) => {
+  const { t, i18n } = useTranslation();
+
+  const formattedDate = new Date(`${date}T00:00:00`).toLocaleDateString(
+    i18n.language,
+    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
+  );
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<EditEntryFormData>({
+    resolver: zodResolver(editEntrySchema),
+    shouldFocusError: false,
+    defaultValues: {
+      note: '',
+      time: '13:00',
+      timeEnd: '14:00',
+      allDay: false,
+    },
+  });
+
+  const allDay = useWatch({ control, name: 'allDay' });
+
+  useEffect(() => {
+    if (!timePreset || timePreset.allDay) {
+      return;
+    }
+    setValue('allDay', false);
+    if (timePreset.startStr.length >= 16) {
+      setValue('time', timePreset.startStr.substring(11, 16));
+    }
+    if (timePreset.endStr.length >= 16) {
+      setValue('timeEnd', timePreset.endStr.substring(11, 16));
+    }
+  }, [timePreset, setValue]);
+
+  const onSubmit: SubmitHandler<EditEntryFormData> = async (data) => {
+    const time = data.allDay ? null : data.time || null;
+    const timeEnd = data.allDay ? null : data.timeEnd || null;
+    await onSave(date, time, timeEnd, data.note.trim());
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <div className={'flex items-center gap-2'}>
+          <button
+            onClick={onBack}
+            type={'button'}
+            className={
+              'cursor-pointer text-muted-foreground transition-colors hover:text-foreground'
+            }
+          >
+            <ArrowLeft className={'h-4 w-4'} />
+          </button>
+          <DialogTitle className={'text-base'}>
+            {t('calendar.addPersonalTraining')}
+          </DialogTitle>
+        </div>
+      </DialogHeader>
+
+      <p className={'text-sm text-muted-foreground'}>{formattedDate}</p>
+
+      <form className={'space-y-4'} onSubmit={handleSubmit(onSubmit)}>
+        {/* Time section */}
+        <div className={'space-y-1.5'}>
+          <label className={'text-sm font-medium'} htmlFor={'trainingTime'}>
+            {t('calendar.timeLabel')}
+          </label>
+          <div className={'flex items-center gap-2'}>
+            <Input
+              {...register('time')}
+              className={'flex-1'}
+              disabled={allDay}
+              id={'trainingTime'}
+              type={'time'}
+            />
+            <span className={'text-sm text-muted-foreground'}>{'–'}</span>
+            <Input
+              {...register('timeEnd')}
+              className={'flex-1'}
+              disabled={allDay}
+              id={'trainingTimeEnd'}
+              type={'time'}
+            />
+          </div>
+          <div className={'flex items-center gap-2'}>
+            <Controller
+              control={control}
+              name={'allDay'}
+              render={({ field }) => (
+                <Checkbox
+                  checked={field.value}
+                  id={'trainingAllDay'}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
+            <label
+              className={'cursor-pointer text-sm'}
+              htmlFor={'trainingAllDay'}
+            >
+              {t('calendar.allDay')}
+            </label>
+          </div>
+          {errors.time && (
+            <p className={'text-xs text-destructive'}>{errors.time.message}</p>
+          )}
+        </div>
+
+        {/* Note section */}
+        <div className={'space-y-2'}>
+          <p className={'text-sm font-medium'}>{t('calendar.eventNote')}</p>
+          <Textarea
+            {...register('note')}
+            className={'resize-none text-sm'}
+            maxLength={500}
+            placeholder={t('calendar.activityNotePlaceholder')}
+            rows={3}
+          />
+        </div>
+
+        <Button className={'w-full'} disabled={isSubmitting} type={'submit'}>
+          {t('calendar.addToCalendar')}
+        </Button>
+      </form>
+    </>
+  );
+};
+
 // -- Main component ----------------------------------------------------------
 
 export const ActivityNoteModal = ({
@@ -992,7 +1175,24 @@ export const ActivityNoteModal = ({
             onTrainerToggle={onTrainerToggle}
             readOnly={readOnly}
             onNavigateToAdd={() =>
-              onNavigate({ view: 'add', date, timePreset: null })
+              onNavigate({
+                view: 'add',
+                date,
+                timePreset:
+                  drawerView.view === 'day'
+                    ? (drawerView.timePreset ?? null)
+                    : null,
+              })
+            }
+            onNavigateToAddTraining={() =>
+              onNavigate({
+                view: 'add-training',
+                date,
+                timePreset:
+                  drawerView.view === 'day'
+                    ? (drawerView.timePreset ?? null)
+                    : null,
+              })
             }
             onNavigateToEvent={(entryId) =>
               onNavigate({ view: 'event', date, entryId })
@@ -1014,7 +1214,7 @@ export const ActivityNoteModal = ({
             const isTrainerEntry =
               currentEntry.id.startsWith('trainer-') ||
               currentEntry.id.startsWith('session-');
-            const canEdit = !readOnly || isTrainerEntry;
+            const canEdit = isTrainerEntry ? !!onTrainerToggle : !readOnly;
 
             return (
               <EventView
@@ -1056,6 +1256,18 @@ export const ActivityNoteModal = ({
             onSaveNewCategory={onSaveNewCategory}
             recentActivityIds={recentActivityIds}
             timePreset={drawerView.timePreset}
+          />
+        )}
+
+        {onTrainerToggle && drawerView.view === 'add-training' && (
+          <AddTrainingView
+            date={date}
+            onBack={() => onNavigate({ view: 'day', date })}
+            timePreset={drawerView.timePreset}
+            onSave={async (dateKey, time, timeEnd, noteValue) => {
+              await onTrainerToggle(dateKey, time, timeEnd, noteValue);
+              onNavigate({ view: 'day', date });
+            }}
           />
         )}
       </DialogContent>

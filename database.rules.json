@@ -171,7 +171,7 @@
 
         "activityCategories": {
           ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
-          ".write": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           "_initialized": {
             ".validate": "newData.isBoolean()"
           },

@@ -48,6 +48,8 @@ import {
   toggleTrainerCalendarDay,
   updateCalendarEntryNote,
   updateCalendarEntryTime,
+  updateSessionNote,
+  updateSessionTime,
 } from '../firebase/database';
 import { ActivityIcon } from './ActivityIcon';
 import { ActivityNoteModal } from './ActivityNoteModal';
@@ -202,14 +204,18 @@ export const FullCalendarView = ({
         ? Object.values(calendarEntries[dateKey])
         : [];
 
-      // Virtual trainer-day event (only if not already logged as an entry)
+      // Virtual trainer-day event (only if not already logged as an entry
+      // AND no timed session exists — timed sessions get their own event below)
       if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
         const alreadyLogged = dayEntries.some(
           (e) =>
             e.type === 'activity' &&
             e.activityId === trainerCategoryForDisplay.id,
         );
-        if (!alreadyLogged) {
+        const hasTimedSession = trainingSessions.some(
+          (s) => s.date === dateKey && s.status !== 'cancelled' && s.time,
+        );
+        if (!alreadyLogged && !hasTimedSession) {
           const color =
             ACTIVITY_COLOR_MAP[trainerCategoryForDisplay.color] ?? '#888';
           result.push({
@@ -283,6 +289,9 @@ export const FullCalendarView = ({
         id: `session-${session.id}`,
         title: t('calendar.trainerActivity'),
         start: `${session.date}T${session.time}:00`,
+        end: session.timeEnd
+          ? `${session.date}T${session.timeEnd}:00`
+          : undefined,
         allDay: false,
         backgroundColor: bgColor,
         borderColor,
@@ -328,7 +337,25 @@ export const FullCalendarView = ({
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
-    setDrawerView({ view: 'day', date: formatDateKey(arg.date) });
+    const date = formatDateKey(arg.date);
+    if (arg.allDay) {
+      setDrawerView({ view: 'day', date });
+    } else {
+      const hh = String(arg.date.getHours()).padStart(2, '0');
+      const mm = String(arg.date.getMinutes()).padStart(2, '0');
+      const endDate = new Date(arg.date.getTime() + 60 * 60 * 1000);
+      const ehh = String(endDate.getHours()).padStart(2, '0');
+      const emm = String(endDate.getMinutes()).padStart(2, '0');
+      setDrawerView({
+        view: 'day',
+        date,
+        timePreset: {
+          startStr: `${date}T${hh}:${mm}:00`,
+          endStr: `${date}T${ehh}:${emm}:00`,
+          allDay: false,
+        },
+      });
+    }
   }, []);
 
   const handleEventClick = useCallback(
@@ -366,30 +393,49 @@ export const FullCalendarView = ({
           }
         }
       }
-      // Training session events are read-only; no modal opened
+      // Training session events — only trainer can open event view
+      else if (meta.type === 'trainingSession' && arg.event.start) {
+        const date = formatDateKey(arg.event.start);
+        const sessionId = meta.session?.id;
+        if (readOnly && allowTrainerToggle && sessionId) {
+          setDrawerView({
+            view: 'event',
+            date,
+            entryId: `session-${sessionId}`,
+          });
+        } else {
+          setDrawerView({ view: 'day', date });
+        }
+      }
     },
-    [readOnly],
+    [readOnly, allowTrainerToggle],
   );
 
   const handleSelect = useCallback(
     (arg: DateSelectArg) => {
-      if (readOnly) {
-        return;
-      }
       const date = formatDateKey(arg.start);
       const timePreset: TimePreset = {
         startStr: arg.startStr,
         endStr: arg.endStr,
         allDay: arg.allDay,
       };
-      setDrawerView({ view: 'add', date, timePreset });
+      if (readOnly && allowTrainerToggle) {
+        setDrawerView({ view: 'add-training', date, timePreset });
+      } else if (!readOnly) {
+        setDrawerView({ view: 'add', date, timePreset });
+      }
     },
-    [readOnly],
+    [readOnly, allowTrainerToggle],
   );
 
   /** Add trainer-marked activity on a day (writes to trainerCalendar + training session) */
   const handleTrainerToggle = useCallback(
-    async (dateKey: string) => {
+    async (
+      dateKey: string,
+      time: string | null,
+      timeEnd: string | null,
+      note: string,
+    ) => {
       if (
         !targetUserId ||
         !trainerCategoryForDisplay?.trainerId ||
@@ -422,18 +468,17 @@ export const FullCalendarView = ({
 
       try {
         await toggleTrainerCalendarDay(targetUserId, dateKey, true);
-        await createTrainingSession(
+        const sessionId = await createTrainingSession(
           connectionId,
           trainerCategoryForDisplay.trainerId!,
           targetUserId,
           dateKey,
+          time,
+          timeEnd,
         );
-        // Open event view for the newly created trainer entry
-        setDrawerView({
-          view: 'event',
-          date: dateKey,
-          entryId: `trainer-${dateKey}`,
-        });
+        if (note) {
+          await updateSessionNote(connectionId, sessionId, note);
+        }
       } catch {
         try {
           await toggleTrainerCalendarDay(targetUserId, dateKey, false);
@@ -523,6 +568,40 @@ export const FullCalendarView = ({
       if (!user) {
         return;
       }
+
+      // Route trainer/session entries to session note update
+      if (entryId.startsWith('trainer-') || entryId.startsWith('session-')) {
+        if (!connectionId) {
+          return;
+        }
+        const sessionId = entryId.startsWith('session-')
+          ? entryId.replace('session-', '')
+          : trainingSessions.find(
+              (s) => s.date === date && s.status !== 'cancelled',
+            )?.id;
+        if (!sessionId) {
+          return;
+        }
+        const existing = entryNoteTimersRef.current.get(entryId);
+        if (existing) {
+          clearTimeout(existing);
+        }
+        entryNoteTimersRef.current.set(
+          entryId,
+          setTimeout(async () => {
+            try {
+              await updateSessionNote(connectionId, sessionId, value);
+            } catch {
+              toast.error(t('common.saveError'));
+            } finally {
+              entryNoteTimersRef.current.delete(entryId);
+            }
+          }, 500),
+        );
+
+        return;
+      }
+
       const existing = entryNoteTimersRef.current.get(entryId);
       if (existing) {
         clearTimeout(existing);
@@ -540,7 +619,7 @@ export const FullCalendarView = ({
         }, 500),
       );
     },
-    [user, t],
+    [user, connectionId, trainingSessions, t],
   );
 
   const handleUpdateEntryTime = useCallback(
@@ -553,13 +632,36 @@ export const FullCalendarView = ({
       if (!user) {
         return;
       }
+
+      // Route trainer/session entries to session time update
+      if (entryId.startsWith('trainer-') || entryId.startsWith('session-')) {
+        if (!connectionId) {
+          return;
+        }
+        const sessionId = entryId.startsWith('session-')
+          ? entryId.replace('session-', '')
+          : trainingSessions.find(
+              (s) => s.date === date && s.status !== 'cancelled',
+            )?.id;
+        if (!sessionId) {
+          return;
+        }
+        try {
+          await updateSessionTime(connectionId, sessionId, time, timeEnd);
+        } catch {
+          toast.error(t('common.saveError'));
+        }
+
+        return;
+      }
+
       try {
         await updateCalendarEntryTime(user.uid, date, entryId, time, timeEnd);
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, t],
+    [user, connectionId, trainingSessions, t],
   );
 
   const handleSaveNewCategory = useCallback(
@@ -691,18 +793,27 @@ export const FullCalendarView = ({
       : [];
 
     // Include virtual trainer-day entry if not already logged as a real entry
+    // AND no timed session exists (timed sessions get their own virtual entry below)
     if (trainerCategoryForDisplay && trainerCalendar?.[drawerDate]) {
       const alreadyLogged = entries.some(
         (e) =>
           e.type === 'activity' &&
           e.activityId === trainerCategoryForDisplay.id,
       );
-      if (!alreadyLogged) {
+      const hasTimedSession = trainingSessions.some(
+        (s) => s.date === drawerDate && s.status !== 'cancelled' && s.time,
+      );
+      if (!alreadyLogged && !hasTimedSession) {
+        // Find matching session to pull note
+        const matchingSession = trainingSessions.find(
+          (s) => s.date === drawerDate && s.status !== 'cancelled',
+        );
         entries.push({
           id: `trainer-${drawerDate}`,
           type: 'activity',
           activityId: trainerCategoryForDisplay.id,
           time: null,
+          note: matchingSession?.note,
         });
       }
     }
@@ -719,7 +830,8 @@ export const FullCalendarView = ({
           type: 'activity',
           activityId: trainerCategoryForDisplay?.id ?? 'trainer',
           time: session.time,
-          timeEnd: null,
+          timeEnd: session.timeEnd ?? null,
+          note: session.note,
         });
       }
     }
@@ -787,12 +899,17 @@ export const FullCalendarView = ({
           locales={[plLocale]}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           select={handleSelect}
-          selectable={!readOnly}
+          selectable={!readOnly || allowTrainerToggle}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek',
           }}
+          selectAllow={(info) =>
+            info.start.toDateString() === info.end.toDateString() ||
+            (info.allDay &&
+              info.end.getTime() - info.start.getTime() <= 86400000)
+          }
         />
       </div>
 

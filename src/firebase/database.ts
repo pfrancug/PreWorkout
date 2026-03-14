@@ -53,10 +53,6 @@ export interface CalendarNotes {
   [date: string]: string;
 }
 
-export type ActivityNotes = {
-  [date: string]: { [activityId: string]: string };
-};
-
 export interface CalendarEntry {
   id: string;
   type: 'activity' | 'custom';
@@ -504,23 +500,6 @@ export const getRemainingMessages = async (userId: string): Promise<number> => {
   return Math.max(0, max - count);
 };
 
-export const subscribeToUserData = (
-  userId: string,
-  callback: (data: IRowData[] | null) => void,
-): (() => void) => {
-  const dataRef = getUserDataRef(userId);
-  const unsubscribe = onValue(dataRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      callback(Array.isArray(data) ? data : Object.values(data));
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
-};
-
 // Calendar
 export const getUserCalendarRef = (userId: string) =>
   ref(database, `users/${userId}/calendar`);
@@ -618,39 +597,6 @@ export const subscribeToCalendarNotes = (
 // Activity Notes (per-category notes per day)
 export const getUserActivityNotesRef = (userId: string) =>
   ref(database, `users/${userId}/activityNotes`);
-
-export const saveActivityNote = async (
-  userId: string,
-  date: string,
-  activityId: string,
-  note: string,
-): Promise<void> => {
-  const noteRef = ref(
-    database,
-    `users/${userId}/activityNotes/${date}/${activityId}`,
-  );
-  if (!note.trim()) {
-    await remove(noteRef);
-  } else {
-    await set(noteRef, note.trim());
-  }
-};
-
-export const subscribeToActivityNotes = (
-  userId: string,
-  callback: (data: ActivityNotes | null) => void,
-): (() => void) => {
-  const notesRef = getUserActivityNotesRef(userId);
-  const unsubscribe = onValue(notesRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val() as ActivityNotes);
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
-};
 
 // Calendar Entries (unified: replaces `calendar` + `activityNotes`)
 export const getUserCalendarEntriesRef = (userId: string) =>
@@ -834,22 +780,66 @@ export interface UserDirectoryEntry {
 export const updateUserDirectory = async (
   userId: string,
   email: string,
-  displayName: string,
+  googleDisplayName: string,
 ): Promise<void> => {
   const entryRef = ref(database, `userDirectory/${userId}`);
-  await update(entryRef, {
+
+  // Only set displayName on first login; afterwards it's managed via settings
+  const existingName = await get(
+    ref(database, `userDirectory/${userId}/displayName`),
+  );
+  const updates: Record<string, string> = {
     email,
-    displayName,
     lastLogin: new Date().toISOString(),
-  });
+  };
+  if (!existingName.exists() || !existingName.val()) {
+    updates.displayName = googleDisplayName;
+  }
+  await update(entryRef, updates);
 };
 
-/** Update only the display name in userDirectory (for settings sync). */
+/** Update only the display name in userDirectory (for settings sync).
+ *  Also propagates the new name to trainer categories on connected trainees. */
 export const updateUserDisplayName = async (
   userId: string,
   displayName: string,
 ): Promise<void> => {
   await update(ref(database, `userDirectory/${userId}`), { displayName });
+
+  // Propagate to trainer categories on all active trainees
+  const connectionsRef = ref(database, 'trainerConnections');
+  const snap = await get(
+    query(connectionsRef, orderByChild('trainerId'), equalTo(userId)),
+  );
+  if (!snap.exists()) {
+    return;
+  }
+  const connections = snap.val() as Record<string, ITrainerConnection>;
+  const updatePromises: Promise<void>[] = [];
+  for (const conn of Object.values(connections)) {
+    if (conn.status !== 'active' || !conn.traineeId) {
+      continue;
+    }
+    updatePromises.push(
+      (async () => {
+        const cats = await loadActivityCategories(conn.traineeId);
+        if (!cats) {
+          return;
+        }
+        const idx = cats.findIndex((c) => c.trainerId === userId);
+        if (idx === -1 || cats[idx].name === `Training with ${displayName}`) {
+          return;
+        }
+        const updated = [...cats];
+        updated[idx] = {
+          ...updated[idx],
+          name: `Training with ${displayName}`,
+        };
+        await saveActivityCategories(conn.traineeId, updated);
+      })(),
+    );
+  }
+  await Promise.all(updatePromises);
 };
 
 // Admin functions
@@ -1439,6 +1429,7 @@ export const createTrainingSession = async (
   traineeId: string,
   date: string,
   time?: string | null,
+  timeEnd?: string | null,
 ): Promise<string> => {
   const sessionsRef = ref(database, `trainingSessions/${connectionId}`);
   const newRef = push(sessionsRef);
@@ -1449,6 +1440,7 @@ export const createTrainingSession = async (
     traineeId,
     date,
     time: time ?? null,
+    timeEnd: timeEnd ?? null,
     status: 'planned',
     trainerConfirmed: true,
     paymentStatus: 'unpaid',
@@ -1510,12 +1502,25 @@ export const updateSessionTime = async (
   connectionId: string,
   sessionId: string,
   time: string | null,
+  timeEnd?: string | null,
 ): Promise<void> => {
   const sessionRef = ref(
     database,
     `trainingSessions/${connectionId}/${sessionId}`,
   );
-  await update(sessionRef, { time });
+  await update(sessionRef, { time, timeEnd: timeEnd ?? null });
+};
+
+export const updateSessionNote = async (
+  connectionId: string,
+  sessionId: string,
+  note: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, { note: note || null });
 };
 
 /** Trainer marks session as paid (immediate, no confirmation needed). */
@@ -1570,16 +1575,6 @@ export const groupSessionsAsPackage = async (
   await update(ref(database), updates);
 
   return packageId;
-};
-
-/** Remove a session from its package. */
-export const removeFromPackage = async (
-  connectionId: string,
-  sessionId: string,
-): Promise<void> => {
-  await update(ref(database, `trainingSessions/${connectionId}/${sessionId}`), {
-    packageId: null,
-  });
 };
 
 /** Remove multiple sessions from their packages in a single write. */
