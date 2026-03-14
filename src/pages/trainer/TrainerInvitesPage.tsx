@@ -54,11 +54,13 @@ const InviteCard = ({
       }
 
       debounceRef.current = setTimeout(() => {
-        updateConnectionNote(connection.id, value).catch(() => {});
+        updateConnectionNote(connection.id, value).catch(() => {
+          toast.error(t('common.saveError'));
+        });
         debounceRef.current = null;
       }, 600);
     },
-    [connection.id],
+    [connection.id, t],
   );
 
   useEffect(() => {

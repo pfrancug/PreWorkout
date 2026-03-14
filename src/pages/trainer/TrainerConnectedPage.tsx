@@ -43,7 +43,9 @@ export const TrainerConnectedPage = () => {
       setLoading(false);
 
       const activeTraineeIds = new Set(
-        conns.filter((c) => c.traineeId).map((c) => c.traineeId),
+        conns
+          .filter((c) => c.traineeId && c.status === 'active')
+          .map((c) => c.traineeId),
       );
 
       // Only fetch info for traineeIds we haven't cached yet

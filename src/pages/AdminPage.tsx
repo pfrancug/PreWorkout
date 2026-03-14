@@ -91,14 +91,32 @@ export const AdminPage = () => {
           Object.entries(directory).map(async ([uid, entry]) => {
             const isDeleted = !entry.email && !entry.lastLogin;
             try {
-              const [maxLimit, stats, isTrainer, avatarUrl] = await Promise.all(
-                [
-                  getUserMaxLimitForAdmin(uid),
-                  getUserUsageStats(uid),
-                  getTrainerFlagFromDirectory(uid),
-                  getUserAvatarUrl(uid),
-                ],
-              );
+              const [
+                maxLimitResult,
+                statsResult,
+                isTrainerResult,
+                avatarUrlResult,
+              ] = await Promise.allSettled([
+                getUserMaxLimitForAdmin(uid),
+                getUserUsageStats(uid),
+                getTrainerFlagFromDirectory(uid),
+                getUserAvatarUrl(uid),
+              ]);
+
+              const maxLimit =
+                maxLimitResult.status === 'fulfilled'
+                  ? maxLimitResult.value
+                  : -1;
+              const stats =
+                statsResult.status === 'fulfilled' ? statsResult.value : null;
+              const isTrainer =
+                isTrainerResult.status === 'fulfilled'
+                  ? isTrainerResult.value
+                  : false;
+              const avatarUrl =
+                avatarUrlResult.status === 'fulfilled'
+                  ? avatarUrlResult.value
+                  : null;
 
               return {
                 uid,

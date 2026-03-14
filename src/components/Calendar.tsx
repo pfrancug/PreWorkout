@@ -285,6 +285,9 @@ export const Calendar = ({
 
   // Map training sessions by date for quick lookup
   const sessionsByDate = useMemo(() => {
+    if (!connectionId) {
+      return new Map<string, ITrainingSession>();
+    }
     const map = new Map<string, ITrainingSession>();
     for (const s of trainingSessions) {
       if (s.status !== 'cancelled') {
@@ -293,7 +296,7 @@ export const Calendar = ({
     }
 
     return map;
-  }, [trainingSessions]);
+  }, [connectionId, trainingSessions]);
 
   // Categories available for the activity picker (excludes archived and trainer-linked when not in trainer mode)
   const pickableCategories = useMemo(
