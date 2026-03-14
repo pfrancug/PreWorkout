@@ -33,7 +33,9 @@ import {
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import {
+  cancelSession,
   createCalendarEntry,
+  createTrainingSession,
   deleteCalendarEntry,
   saveActivityCategories,
   saveCalendarNote,
@@ -43,6 +45,7 @@ import {
   subscribeToTraineeConnection,
   subscribeToTrainerCalendar,
   subscribeToTrainingSessions,
+  toggleTrainerCalendarDay,
   updateCalendarEntryNote,
   updateCalendarEntryTime,
 } from '../firebase/database';
@@ -52,7 +55,23 @@ import { ActivityNoteModal } from './ActivityNoteModal';
 const formatDateKey = (date: Date): string =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-export const FullCalendarView = () => {
+interface FullCalendarViewProps {
+  /** Override whose data to display (defaults to current user) */
+  userId?: string;
+  /** When true, disable all editing (activity toggles, notes, adding entries) */
+  readOnly?: boolean;
+  /** Allow toggling trainer-linked activity even in readOnly mode */
+  allowTrainerToggle?: boolean;
+  /** The active trainer connection ID — needed for creating training sessions */
+  connectionId?: string;
+}
+
+export const FullCalendarView = ({
+  userId: propUserId,
+  readOnly = false,
+  allowTrainerToggle = false,
+  connectionId: connectionIdProp,
+}: FullCalendarViewProps = {}) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { preferences } = useSettings();
@@ -68,43 +87,48 @@ export const FullCalendarView = () => {
   const [trainingSessions, setTrainingSessions] = useState<ITrainingSession[]>(
     [],
   );
-  const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [autoConnectionId, setAutoConnectionId] = useState<string | null>(null);
   const [drawerView, setDrawerView] = useState<DrawerView | null>(null);
+
+  const targetUserId = propUserId || user?.uid;
+  const isOwnCalendar = !propUserId || propUserId === user?.uid;
+  const connectionId = connectionIdProp ?? autoConnectionId ?? undefined;
+  const trainerToggleInFlight = useRef(new Set<string>());
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const entryNoteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
 
-  // Auto-detect active trainer connection
+  // Auto-detect connectionId for the trainee's own calendar
   useEffect(() => {
-    if (!user) {
+    if (connectionIdProp || !isOwnCalendar || !user) {
       return;
     }
     const unsub = subscribeToTraineeConnection(user.uid, (conn) => {
-      setConnectionId(conn?.status === 'active' ? conn.id : null);
+      setAutoConnectionId(conn?.status === 'active' ? conn.id : null);
     });
 
     return unsub;
-  }, [user]);
+  }, [connectionIdProp, isOwnCalendar, user]);
 
   // Calendar data subscriptions
   useEffect(() => {
-    if (!user) {
+    if (!targetUserId) {
       return;
     }
     const unsubEntries = subscribeToCalendarEntries(
-      user.uid,
+      targetUserId,
       setCalendarEntries,
     );
-    const unsubNotes = subscribeToCalendarNotes(user.uid, setCalendarNotes);
+    const unsubNotes = subscribeToCalendarNotes(targetUserId, setCalendarNotes);
     const unsubCategories = subscribeToActivityCategories(
-      user.uid,
+      targetUserId,
       setCategories,
       DEFAULT_CATEGORIES,
     );
     const unsubTrainerCal = subscribeToTrainerCalendar(
-      user.uid,
+      targetUserId,
       setTrainerCalendar,
     );
 
@@ -114,7 +138,7 @@ export const FullCalendarView = () => {
       unsubCategories();
       unsubTrainerCal();
     };
-  }, [user]);
+  }, [targetUserId]);
 
   // Training sessions subscription (read-only; session creation is trainer-only)
   useEffect(() => {
@@ -151,9 +175,15 @@ export const FullCalendarView = () => {
     [categories],
   );
 
-  // Categories available in the modal (strip archived + trainer-linked)
+  // Categories available for adding new entries (strip archived + trainer-linked)
   const pickableCategories = useMemo(
     () => categories.filter((c) => !c.archived && !c.trainerId),
+    [categories],
+  );
+
+  // All displayable categories (including trainer) for the modal event list
+  const displayCategories = useMemo(
+    () => categories.filter((c) => !c.archived),
     [categories],
   );
 
@@ -301,42 +331,131 @@ export const FullCalendarView = () => {
     setDrawerView({ view: 'day', date: formatDateKey(arg.date) });
   }, []);
 
-  const handleEventClick = useCallback((arg: EventClickArg) => {
-    // Close the "+N more" popover when clicking an event inside it
-    arg.el
-      .closest('.fc-popover')
-      ?.querySelector<HTMLButtonElement>('.fc-popover-close')
-      ?.click();
+  const handleEventClick = useCallback(
+    (arg: EventClickArg) => {
+      // Close the "+N more" popover when clicking an event inside it
+      arg.el
+        .closest('.fc-popover')
+        ?.querySelector<HTMLButtonElement>('.fc-popover-close')
+        ?.click();
 
-    const meta = arg.event.extendedProps as FullCalendarEventMeta;
-    if (meta.type === 'entry' && arg.event.start) {
-      const date = formatDateKey(arg.event.start);
-      const entryId = meta.entry?.id;
-      if (entryId && !entryId.startsWith('trainer-')) {
-        setDrawerView({ view: 'event', date, entryId });
-      } else {
-        setDrawerView({ view: 'day', date });
+      const meta = arg.event.extendedProps as FullCalendarEventMeta;
+      if (meta.type === 'entry' && arg.event.start) {
+        const date = formatDateKey(arg.event.start);
+        const entryId = meta.entry?.id;
+        if (readOnly) {
+          // Trainer can only view the day overview, not individual events
+          setDrawerView({ view: 'day', date });
+        } else if (entryId && !entryId.startsWith('trainer-')) {
+          setDrawerView({ view: 'event', date, entryId });
+        } else {
+          setDrawerView({ view: 'day', date });
+        }
+      } else if (meta.type === 'note') {
+        if (readOnly) {
+          const date = arg.event.start ? formatDateKey(arg.event.start) : null;
+          if (date) {
+            setDrawerView({ view: 'day', date });
+          }
+        } else {
+          const dateKey =
+            (meta.dateKey as string | undefined) ??
+            (arg.event.start ? formatDateKey(arg.event.start) : null);
+          if (dateKey) {
+            setDrawerView({ view: 'note', date: dateKey });
+          }
+        }
       }
-    } else if (meta.type === 'note') {
-      const dateKey =
-        (meta.dateKey as string | undefined) ??
-        (arg.event.start ? formatDateKey(arg.event.start) : null);
-      if (dateKey) {
-        setDrawerView({ view: 'note', date: dateKey });
-      }
-    }
-    // Training session events are read-only; no modal opened
-  }, []);
+      // Training session events are read-only; no modal opened
+    },
+    [readOnly],
+  );
 
-  const handleSelect = useCallback((arg: DateSelectArg) => {
-    const date = formatDateKey(arg.start);
-    const timePreset: TimePreset = {
-      startStr: arg.startStr,
-      endStr: arg.endStr,
-      allDay: arg.allDay,
-    };
-    setDrawerView({ view: 'add', date, timePreset });
-  }, []);
+  const handleSelect = useCallback(
+    (arg: DateSelectArg) => {
+      if (readOnly) {
+        return;
+      }
+      const date = formatDateKey(arg.start);
+      const timePreset: TimePreset = {
+        startStr: arg.startStr,
+        endStr: arg.endStr,
+        allDay: arg.allDay,
+      };
+      setDrawerView({ view: 'add', date, timePreset });
+    },
+    [readOnly],
+  );
+
+  /** Add trainer-marked activity on a day (writes to trainerCalendar + training session) */
+  const handleTrainerToggle = useCallback(
+    async (dateKey: string) => {
+      if (
+        !targetUserId ||
+        !trainerCategoryForDisplay?.trainerId ||
+        !connectionId ||
+        !user
+      ) {
+        return;
+      }
+
+      const isTrainerMarked = trainerCalendar?.[dateKey] === true;
+      const dayEntries = calendarEntries?.[dateKey]
+        ? Object.values(calendarEntries[dateKey])
+        : [];
+      const inRegular = dayEntries.some(
+        (e) =>
+          e.type === 'activity' &&
+          e.activityId === trainerCategoryForDisplay.id,
+      );
+      const hasSession = trainingSessions.some(
+        (s) => s.date === dateKey && s.status !== 'cancelled',
+      );
+      if (isTrainerMarked || inRegular || hasSession) {
+        return;
+      }
+
+      if (trainerToggleInFlight.current.has(dateKey)) {
+        return;
+      }
+      trainerToggleInFlight.current.add(dateKey);
+
+      try {
+        await toggleTrainerCalendarDay(targetUserId, dateKey, true);
+        await createTrainingSession(
+          connectionId,
+          trainerCategoryForDisplay.trainerId!,
+          targetUserId,
+          dateKey,
+        );
+        // Open event view for the newly created trainer entry
+        setDrawerView({
+          view: 'event',
+          date: dateKey,
+          entryId: `trainer-${dateKey}`,
+        });
+      } catch {
+        try {
+          await toggleTrainerCalendarDay(targetUserId, dateKey, false);
+        } catch {
+          // Ignore rollback failure
+        }
+        toast.error(t('common.saveError'));
+      } finally {
+        trainerToggleInFlight.current.delete(dateKey);
+      }
+    },
+    [
+      targetUserId,
+      calendarEntries,
+      trainerCalendar,
+      trainerCategoryForDisplay,
+      trainingSessions,
+      connectionId,
+      user,
+      t,
+    ],
+  );
 
   const handleAddEntry = useCallback(
     async (entryData: Omit<CalendarEntry, 'id'>) => {
@@ -358,12 +477,45 @@ export const FullCalendarView = () => {
         return;
       }
       try {
-        await deleteCalendarEntry(user.uid, date, entryId);
+        if (entryId.startsWith('trainer-')) {
+          // Delete virtual trainer-day entry: unmark the day and cancel the session
+          if (targetUserId) {
+            await toggleTrainerCalendarDay(targetUserId, date, false);
+          }
+          if (connectionId) {
+            const session = trainingSessions.find(
+              (s) => s.date === date && s.status !== 'cancelled',
+            );
+            if (session) {
+              await cancelSession(connectionId, session.id, 'trainer');
+            }
+          }
+        } else if (entryId.startsWith('session-')) {
+          // Delete a timed training session entry
+          const sessionId = entryId.replace('session-', '');
+          if (connectionId) {
+            await cancelSession(connectionId, sessionId, 'trainer');
+          }
+          // Also unmark the trainer calendar day if no other sessions remain
+          if (targetUserId) {
+            const remaining = trainingSessions.filter(
+              (s) =>
+                s.date === date &&
+                s.status !== 'cancelled' &&
+                s.id !== sessionId,
+            );
+            if (remaining.length === 0) {
+              await toggleTrainerCalendarDay(targetUserId, date, false);
+            }
+          }
+        } else {
+          await deleteCalendarEntry(user.uid, date, entryId);
+        }
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, t],
+    [user, targetUserId, connectionId, trainingSessions, t],
   );
 
   const handleUpdateEntryNote = useCallback(
@@ -530,12 +682,56 @@ export const FullCalendarView = () => {
   const drawerDate = drawerView?.date ?? null;
 
   const drawerEntries = useMemo((): CalendarEntry[] => {
-    if (!drawerDate || !calendarEntries?.[drawerDate]) {
+    if (!drawerDate) {
       return [];
     }
 
-    return Object.values(calendarEntries[drawerDate]);
-  }, [drawerDate, calendarEntries]);
+    const entries = calendarEntries?.[drawerDate]
+      ? Object.values(calendarEntries[drawerDate])
+      : [];
+
+    // Include virtual trainer-day entry if not already logged as a real entry
+    if (trainerCategoryForDisplay && trainerCalendar?.[drawerDate]) {
+      const alreadyLogged = entries.some(
+        (e) =>
+          e.type === 'activity' &&
+          e.activityId === trainerCategoryForDisplay.id,
+      );
+      if (!alreadyLogged) {
+        entries.push({
+          id: `trainer-${drawerDate}`,
+          type: 'activity',
+          activityId: trainerCategoryForDisplay.id,
+          time: null,
+        });
+      }
+    }
+
+    // Include timed training sessions as virtual entries
+    for (const session of trainingSessions) {
+      if (
+        session.date === drawerDate &&
+        session.status !== 'cancelled' &&
+        session.time
+      ) {
+        entries.push({
+          id: `session-${session.id}`,
+          type: 'activity',
+          activityId: trainerCategoryForDisplay?.id ?? 'trainer',
+          time: session.time,
+          timeEnd: null,
+        });
+      }
+    }
+
+    return entries;
+  }, [
+    drawerDate,
+    calendarEntries,
+    trainerCalendar,
+    trainerCategoryForDisplay,
+    trainingSessions,
+  ]);
 
   const recentActivityIds = useMemo((): string[] => {
     if (!calendarEntries) {
@@ -579,7 +775,6 @@ export const FullCalendarView = () => {
       >
         <FullCalendar
           nowIndicator
-          selectable
           dateClick={handleDateClick}
           dayMaxEvents={3}
           eventClick={handleEventClick}
@@ -592,6 +787,7 @@ export const FullCalendarView = () => {
           locales={[plLocale]}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           select={handleSelect}
+          selectable={!readOnly}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
@@ -602,7 +798,7 @@ export const FullCalendarView = () => {
 
       {drawerView && (
         <ActivityNoteModal
-          categories={pickableCategories}
+          categories={displayCategories}
           drawerView={drawerView}
           entries={drawerEntries}
           note={drawerNote}
@@ -614,7 +810,12 @@ export const FullCalendarView = () => {
           onSaveNewCategory={handleSaveNewCategory}
           onUpdateEntryNote={handleUpdateEntryNote}
           onUpdateEntryTime={handleUpdateEntryTime}
+          pickableCategories={pickableCategories}
+          readOnly={readOnly}
           recentActivityIds={recentActivityIds}
+          onTrainerToggle={
+            allowTrainerToggle && connectionId ? handleTrainerToggle : undefined
+          }
         />
       )}
     </>

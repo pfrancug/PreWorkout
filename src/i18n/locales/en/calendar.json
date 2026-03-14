@@ -46,6 +46,8 @@
     "saveChanges": "Save changes",
     "deleteEvent": "Delete",
     "addEventButton": "Add event",
+    "markTraining": "Mark training",
+    "addPersonalTraining": "Add personal training",
     "eventNote": "Note",
     "activityLabel": "Activity",
     "timeLabel": "Time",

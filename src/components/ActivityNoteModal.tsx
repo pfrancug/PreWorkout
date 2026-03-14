@@ -75,12 +75,18 @@ type EditEntryFormData = z.infer<typeof editEntrySchema>;
 interface ActivityNoteModalProps {
   drawerView: DrawerView;
   categories: ActivityCategory[];
+  /** Categories available for adding new entries (excludes trainer-linked) */
+  pickableCategories?: ActivityCategory[];
   /** All entries already logged for the current date */
   entries: CalendarEntry[];
   /** Activity IDs ordered by most recently used (across all dates) */
   recentActivityIds: string[];
   /** Current day note text */
   note: string;
+  /** When true, disable all editing (view-only mode) */
+  readOnly?: boolean;
+  /** When provided, show a trainer toggle button in the day view */
+  onTrainerToggle?: (dateKey: string) => void;
   onNavigate: (next: DrawerView) => void;
   onClose: () => void;
   onNoteChange: (value: string) => void;
@@ -103,6 +109,8 @@ interface DayViewProps {
   categories: ActivityCategory[];
   entries: CalendarEntry[];
   note: string;
+  readOnly?: boolean;
+  onTrainerToggle?: (dateKey: string) => void;
   onNavigateToEvent: (entryId: string) => void;
   onNavigateToAdd: () => void;
   onNavigateToNote: () => void;
@@ -113,6 +121,8 @@ const DayView = ({
   categories,
   entries,
   note,
+  readOnly,
+  onTrainerToggle,
   onNavigateToEvent,
   onNavigateToAdd,
   onNavigateToNote,
@@ -131,15 +141,28 @@ const DayView = ({
       </DialogHeader>
 
       {note && (
-        <button
-          onClick={onNavigateToNote}
-          type={'button'}
-          className={
-            'w-full cursor-pointer rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-left text-sm whitespace-pre-wrap transition-colors hover:bg-accent'
-          }
-        >
-          {note}
-        </button>
+        <div className={'space-y-1'}>
+          <p className={'text-sm font-medium'}>{t('calendar.dayNote')}</p>
+          {readOnly ? (
+            <div
+              className={
+                'w-full rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-left text-sm whitespace-pre-wrap'
+              }
+            >
+              {note}
+            </div>
+          ) : (
+            <button
+              onClick={onNavigateToNote}
+              type={'button'}
+              className={
+                'w-full cursor-pointer rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-left text-sm whitespace-pre-wrap transition-colors hover:bg-accent'
+              }
+            >
+              {note}
+            </button>
+          )}
+        </div>
       )}
 
       {/* Events list */}
@@ -164,15 +187,33 @@ const DayView = ({
               const entryColor = category
                 ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
                 : '#94a3b8';
+              const isTrainerEntry =
+                entry.id.startsWith('trainer-') ||
+                entry.id.startsWith('session-');
+              const isClickable = !readOnly || isTrainerEntry;
 
               return (
-                <button
+                <div
                   key={entry.id}
-                  onClick={() => onNavigateToEvent(entry.id)}
-                  type={'button'}
+                  role={isClickable ? 'button' : undefined}
+                  tabIndex={isClickable ? 0 : undefined}
                   className={cn(
-                    'flex w-full cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors hover:opacity-80',
+                    'flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left',
+                    isClickable &&
+                      'cursor-pointer transition-colors hover:opacity-80',
                   )}
+                  onClick={
+                    isClickable ? () => onNavigateToEvent(entry.id) : undefined
+                  }
+                  onKeyDown={
+                    isClickable
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            onNavigateToEvent(entry.id);
+                          }
+                        }
+                      : undefined
+                  }
                   style={{
                     backgroundColor: `${entryColor}1a`,
                     borderColor: `${entryColor}60`,
@@ -213,7 +254,7 @@ const DayView = ({
                       {entry.timeEnd && ` – ${entry.timeEnd}`}
                     </span>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -221,21 +262,35 @@ const DayView = ({
       </div>
 
       <div className={'flex gap-2'}>
-        <Button
-          className={'flex-1'}
-          onClick={onNavigateToAdd}
-          variant={'outline'}
-        >
-          {t('calendar.addEventButton')}
-        </Button>
+        {!readOnly && (
+          <Button
+            className={'flex-1'}
+            onClick={onNavigateToAdd}
+            variant={'outline'}
+          >
+            {t('calendar.addEventButton')}
+          </Button>
+        )}
 
-        <Button
-          className={'flex-1'}
-          onClick={onNavigateToNote}
-          variant={'outline'}
-        >
-          {note ? t('calendar.dayNote') : t('calendar.addDayNote')}
-        </Button>
+        {onTrainerToggle && (
+          <Button
+            className={'flex-1'}
+            onClick={() => onTrainerToggle(date)}
+            variant={'outline'}
+          >
+            {t('calendar.addPersonalTraining')}
+          </Button>
+        )}
+
+        {!readOnly && (
+          <Button
+            className={'flex-1'}
+            onClick={onNavigateToNote}
+            variant={'outline'}
+          >
+            {note ? t('calendar.dayNote') : t('calendar.addDayNote')}
+          </Button>
+        )}
       </div>
     </>
   );
@@ -888,9 +943,12 @@ const AddView = ({
 export const ActivityNoteModal = ({
   drawerView,
   categories,
+  pickableCategories,
   entries,
   recentActivityIds,
   note,
+  readOnly = false,
+  onTrainerToggle,
   onNavigate,
   onClose,
   onNoteChange,
@@ -931,6 +989,8 @@ export const ActivityNoteModal = ({
             entries={entries}
             note={note}
             onNavigateToNote={() => onNavigate({ view: 'note', date })}
+            onTrainerToggle={onTrainerToggle}
+            readOnly={readOnly}
             onNavigateToAdd={() =>
               onNavigate({ view: 'add', date, timePreset: null })
             }
@@ -944,33 +1004,52 @@ export const ActivityNoteModal = ({
           <NoteView
             note={note}
             onBack={() => onNavigate({ view: 'day', date })}
-            onNoteChange={onNoteChange}
+            onNoteChange={readOnly ? () => {} : onNoteChange}
           />
         )}
 
-        {drawerView.view === 'event' && currentEntry && (
-          <EventView
-            categories={categories}
-            date={date}
-            entry={currentEntry}
-            key={currentEntry.id}
-            onBack={() => onNavigate({ view: 'day', date })}
-            onDelete={() => {
-              onDeleteEntry(currentEntry.id, date);
-              onNavigate({ view: 'day', date });
-            }}
-            onUpdateNote={(noteValue) =>
-              onUpdateEntryNote(currentEntry.id, date, noteValue)
-            }
-            onUpdateTime={(time, timeEnd) =>
-              onUpdateEntryTime(currentEntry.id, date, time, timeEnd)
-            }
-          />
-        )}
+        {drawerView.view === 'event' &&
+          currentEntry &&
+          (() => {
+            const isTrainerEntry =
+              currentEntry.id.startsWith('trainer-') ||
+              currentEntry.id.startsWith('session-');
+            const canEdit = !readOnly || isTrainerEntry;
 
-        {drawerView.view === 'add' && (
+            return (
+              <EventView
+                categories={categories}
+                date={date}
+                entry={currentEntry}
+                key={currentEntry.id}
+                onBack={() => onNavigate({ view: 'day', date })}
+                onDelete={
+                  canEdit
+                    ? () => {
+                        onDeleteEntry(currentEntry.id, date);
+                        onNavigate({ view: 'day', date });
+                      }
+                    : () => {}
+                }
+                onUpdateNote={
+                  canEdit
+                    ? (noteValue) =>
+                        onUpdateEntryNote(currentEntry.id, date, noteValue)
+                    : () => {}
+                }
+                onUpdateTime={
+                  canEdit
+                    ? (time, timeEnd) =>
+                        onUpdateEntryTime(currentEntry.id, date, time, timeEnd)
+                    : () => {}
+                }
+              />
+            );
+          })()}
+
+        {!readOnly && drawerView.view === 'add' && (
           <AddView
-            categories={categories}
+            categories={pickableCategories ?? categories}
             date={date}
             onAddEntry={onAddEntry}
             onBack={() => onNavigate({ view: 'day', date })}

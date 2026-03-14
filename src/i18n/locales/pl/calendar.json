@@ -46,6 +46,8 @@
     "saveChanges": "Zapisz",
     "deleteEvent": "Usuń",
     "addEventButton": "Dodaj wpis",
+    "markTraining": "Oznacz trening",
+    "addPersonalTraining": "Dodaj trening personalny",
     "eventNote": "Notatka",
     "activityLabel": "Aktywność",
     "timeLabel": "Czas",
