@@ -3,43 +3,39 @@ import type { SubmitHandler } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@lib/utils';
-import { ArrowLeft, Clock, Pencil, Settings2, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, ChevronDown, Clock, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
-import {
-  ACTIVITY_COLOR_MAP,
-  ACTIVITY_COLORS,
-  AVAILABLE_ICONS,
-} from '../constants/activities';
+import { ACTIVITY_COLOR_MAP } from '../constants/activities';
 import { ActivityIcon } from './ActivityIcon';
+import { IconColorPicker } from './IconColorPicker';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
-import { Switch } from './ui/switch';
 import { Textarea } from './ui/textarea';
 
 // -- Types -------------------------------------------------------------------
 
 export interface TimePreset {
   startStr: string;
+  endStr: string;
   allDay: boolean;
 }
 
 export type DrawerView =
   | { view: 'day'; date: string }
   | { view: 'event'; date: string; entryId: string }
-  | { view: 'add'; date: string; timePreset: TimePreset | null };
+  | { view: 'add'; date: string; timePreset: TimePreset | null }
+  | { view: 'note'; date: string };
 
 // -- Zod schema --------------------------------------------------------------
 
 const addEventSchema = z
   .object({
-    mode: z.enum(['library', 'custom']),
     activityId: z.string().optional(),
     name: z.string().max(100).optional(),
     saveToActivities: z.boolean(),
@@ -47,27 +43,32 @@ const addEventSchema = z
     color: z.string(),
     allDay: z.boolean(),
     time: z.string().optional(),
+    timeEnd: z.string().optional(),
     note: z.string().max(500).optional(),
   })
-  .refine((d) => d.mode !== 'library' || !!d.activityId, {
-    message: 'Select an activity',
+  .refine((d) => !!d.activityId || !!d.name?.trim(), {
+    message: 'Select an activity or enter a name',
     path: ['activityId'],
   })
-  .refine((d) => d.mode !== 'custom' || !!d.name?.trim(), {
-    message: 'Name is required',
-    path: ['name'],
-  })
-  .refine((d) => d.allDay || !!d.time, {
-    message: 'Add a time',
+  .refine((d) => d.allDay || (!!d.time && !!d.timeEnd), {
+    message: 'Add start and end time',
     path: ['time'],
   });
 
 type AddEventFormData = z.infer<typeof addEventSchema>;
 
-const editNoteSchema = z.object({
-  note: z.string().max(500),
-});
-type EditNoteFormData = z.infer<typeof editNoteSchema>;
+const editEntrySchema = z
+  .object({
+    note: z.string().max(500),
+    time: z.string().optional(),
+    timeEnd: z.string().optional(),
+    allDay: z.boolean(),
+  })
+  .refine((d) => d.allDay || (!!d.time && !!d.timeEnd), {
+    message: 'Add start and end time',
+    path: ['time'],
+  });
+type EditEntryFormData = z.infer<typeof editEntrySchema>;
 
 // -- Props -------------------------------------------------------------------
 
@@ -76,6 +77,8 @@ interface ActivityNoteModalProps {
   categories: ActivityCategory[];
   /** All entries already logged for the current date */
   entries: CalendarEntry[];
+  /** Activity IDs ordered by most recently used (across all dates) */
+  recentActivityIds: string[];
   /** Current day note text */
   note: string;
   onNavigate: (next: DrawerView) => void;
@@ -84,6 +87,12 @@ interface ActivityNoteModalProps {
   onAddEntry: (entry: Omit<CalendarEntry, 'id'>) => Promise<void>;
   onDeleteEntry: (entryId: string, date: string) => Promise<void>;
   onUpdateEntryNote: (entryId: string, date: string, note: string) => void;
+  onUpdateEntryTime: (
+    entryId: string,
+    date: string,
+    time: string | null,
+    timeEnd?: string | null,
+  ) => void;
   onSaveNewCategory: (category: ActivityCategory) => Promise<void>;
 }
 
@@ -94,10 +103,9 @@ interface DayViewProps {
   categories: ActivityCategory[];
   entries: CalendarEntry[];
   note: string;
-  onNoteChange: (value: string) => void;
   onNavigateToEvent: (entryId: string) => void;
   onNavigateToAdd: () => void;
-  onClose: () => void;
+  onNavigateToNote: () => void;
 }
 
 const DayView = ({
@@ -105,13 +113,11 @@ const DayView = ({
   categories,
   entries,
   note,
-  onNoteChange,
   onNavigateToEvent,
   onNavigateToAdd,
-  onClose,
+  onNavigateToNote,
 }: DayViewProps) => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
 
   const formattedDate = new Date(`${date}T00:00:00`).toLocaleDateString(
     i18n.language,
@@ -124,18 +130,17 @@ const DayView = ({
         <DialogTitle className={'text-base'}>{formattedDate}</DialogTitle>
       </DialogHeader>
 
-      {/* Day note */}
-      <div className={'space-y-2'}>
-        <label className={'text-sm font-medium'}>{t('calendar.dayNote')}</label>
-        <Textarea
-          className={'resize-none text-sm'}
-          defaultValue={note}
-          key={date}
-          onChange={(e) => onNoteChange(e.target.value)}
-          placeholder={t('calendar.notePlaceholder')}
-          rows={3}
-        />
-      </div>
+      {note && (
+        <button
+          onClick={onNavigateToNote}
+          type={'button'}
+          className={
+            'w-full cursor-pointer rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-left text-sm whitespace-pre-wrap transition-colors hover:bg-accent'
+          }
+        >
+          {note}
+        </button>
+      )}
 
       {/* Events list */}
       <div className={'space-y-2'}>
@@ -185,20 +190,27 @@ const DayView = ({
                       style={{ color: entryColor }}
                     />
                   )}
-                  <span
-                    className={'flex-1 text-sm'}
-                    style={{ color: entryColor }}
-                  >
-                    {displayName}
-                  </span>
+                  <div className={'flex flex-1 flex-col gap-0.5'}>
+                    <span className={'text-sm'} style={{ color: entryColor }}>
+                      {displayName}
+                    </span>
+                    {entry.note && (
+                      <span
+                        className={'text-xs text-muted-foreground line-clamp-1'}
+                      >
+                        {entry.note}
+                      </span>
+                    )}
+                  </div>
                   {entry.time && (
                     <span
                       className={
-                        'flex items-center gap-1 text-xs text-muted-foreground'
+                        'flex shrink-0 items-center gap-1 text-xs text-muted-foreground'
                       }
                     >
                       <Clock className={'h-3 w-3'} />
                       {entry.time}
+                      {entry.timeEnd && ` – ${entry.timeEnd}`}
                     </span>
                   )}
                 </button>
@@ -208,29 +220,105 @@ const DayView = ({
         )}
       </div>
 
-      {/* Add event button */}
-      <Button
-        className={'w-full'}
-        onClick={onNavigateToAdd}
-        variant={'outline'}
-      >
-        {t('calendar.addEventButton')}
-      </Button>
+      <div className={'flex gap-2'}>
+        <Button
+          className={'flex-1'}
+          onClick={onNavigateToAdd}
+          variant={'outline'}
+        >
+          {t('calendar.addEventButton')}
+        </Button>
 
-      {/* Manage activities link */}
-      <button
-        type={'button'}
-        className={
-          'flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground'
-        }
-        onClick={() => {
-          navigate('/settings/categories');
-          onClose();
-        }}
-      >
-        <Settings2 className={'h-3.5 w-3.5'} />
-        {t('calendar.manageActivities')}
-      </button>
+        <Button
+          className={'flex-1'}
+          onClick={onNavigateToNote}
+          variant={'outline'}
+        >
+          {note ? t('calendar.dayNote') : t('calendar.addDayNote')}
+        </Button>
+      </div>
+    </>
+  );
+};
+
+// -- Note View ---------------------------------------------------------------
+
+interface NoteViewProps {
+  note: string;
+  onBack: () => void;
+  onNoteChange: (value: string) => void;
+}
+
+const noteSchema = z.object({
+  note: z.string().max(1000),
+});
+type NoteFormData = z.infer<typeof noteSchema>;
+
+const NoteView = ({ note, onBack, onNoteChange }: NoteViewProps) => {
+  const { t } = useTranslation();
+
+  const { register, handleSubmit } = useForm<NoteFormData>({
+    resolver: zodResolver(noteSchema),
+    defaultValues: { note },
+  });
+
+  const onSubmit: SubmitHandler<NoteFormData> = (data) => {
+    onNoteChange(data.note.trim());
+    onBack();
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <div className={'flex items-center gap-2'}>
+          <button
+            onClick={onBack}
+            type={'button'}
+            className={
+              'cursor-pointer text-muted-foreground transition-colors hover:text-foreground'
+            }
+          >
+            <ArrowLeft className={'h-4 w-4'} />
+          </button>
+          <DialogTitle className={'text-base'}>
+            {t('calendar.dayNote')}
+          </DialogTitle>
+        </div>
+      </DialogHeader>
+
+      {/* Note content */}
+      <div className={'space-y-2'}>
+        <Textarea
+          {...register('note')}
+          autoFocus
+          className={'resize-none text-sm'}
+          maxLength={1000}
+          placeholder={t('calendar.notePlaceholder')}
+          rows={4}
+        />
+      </div>
+
+      {/* Action buttons */}
+      <div className={'flex gap-2'}>
+        <Button
+          className={'flex-1'}
+          onClick={handleSubmit(onSubmit)}
+          type={'button'}
+        >
+          {t('calendar.saveChanges')}
+        </Button>
+        <Button
+          className={'flex-1 gap-2'}
+          variant={'destructive'}
+          onClick={() => {
+            onNoteChange('');
+            onBack();
+          }}
+        >
+          <Trash2 className={'h-4 w-4'} />
+          {t('calendar.deleteEvent')}
+        </Button>
+      </div>
     </>
   );
 };
@@ -244,6 +332,7 @@ interface EventViewProps {
   onBack: () => void;
   onDelete: () => void;
   onUpdateNote: (note: string) => void;
+  onUpdateTime: (time: string | null, timeEnd?: string | null) => void;
 }
 
 const EventView = ({
@@ -253,9 +342,9 @@ const EventView = ({
   onBack,
   onDelete,
   onUpdateNote,
+  onUpdateTime,
 }: EventViewProps) => {
   const { t } = useTranslation();
-  const [isEditing, setIsEditing] = useState(false);
 
   const category =
     entry.type === 'activity'
@@ -267,16 +356,36 @@ const EventView = ({
       : (entry.name ?? '?');
   const entryColor = category
     ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
-    : '#94a3b8';
+    : entry.color
+      ? (ACTIVITY_COLOR_MAP[entry.color] ?? '#94a3b8')
+      : '#94a3b8';
 
-  const { register, handleSubmit, reset } = useForm<EditNoteFormData>({
-    resolver: zodResolver(editNoteSchema),
-    defaultValues: { note: entry.note ?? '' },
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<EditEntryFormData>({
+    resolver: zodResolver(editEntrySchema),
+    shouldFocusError: false,
+    defaultValues: {
+      note: entry.note ?? '',
+      time: entry.time ?? '',
+      timeEnd: entry.timeEnd ?? '',
+      allDay: !entry.time,
+    },
   });
 
-  const onSubmit: SubmitHandler<EditNoteFormData> = (data) => {
+  const allDay = useWatch({ control, name: 'allDay' });
+
+  const onSubmit: SubmitHandler<EditEntryFormData> = (data) => {
     onUpdateNote(data.note.trim());
-    setIsEditing(false);
+    const newTime = data.allDay ? null : data.time || null;
+    const newTimeEnd = data.allDay ? null : data.timeEnd || null;
+    if (newTime !== entry.time || newTimeEnd !== (entry.timeEnd ?? null)) {
+      onUpdateTime(newTime, newTimeEnd);
+    }
+    onBack();
   };
 
   return (
@@ -287,7 +396,7 @@ const EventView = ({
             onClick={onBack}
             type={'button'}
             className={
-              'text-muted-foreground transition-colors hover:text-foreground'
+              'cursor-pointer text-muted-foreground transition-colors hover:text-foreground'
             }
           >
             <ArrowLeft className={'h-4 w-4'} />
@@ -310,6 +419,12 @@ const EventView = ({
             iconId={category.icon}
             style={{ color: entryColor }}
           />
+        ) : entry.icon ? (
+          <ActivityIcon
+            className={'h-5 w-5 shrink-0'}
+            iconId={entry.icon}
+            style={{ color: entryColor }}
+          />
         ) : (
           <Pencil
             className={'h-5 w-5 shrink-0'}
@@ -328,68 +443,79 @@ const EventView = ({
           >
             <Clock className={'h-3.5 w-3.5'} />
             {entry.time}
+            {entry.timeEnd && ` – ${entry.timeEnd}`}
           </span>
+        )}
+      </div>
+
+      {/* Time section */}
+      <div className={'space-y-1.5'}>
+        <label className={'text-sm font-medium'} htmlFor={'editTime'}>
+          {t('calendar.timeLabel')}
+        </label>
+        <div className={'flex items-center gap-2'}>
+          <Input
+            {...register('time')}
+            className={'flex-1'}
+            disabled={allDay}
+            id={'editTime'}
+            type={'time'}
+          />
+          <span className={'text-sm text-muted-foreground'}>{'–'}</span>
+          <Input
+            {...register('timeEnd')}
+            className={'flex-1'}
+            disabled={allDay}
+            id={'editTimeEnd'}
+            type={'time'}
+          />
+        </div>
+        <div className={'flex items-center gap-2'}>
+          <Controller
+            control={control}
+            name={'allDay'}
+            render={({ field }) => (
+              <Checkbox
+                checked={field.value}
+                id={'editAllDay'}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+          <label className={'cursor-pointer text-sm'} htmlFor={'editAllDay'}>
+            {t('calendar.allDay')}
+          </label>
+        </div>
+        {errors.time && (
+          <p className={'text-xs text-destructive'}>{errors.time.message}</p>
         )}
       </div>
 
       {/* Note section */}
       <div className={'space-y-2'}>
         <p className={'text-sm font-medium'}>{t('calendar.eventNote')}</p>
-
-        {isEditing ? (
-          <form className={'space-y-2'} onSubmit={handleSubmit(onSubmit)}>
-            <Textarea
-              {...register('note')}
-              autoFocus
-              className={'resize-none text-sm'}
-              maxLength={500}
-              placeholder={t('calendar.activityNotePlaceholder')}
-              rows={3}
-            />
-            <div className={'flex gap-2'}>
-              <Button className={'flex-1'} size={'sm'} type={'submit'}>
-                {t('calendar.saveChanges')}
-              </Button>
-              <Button
-                className={'flex-1'}
-                size={'sm'}
-                type={'button'}
-                variant={'outline'}
-                onClick={() => {
-                  reset({ note: entry.note ?? '' });
-                  setIsEditing(false);
-                }}
-              >
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <div
-            onClick={() => setIsEditing(true)}
-            className={cn(
-              'min-h-[4rem] cursor-pointer rounded-lg border border-dashed border-border px-3 py-2.5 text-sm transition-colors hover:border-foreground/30',
-              !entry.note && 'text-muted-foreground',
-            )}
-          >
-            {entry.note || t('calendar.activityNotePlaceholder')}
-          </div>
-        )}
+        <form className={'space-y-2'} onSubmit={handleSubmit(onSubmit)}>
+          <Textarea
+            {...register('note')}
+            className={'resize-none text-sm'}
+            maxLength={500}
+            placeholder={t('calendar.activityNotePlaceholder')}
+            rows={3}
+          />
+        </form>
       </div>
 
       {/* Action buttons */}
       <div className={'flex gap-2'}>
-        {!isEditing && (
-          <Button
-            className={'flex-1'}
-            onClick={() => setIsEditing(true)}
-            variant={'outline'}
-          >
-            {t('calendar.editEvent')}
-          </Button>
-        )}
         <Button
-          className={cn('gap-2', !isEditing && 'flex-1')}
+          className={'flex-1'}
+          onClick={handleSubmit(onSubmit)}
+          type={'button'}
+        >
+          {t('calendar.saveChanges')}
+        </Button>
+        <Button
+          className={'flex-1 gap-2'}
           onClick={onDelete}
           variant={'destructive'}
         >
@@ -407,7 +533,7 @@ interface AddViewProps {
   date: string;
   timePreset: TimePreset | null;
   categories: ActivityCategory[];
-  entries: CalendarEntry[];
+  recentActivityIds: string[];
   onBack: () => void;
   onAddEntry: (entry: Omit<CalendarEntry, 'id'>) => Promise<void>;
   onSaveNewCategory: (category: ActivityCategory) => Promise<void>;
@@ -417,7 +543,7 @@ const AddView = ({
   date,
   timePreset,
   categories,
-  entries,
+  recentActivityIds,
   onBack,
   onAddEntry,
   onSaveNewCategory,
@@ -437,53 +563,83 @@ const AddView = ({
     formState: { errors, isSubmitting },
   } = useForm<AddEventFormData>({
     resolver: zodResolver(addEventSchema),
+    shouldFocusError: false,
     defaultValues: {
-      mode: 'library',
       saveToActivities: false,
       icon: 'dumbbell',
       color: 'slate',
-      allDay: true,
+      allDay: false,
+      time: '12:00',
+      timeEnd: '13:00',
     },
   });
 
-  const mode = useWatch({ control, name: 'mode' });
   const watchedActivityId = useWatch({ control, name: 'activityId' });
+  const nameValue = useWatch({ control, name: 'name' });
   const allDay = useWatch({ control, name: 'allDay' });
-  const saveToActivities = useWatch({ control, name: 'saveToActivities' });
   const iconValue = useWatch({ control, name: 'icon' });
   const colorValue = useWatch({ control, name: 'color' });
+
+  const canSaveToActivities = !watchedActivityId && !!nameValue?.trim();
+
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
+  const { recentCategories, remainingCategories } = useMemo(() => {
+    const recentSet = new Set(recentActivityIds);
+    const recent: ActivityCategory[] = [];
+    const remaining: ActivityCategory[] = [];
+
+    for (const id of recentActivityIds) {
+      const cat = categories.find((c) => c.id === id);
+      if (cat) {
+        recent.push(cat);
+      }
+    }
+
+    for (const cat of categories) {
+      if (!recentSet.has(cat.id)) {
+        remaining.push(cat);
+      }
+    }
+
+    return {
+      recentCategories: recent.slice(0, 3),
+      remainingCategories: [...recent.slice(3), ...remaining],
+    };
+  }, [categories, recentActivityIds]);
 
   useEffect(() => {
     if (!timePreset) {
       return;
     }
-    setValue('allDay', timePreset.allDay);
-    if (!timePreset.allDay && timePreset.startStr.length >= 16) {
-      setValue('time', timePreset.startStr.substring(11, 16));
+    if (timePreset.allDay) {
+      setValue('allDay', true);
+      setValue('time', '12:00');
+      setValue('timeEnd', '13:00');
+    } else {
+      setValue('allDay', false);
+      if (timePreset.startStr.length >= 16) {
+        setValue('time', timePreset.startStr.substring(11, 16));
+      }
+      if (timePreset.endStr.length >= 16) {
+        setValue('timeEnd', timePreset.endStr.substring(11, 16));
+      }
     }
   }, [timePreset, setValue]);
 
-  const loggedActivityIds = new Set(
-    entries
-      .filter(
-        (e): e is CalendarEntry & { activityId: string } =>
-          e.type === 'activity' && !!e.activityId,
-      )
-      .map((e) => e.activityId),
-  );
-  const availableCategories = categories.filter(
-    (c) => !loggedActivityIds.has(c.id),
-  );
-
   const onSubmit: SubmitHandler<AddEventFormData> = async (data) => {
-    const base: Omit<CalendarEntry, 'id'> = {
-      type: 'activity',
+    const base = {
       time: data.allDay ? null : data.time!,
+      timeEnd: data.allDay ? null : data.timeEnd || null,
       ...(data.note?.trim() ? { note: data.note.trim() } : {}),
     };
 
-    if (data.mode === 'library') {
-      await onAddEntry({ ...base, activityId: data.activityId! });
+    if (data.activityId) {
+      await onAddEntry({
+        ...base,
+        type: 'activity',
+        activityId: data.activityId,
+      });
     } else if (data.saveToActivities) {
       const newCategory: ActivityCategory = {
         // eslint-disable-next-line react-hooks/purity
@@ -493,9 +649,19 @@ const AddView = ({
         color: data.color,
       };
       await onSaveNewCategory(newCategory);
-      await onAddEntry({ ...base, activityId: newCategory.id });
+      await onAddEntry({
+        ...base,
+        type: 'activity',
+        activityId: newCategory.id,
+      });
     } else {
-      await onAddEntry({ ...base, type: 'custom', name: data.name!.trim() });
+      await onAddEntry({
+        ...base,
+        type: 'custom',
+        name: data.name!.trim(),
+        icon: data.icon,
+        color: data.color,
+      });
     }
 
     onBack();
@@ -509,7 +675,7 @@ const AddView = ({
             onClick={onBack}
             type={'button'}
             className={
-              'text-muted-foreground transition-colors hover:text-foreground'
+              'cursor-pointer text-muted-foreground transition-colors hover:text-foreground'
             }
           >
             <ArrowLeft className={'h-4 w-4'} />
@@ -519,175 +685,167 @@ const AddView = ({
       </DialogHeader>
 
       <form className={'space-y-3'} onSubmit={handleSubmit(onSubmit)}>
-        {/* Mode toggle */}
-        <div className={'flex overflow-hidden rounded-lg border border-border'}>
-          {(['library', 'custom'] as const).map((m) => (
-            <button
-              key={m}
-              type={'button'}
-              className={cn(
-                'flex-1 px-3 py-2 text-sm transition-colors',
-                mode === m
-                  ? 'bg-accent font-medium'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-              onClick={() => {
-                setValue('mode', m);
-                setValue('activityId', undefined);
-              }}
-            >
-              {t(
-                m === 'library'
-                  ? 'calendar.fromLibrary'
-                  : 'calendar.customEvent',
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Activity */}
+        <div className={'space-y-1.5'}>
+          <label className={'text-sm font-medium'}>
+            {t('calendar.activityLabel')}
+          </label>
 
-        {/* Library mode */}
-        {mode === 'library' && (
-          <div className={'space-y-1'}>
-            {availableCategories.length === 0 ? (
-              <p className={'text-sm text-muted-foreground'}>
-                {t('calendar.allActivitiesLogged')}
-              </p>
-            ) : (
-              availableCategories.map((category) => {
-                const c = ACTIVITY_COLOR_MAP[category.color] ?? '#888';
-                const isSelected = watchedActivityId === category.id;
-
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setValue('activityId', category.id)}
-                    type={'button'}
-                    className={cn(
-                      'flex w-full cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors',
-                      isSelected
-                        ? 'border-transparent'
-                        : 'border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
-                    )}
-                    style={
-                      isSelected
-                        ? {
-                            backgroundColor: `${c}26`,
-                            borderColor: c,
-                            color: c,
-                          }
-                        : undefined
-                    }
-                  >
-                    <ActivityIcon
-                      className={'h-4 w-4 shrink-0'}
-                      iconId={category.icon}
-                    />
-                    <span className={'flex-1 text-left'}>{category.name}</span>
-                  </button>
-                );
-              })
-            )}
-            {errors.activityId && (
-              <p className={'text-xs text-destructive'}>
-                {errors.activityId.message}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Custom mode */}
-        {mode === 'custom' && (
-          <div className={'space-y-2'}>
+          {/* Custom name input */}
+          <div className={'flex items-center gap-2'}>
+            <IconColorPicker
+              color={colorValue}
+              icon={iconValue}
+              onColorChange={(id) => setValue('color', id)}
+              onIconChange={(id) => setValue('icon', id)}
+            />
             <Input
-              {...register('name')}
+              {...register('name', {
+                onChange: (e) => {
+                  if (e.target.value) {
+                    setValue('activityId', undefined);
+                  }
+                },
+              })}
+              disabled={!!watchedActivityId}
+              id={'eventName'}
               maxLength={100}
               placeholder={t('calendar.eventNamePlaceholder')}
             />
-            {errors.name && (
-              <p className={'text-xs text-destructive'}>
-                {errors.name.message}
-              </p>
-            )}
-
-            <div className={'flex items-center gap-2'}>
-              <Controller
-                control={control}
-                name={'saveToActivities'}
-                render={({ field }) => (
-                  <Checkbox
-                    checked={field.value}
-                    id={'saveToActivities'}
-                    onCheckedChange={(v) => field.onChange(!!v)}
-                  />
-                )}
-              />
-              <label
-                className={'cursor-pointer text-sm'}
-                htmlFor={'saveToActivities'}
-              >
-                {t('calendar.saveToActivities')}
-              </label>
-            </div>
-
-            {saveToActivities && (
-              <div className={'space-y-3 rounded-lg border border-border p-3'}>
-                <div className={'space-y-1.5'}>
-                  <p className={'text-xs font-medium text-muted-foreground'}>
-                    {t('calendar.iconLabel')}
-                  </p>
-                  <div className={'flex flex-wrap gap-1.5'}>
-                    {AVAILABLE_ICONS.map(({ id, icon: Icon }) => (
-                      <button
-                        key={id}
-                        onClick={() => setValue('icon', id)}
-                        type={'button'}
-                        className={cn(
-                          'flex h-8 w-8 items-center justify-center rounded-md border transition-colors',
-                          iconValue === id
-                            ? 'border-foreground bg-accent'
-                            : 'border-border hover:bg-accent',
-                        )}
-                      >
-                        <Icon className={'h-4 w-4'} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={'space-y-1.5'}>
-                  <p className={'text-xs font-medium text-muted-foreground'}>
-                    {t('calendar.colorLabel')}
-                  </p>
-                  <div className={'flex flex-wrap gap-2'}>
-                    {ACTIVITY_COLORS.map(({ id, hex }) => (
-                      <button
-                        key={id}
-                        onClick={() => setValue('color', id)}
-                        style={{ backgroundColor: hex }}
-                        type={'button'}
-                        className={cn(
-                          'h-7 w-7 rounded-full border-2 transition-transform',
-                          colorValue === id
-                            ? 'scale-110 border-foreground'
-                            : 'border-transparent',
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        )}
+
+          {/* Save as new activity checkbox */}
+          <div className={'flex items-center gap-2'}>
+            <Controller
+              control={control}
+              name={'saveToActivities'}
+              render={({ field }) => (
+                <Checkbox
+                  checked={field.value && canSaveToActivities}
+                  disabled={!canSaveToActivities}
+                  id={'saveToActivities'}
+                  onCheckedChange={(v) => field.onChange(!!v)}
+                />
+              )}
+            />
+            <label
+              htmlFor={'saveToActivities'}
+              className={cn(
+                'text-sm',
+                canSaveToActivities
+                  ? 'cursor-pointer'
+                  : 'text-muted-foreground',
+              )}
+            >
+              {t('calendar.saveToActivities')}
+            </label>
+          </div>
+
+          {/* Divider */}
+          <div className={'flex items-center gap-2 py-1'}>
+            <div className={'h-px flex-1 bg-border'} />
+            <span className={'text-xs text-muted-foreground'}>
+              {t('calendar.orFromLibrary')}
+            </span>
+            <div className={'h-px flex-1 bg-border'} />
+          </div>
+
+          {/* Category buttons */}
+          <div className={'space-y-1'}>
+            {(showAllCategories
+              ? [...recentCategories, ...remainingCategories]
+              : recentCategories
+            ).map((category) => {
+              const c = ACTIVITY_COLOR_MAP[category.color] ?? '#888';
+              const isSelected = watchedActivityId === category.id;
+
+              return (
+                <button
+                  key={category.id}
+                  type={'button'}
+                  className={cn(
+                    'flex w-full cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors',
+                    isSelected
+                      ? 'border-transparent'
+                      : 'border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                  onClick={() => {
+                    if (isSelected) {
+                      setValue('activityId', undefined);
+                    } else {
+                      setValue('activityId', category.id);
+                      setValue('name', '');
+                      setValue('icon', category.icon);
+                      setValue('color', category.color);
+                    }
+                  }}
+                  style={
+                    isSelected
+                      ? {
+                          backgroundColor: `${c}26`,
+                          borderColor: c,
+                          color: c,
+                        }
+                      : undefined
+                  }
+                >
+                  <ActivityIcon
+                    className={'h-4 w-4 shrink-0'}
+                    iconId={category.icon}
+                  />
+                  <span className={'flex-1 text-left'}>{category.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          {!showAllCategories && remainingCategories.length > 0 && (
+            <button
+              onClick={() => setShowAllCategories(true)}
+              type={'button'}
+              className={
+                'flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground'
+              }
+            >
+              <ChevronDown className={'h-3.5 w-3.5'} />
+              {t('calendar.showAllActivities')}
+            </button>
+          )}
+
+          {errors.activityId && (
+            <p className={'text-xs text-destructive'}>
+              {errors.activityId.message}
+            </p>
+          )}
+        </div>
 
         {/* Time */}
-        <div className={'space-y-2'}>
+        <div className={'space-y-1.5'}>
+          <label className={'text-sm font-medium'} htmlFor={'eventTime'}>
+            {t('calendar.timeLabel')}
+          </label>
+          <div className={'flex items-center gap-2'}>
+            <Input
+              {...register('time')}
+              className={'flex-1'}
+              disabled={allDay}
+              id={'eventTime'}
+              type={'time'}
+            />
+            <span className={'text-sm text-muted-foreground'}>{'–'}</span>
+            <Input
+              {...register('timeEnd')}
+              className={'flex-1'}
+              disabled={allDay}
+              id={'eventTimeEnd'}
+              type={'time'}
+            />
+          </div>
           <div className={'flex items-center gap-2'}>
             <Controller
               control={control}
               name={'allDay'}
               render={({ field }) => (
-                <Switch
+                <Checkbox
                   checked={field.value}
                   id={'allDay'}
                   onCheckedChange={field.onChange}
@@ -698,22 +856,25 @@ const AddView = ({
               {t('calendar.allDay')}
             </label>
           </div>
-          {!allDay && (
-            <Input {...register('time')} className={'w-auto'} type={'time'} />
-          )}
           {errors.time && (
             <p className={'text-xs text-destructive'}>{errors.time.message}</p>
           )}
         </div>
 
-        {/* Note for this occurrence */}
-        <Textarea
-          {...register('note')}
-          className={'resize-none text-sm'}
-          maxLength={500}
-          placeholder={t('calendar.activityNotePlaceholder')}
-          rows={2}
-        />
+        {/* Note */}
+        <div className={'space-y-1.5'}>
+          <label className={'text-sm font-medium'} htmlFor={'eventNote'}>
+            {t('calendar.noteLabel')}
+          </label>
+          <Textarea
+            {...register('note')}
+            className={'resize-none text-sm'}
+            id={'eventNote'}
+            maxLength={500}
+            placeholder={t('calendar.activityNotePlaceholder')}
+            rows={2}
+          />
+        </div>
 
         <Button className={'w-full'} disabled={isSubmitting} type={'submit'}>
           {t('calendar.addToCalendar')}
@@ -729,6 +890,7 @@ export const ActivityNoteModal = ({
   drawerView,
   categories,
   entries,
+  recentActivityIds,
   note,
   onNavigate,
   onClose,
@@ -736,6 +898,7 @@ export const ActivityNoteModal = ({
   onAddEntry,
   onDeleteEntry,
   onUpdateEntryNote,
+  onUpdateEntryTime,
   onSaveNewCategory,
 }: ActivityNoteModalProps) => {
   const date = drawerView.date;
@@ -744,6 +907,9 @@ export const ActivityNoteModal = ({
     drawerView.view === 'event'
       ? entries.find((e) => e.id === drawerView.entryId)
       : undefined;
+
+  const showDayView =
+    drawerView.view === 'day' || (drawerView.view === 'event' && !currentEntry);
 
   return (
     <Dialog
@@ -759,20 +925,27 @@ export const ActivityNoteModal = ({
           'flex max-h-[90vh] flex-col gap-5 overflow-y-auto sm:max-w-md'
         }
       >
-        {drawerView.view === 'day' && (
+        {showDayView && (
           <DayView
             categories={categories}
             date={date}
             entries={entries}
             note={note}
-            onClose={onClose}
-            onNoteChange={onNoteChange}
+            onNavigateToNote={() => onNavigate({ view: 'note', date })}
             onNavigateToAdd={() =>
               onNavigate({ view: 'add', date, timePreset: null })
             }
             onNavigateToEvent={(entryId) =>
               onNavigate({ view: 'event', date, entryId })
             }
+          />
+        )}
+
+        {drawerView.view === 'note' && (
+          <NoteView
+            note={note}
+            onBack={() => onNavigate({ view: 'day', date })}
+            onNoteChange={onNoteChange}
           />
         )}
 
@@ -790,22 +963,8 @@ export const ActivityNoteModal = ({
             onUpdateNote={(noteValue) =>
               onUpdateEntryNote(currentEntry.id, date, noteValue)
             }
-          />
-        )}
-
-        {drawerView.view === 'event' && !currentEntry && (
-          <DayView
-            categories={categories}
-            date={date}
-            entries={entries}
-            note={note}
-            onClose={onClose}
-            onNoteChange={onNoteChange}
-            onNavigateToAdd={() =>
-              onNavigate({ view: 'add', date, timePreset: null })
-            }
-            onNavigateToEvent={(entryId) =>
-              onNavigate({ view: 'event', date, entryId })
+            onUpdateTime={(time, timeEnd) =>
+              onUpdateEntryTime(currentEntry.id, date, time, timeEnd)
             }
           />
         )}
@@ -814,10 +973,10 @@ export const ActivityNoteModal = ({
           <AddView
             categories={categories}
             date={date}
-            entries={entries}
             onAddEntry={onAddEntry}
             onBack={() => onNavigate({ view: 'day', date })}
             onSaveNewCategory={onSaveNewCategory}
+            recentActivityIds={recentActivityIds}
             timePreset={drawerView.timePreset}
           />
         )}

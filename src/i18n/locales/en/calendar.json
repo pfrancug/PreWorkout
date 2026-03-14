@@ -46,6 +46,14 @@
     "saveChanges": "Save changes",
     "deleteEvent": "Delete",
     "addEventButton": "Add event",
-    "eventNote": "Note"
+    "eventNote": "Note",
+    "activityLabel": "Activity",
+    "timeLabel": "Time",
+    "noteLabel": "Note",
+    "showAllActivities": "Show all activities",
+    "orCustom": "or type a custom name",
+    "orFromLibrary": "or pick from library",
+    "dontSave": "Don't save to activities",
+    "addDayNote": "Add day note"
   }
 }

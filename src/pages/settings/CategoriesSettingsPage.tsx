@@ -12,12 +12,6 @@ import {
 } from '@components/ui/card';
 import { Input } from '@components/ui/input';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@components/ui/popover';
-import { cn } from '@lib/utils';
-import {
   Archive,
   ArchiveRestore,
   Check,
@@ -31,10 +25,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { ActivityIcon } from '../../components/ActivityIcon';
+import { IconColorPicker } from '../../components/IconColorPicker';
 import {
   ACTIVITY_COLOR_MAP,
   ACTIVITY_COLORS,
-  AVAILABLE_ICONS,
   DEFAULT_CATEGORIES,
 } from '../../constants/activities';
 import { useAuth } from '../../contexts/useAuth';
@@ -55,13 +49,12 @@ export const CategoriesSettingsPage = () => {
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState<ActivityIconId>('dumbbell');
   const [newColor, setNewColor] = useState(ACTIVITY_COLORS[0].id);
-  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+
   const [activeTrainerId, setActiveTrainerId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState<ActivityIconId>('dumbbell');
   const [editColor, setEditColor] = useState(ACTIVITY_COLORS[0].id);
-  const [editPickerOpen, setEditPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -161,7 +154,6 @@ export const CategoriesSettingsPage = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditPickerOpen(false);
   };
 
   const saveEdit = async () => {
@@ -178,7 +170,6 @@ export const CategoriesSettingsPage = () => {
     try {
       await saveActivityCategories(user.uid, updated);
       setEditingId(null);
-      setEditPickerOpen(false);
       toast.success(t('settings.categories.editSuccess'));
     } catch {
       toast.error(t('common.saveError'));
@@ -275,93 +266,12 @@ export const CategoriesSettingsPage = () => {
                       'flex items-center gap-3 rounded-lg border border-primary/50 bg-accent/30 p-3'
                     }
                   >
-                    <Popover
-                      onOpenChange={setEditPickerOpen}
-                      open={editPickerOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <button
-                          type={'button'}
-                          className={
-                            'flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card transition-colors hover:bg-accent'
-                          }
-                        >
-                          <ActivityIcon
-                            className={'h-5 w-5'}
-                            iconId={editIcon}
-                            style={{
-                              color: ACTIVITY_COLOR_MAP[editColor],
-                            }}
-                          />
-                        </button>
-                      </PopoverTrigger>
-
-                      <PopoverContent align={'start'} className={'w-auto p-3'}>
-                        <p
-                          className={
-                            'mb-2 text-xs font-medium text-muted-foreground'
-                          }
-                        >
-                          {t('settings.categories.pickColor')}
-                        </p>
-
-                        <div className={'mb-3 grid grid-cols-5 gap-2'}>
-                          {ACTIVITY_COLORS.map(({ id, hex }) => (
-                            <button
-                              key={id}
-                              onClick={() => setEditColor(id)}
-                              type={'button'}
-                              className={cn(
-                                'flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border transition-colors hover:bg-accent',
-                                editColor === id
-                                  ? 'border-primary bg-primary/10'
-                                  : 'border-border',
-                              )}
-                            >
-                              <span
-                                className={'h-5 w-5 rounded-sm'}
-                                style={{ backgroundColor: hex }}
-                              />
-                            </button>
-                          ))}
-                        </div>
-
-                        <p
-                          className={
-                            'mb-2 text-xs font-medium text-muted-foreground'
-                          }
-                        >
-                          {t('settings.categories.pickIcon')}
-                        </p>
-
-                        <div className={'grid grid-cols-5 gap-2'}>
-                          {AVAILABLE_ICONS.map(({ id, icon: Icon, label }) => (
-                            <button
-                              key={id}
-                              title={label}
-                              type={'button'}
-                              className={cn(
-                                'flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border transition-colors hover:bg-accent',
-                                editIcon === id
-                                  ? 'border-primary bg-primary/10'
-                                  : 'border-border',
-                              )}
-                              onClick={() => {
-                                setEditIcon(id);
-                                setEditPickerOpen(false);
-                              }}
-                            >
-                              <Icon
-                                className={'h-5 w-5'}
-                                style={{
-                                  color: ACTIVITY_COLOR_MAP[editColor],
-                                }}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                    <IconColorPicker
+                      color={editColor}
+                      icon={editIcon}
+                      onColorChange={setEditColor}
+                      onIconChange={setEditIcon}
+                    />
 
                     <Input
                       className={'flex-1'}
@@ -492,78 +402,12 @@ export const CategoriesSettingsPage = () => {
               'flex items-center gap-3 rounded-lg border border-dashed border-border p-3'
             }
           >
-            <Popover onOpenChange={setIconPickerOpen} open={iconPickerOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type={'button'}
-                  className={
-                    'flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-card transition-colors hover:bg-accent'
-                  }
-                >
-                  <ActivityIcon
-                    className={'h-5 w-5'}
-                    iconId={newIcon}
-                    style={{ color: ACTIVITY_COLOR_MAP[newColor] }}
-                  />
-                </button>
-              </PopoverTrigger>
-
-              <PopoverContent align={'start'} className={'w-auto p-3'}>
-                <p className={'mb-2 text-xs font-medium text-muted-foreground'}>
-                  {t('settings.categories.pickColor')}
-                </p>
-
-                <div className={'mb-3 grid grid-cols-5 gap-2'}>
-                  {ACTIVITY_COLORS.map(({ id, hex }) => (
-                    <button
-                      key={id}
-                      onClick={() => setNewColor(id)}
-                      type={'button'}
-                      className={cn(
-                        'flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border transition-colors hover:bg-accent',
-                        newColor === id
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border',
-                      )}
-                    >
-                      <span
-                        className={'h-5 w-5 rounded-sm'}
-                        style={{ backgroundColor: hex }}
-                      />
-                    </button>
-                  ))}
-                </div>
-
-                <p className={'mb-2 text-xs font-medium text-muted-foreground'}>
-                  {t('settings.categories.pickIcon')}
-                </p>
-
-                <div className={'grid grid-cols-5 gap-2'}>
-                  {AVAILABLE_ICONS.map(({ id, icon: Icon, label }) => (
-                    <button
-                      key={id}
-                      title={label}
-                      type={'button'}
-                      className={cn(
-                        'flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border transition-colors hover:bg-accent',
-                        newIcon === id
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border',
-                      )}
-                      onClick={() => {
-                        setNewIcon(id);
-                        setIconPickerOpen(false);
-                      }}
-                    >
-                      <Icon
-                        className={'h-5 w-5'}
-                        style={{ color: ACTIVITY_COLOR_MAP[newColor] }}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+            <IconColorPicker
+              color={newColor}
+              icon={newIcon}
+              onColorChange={setNewColor}
+              onIconChange={setNewIcon}
+            />
 
             <Input
               className={'flex-1'}

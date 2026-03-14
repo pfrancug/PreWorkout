@@ -64,8 +64,14 @@ export interface CalendarEntry {
   activityId?: string;
   /** Display name; required when type = 'custom' */
   name?: string;
+  /** Icon id for custom entries */
+  icon?: string;
+  /** Color id for custom entries */
+  color?: string;
   /** HH:mm, or null for all-day */
   time: string | null;
+  /** HH:mm end time, or null/undefined */
+  timeEnd?: string | null;
   /** Optional note for this occurrence */
   note?: string;
 }
@@ -689,6 +695,24 @@ export const updateCalendarEntryNote = async (
   } else {
     await set(noteRef, note.trim());
   }
+};
+
+export const updateCalendarEntryTime = async (
+  userId: string,
+  date: string,
+  entryId: string,
+  time: string | null,
+  timeEnd?: string | null,
+): Promise<void> => {
+  const entryRef = ref(
+    database,
+    `users/${userId}/calendarEntries/${date}/${entryId}`,
+  );
+  const updates: Record<string, unknown> = { time };
+  if (timeEnd !== undefined) {
+    updates.timeEnd = timeEnd;
+  }
+  await update(entryRef, updates);
 };
 
 export const subscribeToCalendarEntries = (

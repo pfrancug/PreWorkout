@@ -46,6 +46,14 @@
     "saveChanges": "Zapisz",
     "deleteEvent": "Usuń",
     "addEventButton": "Dodaj wpis",
-    "eventNote": "Notatka"
+    "eventNote": "Notatka",
+    "activityLabel": "Aktywność",
+    "timeLabel": "Czas",
+    "noteLabel": "Notatka",
+    "showAllActivities": "Pokaż wszystkie aktywności",
+    "orCustom": "lub wpisz własną nazwę",
+    "orFromLibrary": "lub wybierz z biblioteki",
+    "dontSave": "Nie zapisuj w aktywnościach",
+    "addDayNote": "Dodaj notatkę dnia"
   }
 }

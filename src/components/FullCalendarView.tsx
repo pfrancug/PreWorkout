@@ -44,6 +44,7 @@ import {
   subscribeToTrainerCalendar,
   subscribeToTrainingSessions,
   updateCalendarEntryNote,
+  updateCalendarEntryTime,
 } from '../firebase/database';
 import { ActivityIcon } from './ActivityIcon';
 import { ActivityNoteModal } from './ActivityNoteModal';
@@ -130,12 +131,14 @@ export const FullCalendarView = () => {
 
   // Clear pending note saves when selected date changes or component unmounts
   useEffect(() => {
+    const timers = entryNoteTimersRef.current;
+
     return () => {
       if (noteTimerRef.current) {
         clearTimeout(noteTimerRef.current);
       }
-      entryNoteTimersRef.current.forEach(clearTimeout);
-      entryNoteTimersRef.current.clear();
+      timers.forEach(clearTimeout);
+      timers.clear();
     };
   }, [drawerView?.date]);
 
@@ -208,7 +211,9 @@ export const FullCalendarView = () => {
             : undefined;
         const color = category
           ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
-          : '#94a3b8';
+          : entry.color
+            ? (ACTIVITY_COLOR_MAP[entry.color] ?? '#94a3b8')
+            : '#94a3b8';
         const title =
           entry.type === 'activity'
             ? (category?.name ?? entry.activityId ?? 'Activity')
@@ -218,6 +223,7 @@ export const FullCalendarView = () => {
           id: `entry-${dateKey}-${entry.id}`,
           title,
           start: entry.time ? `${dateKey}T${entry.time}:00` : dateKey,
+          end: entry.timeEnd ? `${dateKey}T${entry.timeEnd}:00` : undefined,
           allDay: !entry.time,
           backgroundColor: `${color}26`,
           borderColor: color,
@@ -310,7 +316,7 @@ export const FullCalendarView = () => {
         (meta.dateKey as string | undefined) ??
         (arg.event.start ? formatDateKey(arg.event.start) : null);
       if (dateKey) {
-        setDrawerView({ view: 'day', date: dateKey });
+        setDrawerView({ view: 'note', date: dateKey });
       }
     }
     // Training session events are read-only; no modal opened
@@ -320,6 +326,7 @@ export const FullCalendarView = () => {
     const date = formatDateKey(arg.start);
     const timePreset: TimePreset = {
       startStr: arg.startStr,
+      endStr: arg.endStr,
       allDay: arg.allDay,
     };
     setDrawerView({ view: 'add', date, timePreset });
@@ -378,6 +385,25 @@ export const FullCalendarView = () => {
     [user, t],
   );
 
+  const handleUpdateEntryTime = useCallback(
+    async (
+      entryId: string,
+      date: string,
+      time: string | null,
+      timeEnd?: string | null,
+    ) => {
+      if (!user) {
+        return;
+      }
+      try {
+        await updateCalendarEntryTime(user.uid, date, entryId, time, timeEnd);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
+    },
+    [user, t],
+  );
+
   const handleSaveNewCategory = useCallback(
     async (newCategory: ActivityCategory) => {
       if (!user) {
@@ -422,7 +448,9 @@ export const FullCalendarView = () => {
         const category = meta.category;
         const color = category
           ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
-          : '#94a3b8';
+          : entry?.color
+            ? (ACTIVITY_COLOR_MAP[entry.color] ?? '#94a3b8')
+            : '#94a3b8';
 
         return (
           <div className={'flex items-center gap-1 overflow-hidden px-1'}>
@@ -430,6 +458,12 @@ export const FullCalendarView = () => {
               <ActivityIcon
                 className={'h-3.5 w-3.5 shrink-0'}
                 iconId={category.icon}
+                style={{ color }}
+              />
+            ) : entry?.icon ? (
+              <ActivityIcon
+                className={'h-3.5 w-3.5 shrink-0'}
+                iconId={entry.icon}
                 style={{ color }}
               />
             ) : (
@@ -497,6 +531,29 @@ export const FullCalendarView = () => {
     return Object.values(calendarEntries[drawerDate]);
   }, [drawerDate, calendarEntries]);
 
+  const recentActivityIds = useMemo((): string[] => {
+    if (!calendarEntries) {
+      return [];
+    }
+    const seen = new Set<string>();
+    const result: string[] = [];
+    const dates = Object.keys(calendarEntries).sort().reverse();
+    for (const d of dates) {
+      for (const entry of Object.values(calendarEntries[d])) {
+        if (
+          entry.type === 'activity' &&
+          entry.activityId &&
+          !seen.has(entry.activityId)
+        ) {
+          seen.add(entry.activityId);
+          result.push(entry.activityId);
+        }
+      }
+    }
+
+    return result;
+  }, [calendarEntries]);
+
   const drawerNote = useMemo(
     () => (drawerDate ? (calendarNotes?.[drawerDate] ?? '') : ''),
     [drawerDate, calendarNotes],
@@ -522,6 +579,7 @@ export const FullCalendarView = () => {
           eventClick={handleEventClick}
           eventContent={renderEventContent}
           events={events}
+          firstDay={1}
           height={'auto'}
           initialView={initialView}
           locale={i18n.language}
@@ -549,6 +607,8 @@ export const FullCalendarView = () => {
           onNoteChange={handleNoteChange}
           onSaveNewCategory={handleSaveNewCategory}
           onUpdateEntryNote={handleUpdateEntryNote}
+          onUpdateEntryTime={handleUpdateEntryTime}
+          recentActivityIds={recentActivityIds}
         />
       )}
     </>
