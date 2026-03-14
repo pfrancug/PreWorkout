@@ -78,15 +78,15 @@ Replace the custom `Calendar` component in `CalendarPage.tsx` with [FullCalendar
 
 ## Phase 6 — Wire into Page
 
-- [ ] Update `src/pages/CalendarPage.tsx`: replace `<Calendar />` import and usage with `<FullCalendarView />`
-- [ ] `src/components/Calendar.tsx` — **no changes** (still used by trainer view in `TraineeViewPage.tsx`)
+- [x] Update `src/pages/CalendarPage.tsx`: replace `<Calendar />` import and usage with `<FullCalendarView />`
+- [x] `src/components/Calendar.tsx` — **no changes** (still used by trainer view in `TraineeViewPage.tsx`)
 
 ---
 
 ## Phase 7 — i18n
 
-- [ ] Add any new modal translation keys to `src/i18n/locales/en/calendar.json` and `src/i18n/locales/pl/calendar.json` (e.g. `calendar.editDay`, `calendar.close`)
-- [ ] FullCalendar's own locale files handle toolbar labels (Today, Month, Week) — no manual overrides needed for those
+- [x] Add any new modal translation keys to `src/i18n/locales/en/calendar.json` and `src/i18n/locales/pl/calendar.json` (e.g. `calendar.editDay`, `calendar.close`)
+- [x] FullCalendar's own locale files handle toolbar labels (Today, Month, Week) — no manual overrides needed for those
 
 ---
 
