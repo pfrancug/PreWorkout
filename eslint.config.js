@@ -52,6 +52,19 @@ export default defineConfig([
           shorthandFirst: true,
         },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^react$',
+              importNamePattern: '^\\*$',
+              message:
+                "Use named imports from 'react' instead of namespace import.",
+            },
+          ],
+        },
+      ],
       'react/self-closing-comp': 'warn',
       'simple-import-sort/exports': 'warn',
       'simple-import-sort/imports': [

@@ -6,7 +6,7 @@ import type {
   TrainerCalendarData,
 } from '../firebase/database';
 import type { FullCalendarEventMeta, ITrainingSession } from '../types/types';
-import type { TimePreset } from './ActivityNoteModal';
+import type { DrawerView, TimePreset } from './ActivityNoteModal';
 import type {
   DateSelectArg,
   EventClickArg,
@@ -68,10 +68,7 @@ export const FullCalendarView = () => {
     [],
   );
   const [connectionId, setConnectionId] = useState<string | null>(null);
-  const [modalDate, setModalDate] = useState<string | null>(null);
-  const [modalTimePreset, setModalTimePreset] = useState<TimePreset | null>(
-    null,
-  );
+  const [drawerView, setDrawerView] = useState<DrawerView | null>(null);
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const entryNoteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
@@ -140,7 +137,7 @@ export const FullCalendarView = () => {
       entryNoteTimersRef.current.forEach(clearTimeout);
       entryNoteTimersRef.current.clear();
     };
-  }, [modalDate]);
+  }, [drawerView?.date]);
 
   // Trainer category for display (prefer non-archived; fall back to archived for history)
   const trainerCategoryForDisplay = useMemo(
@@ -295,60 +292,70 @@ export const FullCalendarView = () => {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
-    setModalDate(formatDateKey(arg.date));
+    setDrawerView({ view: 'day', date: formatDateKey(arg.date) });
   }, []);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const meta = arg.event.extendedProps as FullCalendarEventMeta;
     if (meta.type === 'entry' && arg.event.start) {
-      setModalDate(formatDateKey(arg.event.start));
+      const date = formatDateKey(arg.event.start);
+      const entryId = meta.entry?.id;
+      if (entryId && !entryId.startsWith('trainer-')) {
+        setDrawerView({ view: 'event', date, entryId });
+      } else {
+        setDrawerView({ view: 'day', date });
+      }
     } else if (meta.type === 'note') {
       const dateKey =
         (meta.dateKey as string | undefined) ??
         (arg.event.start ? formatDateKey(arg.event.start) : null);
       if (dateKey) {
-        setModalDate(dateKey);
+        setDrawerView({ view: 'day', date: dateKey });
       }
     }
     // Training session events are read-only; no modal opened
   }, []);
 
   const handleSelect = useCallback((arg: DateSelectArg) => {
-    setModalDate(formatDateKey(arg.start));
-    setModalTimePreset({ startStr: arg.startStr, allDay: arg.allDay });
+    const date = formatDateKey(arg.start);
+    const timePreset: TimePreset = {
+      startStr: arg.startStr,
+      allDay: arg.allDay,
+    };
+    setDrawerView({ view: 'add', date, timePreset });
   }, []);
 
   const handleAddEntry = useCallback(
     async (entryData: Omit<CalendarEntry, 'id'>) => {
-      if (!user || !modalDate) {
+      if (!user || !drawerView) {
         return;
       }
       try {
-        await createCalendarEntry(user.uid, modalDate, entryData);
+        await createCalendarEntry(user.uid, drawerView.date, entryData);
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, modalDate, t],
+    [user, drawerView, t],
   );
 
   const handleDeleteEntry = useCallback(
-    async (entryId: string) => {
-      if (!user || !modalDate) {
+    async (entryId: string, date: string) => {
+      if (!user) {
         return;
       }
       try {
-        await deleteCalendarEntry(user.uid, modalDate, entryId);
+        await deleteCalendarEntry(user.uid, date, entryId);
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, modalDate, t],
+    [user, t],
   );
 
   const handleUpdateEntryNote = useCallback(
-    (entryId: string, value: string) => {
-      if (!user || !modalDate) {
+    (entryId: string, date: string, value: string) => {
+      if (!user) {
         return;
       }
       const existing = entryNoteTimersRef.current.get(entryId);
@@ -359,7 +366,7 @@ export const FullCalendarView = () => {
         entryId,
         setTimeout(async () => {
           try {
-            await updateCalendarEntryNote(user.uid, modalDate, entryId, value);
+            await updateCalendarEntryNote(user.uid, date, entryId, value);
           } catch {
             toast.error(t('common.saveError'));
           } finally {
@@ -368,7 +375,7 @@ export const FullCalendarView = () => {
         }, 500),
       );
     },
-    [user, modalDate, t],
+    [user, t],
   );
 
   const handleSaveNewCategory = useCallback(
@@ -387,7 +394,7 @@ export const FullCalendarView = () => {
 
   const handleNoteChange = useCallback(
     (value: string) => {
-      if (!user || !modalDate) {
+      if (!user || !drawerView) {
         return;
       }
       if (noteTimerRef.current) {
@@ -395,13 +402,13 @@ export const FullCalendarView = () => {
       }
       noteTimerRef.current = setTimeout(async () => {
         try {
-          await saveCalendarNote(user.uid, modalDate, value);
+          await saveCalendarNote(user.uid, drawerView.date, value);
         } catch {
           toast.error(t('common.saveError'));
         }
       }, 500);
     },
-    [user, modalDate, t],
+    [user, drawerView, t],
   );
 
   // ── Custom renderers ───────────────────────────────────────────────────────
@@ -478,19 +485,21 @@ export const FullCalendarView = () => {
     [t],
   );
 
-  // ── Derived modal state ────────────────────────────────────────────────────
+  // ── Derived drawer state ───────────────────────────────────────────────────
 
-  const modalEntries = useMemo((): CalendarEntry[] => {
-    if (!modalDate || !calendarEntries?.[modalDate]) {
+  const drawerDate = drawerView?.date ?? null;
+
+  const drawerEntries = useMemo((): CalendarEntry[] => {
+    if (!drawerDate || !calendarEntries?.[drawerDate]) {
       return [];
     }
 
-    return Object.values(calendarEntries[modalDate]);
-  }, [modalDate, calendarEntries]);
+    return Object.values(calendarEntries[drawerDate]);
+  }, [drawerDate, calendarEntries]);
 
-  const modalNote = useMemo(
-    () => (modalDate ? (calendarNotes?.[modalDate] ?? '') : ''),
-    [modalDate, calendarNotes],
+  const drawerNote = useMemo(
+    () => (drawerDate ? (calendarNotes?.[drawerDate] ?? '') : ''),
+    [drawerDate, calendarNotes],
   );
 
   const initialView =
@@ -527,22 +536,19 @@ export const FullCalendarView = () => {
         />
       </div>
 
-      {modalDate && (
+      {drawerView && (
         <ActivityNoteModal
           categories={pickableCategories}
-          date={modalDate}
-          entries={modalEntries}
-          note={modalNote}
+          drawerView={drawerView}
+          entries={drawerEntries}
+          note={drawerNote}
           onAddEntry={handleAddEntry}
+          onClose={() => setDrawerView(null)}
           onDeleteEntry={handleDeleteEntry}
+          onNavigate={setDrawerView}
           onNoteChange={handleNoteChange}
           onSaveNewCategory={handleSaveNewCategory}
           onUpdateEntryNote={handleUpdateEntryNote}
-          timePreset={modalTimePreset}
-          onClose={() => {
-            setModalDate(null);
-            setModalTimePreset(null);
-          }}
         />
       )}
     </>

@@ -40,6 +40,12 @@
     "addToCalendar": "Add to calendar",
     "iconLabel": "Icon",
     "colorLabel": "Color",
-    "allActivitiesLogged": "All your activities are already logged today"
+    "allActivitiesLogged": "All your activities are already logged today",
+    "back": "Back",
+    "editEvent": "Edit",
+    "saveChanges": "Save changes",
+    "deleteEvent": "Delete",
+    "addEventButton": "Add event",
+    "eventNote": "Note"
   }
 }

@@ -40,6 +40,12 @@
     "addToCalendar": "Dodaj do kalendarza",
     "iconLabel": "Ikona",
     "colorLabel": "Kolor",
-    "allActivitiesLogged": "Wszystkie aktywności zostały już dziś zalogowane"
+    "allActivitiesLogged": "Wszystkie aktywności zostały już dziś zalogowane",
+    "back": "Wróć",
+    "editEvent": "Edytuj",
+    "saveChanges": "Zapisz",
+    "deleteEvent": "Usuń",
+    "addEventButton": "Dodaj wpis",
+    "eventNote": "Notatka"
   }
 }
