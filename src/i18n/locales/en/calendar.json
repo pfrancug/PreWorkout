@@ -25,6 +25,7 @@
     "monthView": "Month",
     "weekView": "Week",
     "trainerActivity": "Trainer session",
-    "toggleTrainerSession": "Toggle trainer session"
+    "toggleTrainerSession": "Toggle trainer session",
+    "editActivities": "Activities"
   }
 }

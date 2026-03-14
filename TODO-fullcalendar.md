@@ -39,7 +39,7 @@ Replace the custom `Calendar` component in `CalendarPage.tsx` with [FullCalendar
 
 ## Phase 4 — New FullCalendarView Component
 
-- [ ] Create `src/components/FullCalendarView.tsx`:
+- [x] Create `src/components/FullCalendarView.tsx`:
   - Use the same Firebase subscriptions as the existing `Calendar.tsx`:
     - `subscribeToCalendarData`
     - `subscribeToCalendarNotes`
@@ -67,7 +67,7 @@ Replace the custom `Calendar` component in `CalendarPage.tsx` with [FullCalendar
 
 ## Phase 5 — Activity/Note Modal
 
-- [ ] Create `src/components/ActivityNoteModal.tsx`:
+- [x] Create `src/components/ActivityNoteModal.tsx`:
   - Props: `date`, `activities`, `note`, `categories`, `onToggleActivity`, `onNoteChange`, `onClose`
   - Use existing shadcn `Dialog` or `Sheet` component
   - Activity toggle buttons/checkboxes per category (mirror existing dropdown logic)
