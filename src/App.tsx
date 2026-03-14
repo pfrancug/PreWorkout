@@ -12,6 +12,12 @@ import { CategoriesSettingsPage } from '@pages/settings/CategoriesSettingsPage';
 import { DataSettingsPage } from '@pages/settings/DataSettingsPage';
 import { PreferencesSettingsPage } from '@pages/settings/PreferencesSettingsPage';
 import { ProfileSettingsPage } from '@pages/settings/ProfileSettingsPage';
+import { TraineeViewPage } from '@pages/trainer/TraineeViewPage';
+import { TrainerConnectedPage } from '@pages/trainer/TrainerConnectedPage';
+import { TrainerConnectPage } from '@pages/trainer/TrainerConnectPage';
+import { TrainerInvitesPage } from '@pages/trainer/TrainerInvitesPage';
+import { TrainerSessionsPage } from '@pages/trainer/TrainerSessionsPage';
+import { TrainerSharingPage } from '@pages/trainer/TrainerSharingPage';
 import { MessageSquare } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -55,6 +61,16 @@ const ChatPanel = ({ dataset }: { dataset: IRow[] | null }) => {
   return <Chat dataset={dataset} />;
 };
 
+const TrainerRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isTrainer } = useAuth();
+
+  if (!isTrainer) {
+    return <Navigate replace to={'/'} />;
+  }
+
+  return <>{children}</>;
+};
+
 const pageTitleKeys: Record<string, string> = {
   '/': 'nav.dashboard',
   '/dashboard': 'nav.dashboard',
@@ -67,6 +83,11 @@ const pageTitleKeys: Record<string, string> = {
   '/settings/categories': 'nav.settingsCategories',
   '/settings/preferences': 'nav.settingsPreferences',
   '/settings/data': 'nav.settingsData',
+  '/trainer/connection': 'nav.trainerConnect',
+  '/trainer/sessions': 'nav.trainerSessions',
+  '/trainer/invites': 'nav.trainerInvites',
+  '/trainer/connected': 'nav.trainerConnected',
+  '/trainer/sharing': 'nav.trainerSharing',
   '/admin': 'nav.admin',
 };
 
@@ -79,7 +100,21 @@ const AppRoutes = () => {
   const { dataSet } = useDataSet();
   const isMobile = useIsMobile();
 
-  const pageTitle = t(pageTitleKeys[location.pathname] || 'nav.dashboard');
+  const getPageTitleKey = () => {
+    const exact = pageTitleKeys[location.pathname];
+    if (exact) {
+      return exact;
+    }
+
+    // Dynamic routes
+    if (location.pathname.match(/^\/trainer\/[^/]+$/)) {
+      return 'nav.trainerView';
+    }
+
+    return 'nav.dashboard';
+  };
+
+  const pageTitle = t(getPageTitleKey());
 
   if (loading) {
     return <Loader />;
@@ -209,6 +244,68 @@ const AppRoutes = () => {
                 />
 
                 <Route element={<DataSettingsPage />} path={'/settings/data'} />
+
+                <Route
+                  element={<TrainerConnectPage />}
+                  path={'/trainer/connection'}
+                />
+
+                <Route
+                  element={<TrainerSessionsPage />}
+                  path={'/trainer/sessions'}
+                />
+
+                <Route
+                  path={'/trainer/invites'}
+                  element={
+                    <TrainerRoute>
+                      <TrainerInvitesPage />
+                    </TrainerRoute>
+                  }
+                />
+
+                <Route
+                  path={'/trainer/connected'}
+                  element={
+                    <TrainerRoute>
+                      <TrainerConnectedPage />
+                    </TrainerRoute>
+                  }
+                />
+
+                <Route
+                  element={<TrainerSharingPage />}
+                  path={'/trainer/sharing'}
+                />
+
+                <Route
+                  path={'/trainer/:traineeId'}
+                  element={
+                    <TrainerRoute>
+                      <TraineeViewPage />
+                    </TrainerRoute>
+                  }
+                />
+
+                <Route
+                  path={'/invite'}
+                  element={
+                    <Navigate
+                      replace
+                      to={`/trainer/connection${window.location.hash}`}
+                    />
+                  }
+                />
+
+                <Route
+                  element={<Navigate replace to={'/trainer/connection'} />}
+                  path={'/settings/trainer'}
+                />
+
+                <Route
+                  element={<Navigate replace to={'/trainer/connection'} />}
+                  path={'/trainer/connect'}
+                />
 
                 <Route element={<AdminPage />} path={'/admin'} />
 

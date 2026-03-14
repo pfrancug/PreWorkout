@@ -21,6 +21,8 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     'calendar',
     'calendarNotes',
     'activityCategories',
+    'energyDrinks',
+    'trainerCalendar',
   ]);
 
   for (const key of Object.keys(d)) {
@@ -179,6 +181,45 @@ export const validateImportData = (data: unknown): data is AllUserData => {
         return false;
       }
       if (typeof note !== 'string') {
+        return false;
+      }
+    }
+  }
+
+  // Validate energyDrinks (date-keyed object with string arrays)
+  if (d.energyDrinks != null) {
+    if (typeof d.energyDrinks !== 'object') {
+      return false;
+    }
+    for (const [date, drinks] of Object.entries(
+      d.energyDrinks as Record<string, unknown>,
+    )) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+      }
+      if (!Array.isArray(drinks)) {
+        return false;
+      }
+      for (const drink of drinks) {
+        if (typeof drink !== 'string') {
+          return false;
+        }
+      }
+    }
+  }
+
+  // Validate trainerCalendar (date-keyed object with boolean values)
+  if (d.trainerCalendar != null) {
+    if (typeof d.trainerCalendar !== 'object') {
+      return false;
+    }
+    for (const [date, val] of Object.entries(
+      d.trainerCalendar as Record<string, unknown>,
+    )) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+      }
+      if (typeof val !== 'boolean') {
         return false;
       }
     }

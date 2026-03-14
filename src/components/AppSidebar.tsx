@@ -23,6 +23,7 @@ import { useSidebar } from '@components/ui/sidebar-context';
 import {
   BookOpen,
   Calculator,
+  CalendarClock,
   CalendarDays,
   ChevronsUpDown,
   Database,
@@ -30,19 +31,26 @@ import {
   GlassWater,
   Globe,
   Home,
+  Link2,
   LogOut,
   MessageSquare,
+  Share2,
   ShieldCheck,
   SlidersHorizontal,
   Tags,
+  Ticket,
   User,
+  UserRound,
+  Users,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import { logoutUser } from '../firebase/auth';
+import { subscribeToTraineeConnection } from '../firebase/database';
 
 const menuItems = [
   {
@@ -100,12 +108,60 @@ const settingsItems = [
   },
 ];
 
+const traineesItems = [
+  {
+    titleKey: 'nav.trainerConnected',
+    icon: Users,
+    path: '/trainer/connected',
+  },
+  {
+    titleKey: 'nav.trainerInvites',
+    icon: Ticket,
+    path: '/trainer/invites',
+  },
+];
+
+const connectionItems = [
+  {
+    titleKey: 'nav.trainerConnect',
+    icon: Link2,
+    path: '/trainer/connection',
+    connectionOnly: false,
+  },
+  {
+    titleKey: 'nav.trainerSessions',
+    icon: CalendarClock,
+    path: '/trainer/sessions',
+    connectionOnly: true,
+  },
+  {
+    titleKey: 'nav.trainerSharing',
+    icon: Share2,
+    path: '/trainer/sharing',
+    connectionOnly: true,
+  },
+];
+
 export const AppSidebar = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
-  const { user, isAdmin } = useAuth();
-  const { settings, changeLanguage } = useSettings();
+  const { user, isAdmin, isTrainer } = useAuth();
+  const { settings, preferences, changeLanguage } = useSettings();
+  const [connectedRaw, setConnectedRaw] = useState(false);
+
+  useEffect(() => {
+    if (!user || isTrainer) {
+      return;
+    }
+
+    return subscribeToTraineeConnection(user.uid, (conn) => {
+      setConnectedRaw(conn !== null);
+    });
+  }, [user, isTrainer]);
+
+  // Derive: trainers never show connection items; reset when user/role changes
+  const hasConnection = !isTrainer && !!user && connectedRaw;
 
   const displayName = settings.name || t('nav.anonymous');
   const email = user?.email || '';
@@ -210,6 +266,66 @@ export const AppSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isTrainer && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('nav.trainees')}</SidebarGroupLabel>
+
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {traineesItems.map((item) => (
+                  <SidebarMenuItem key={item.titleKey}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isSettingsActive(item.path)}
+                      tooltip={t(item.titleKey)}
+                    >
+                      <Link
+                        onClick={() => isMobile && setOpenMobile(false)}
+                        to={item.path}
+                      >
+                        <item.icon />
+
+                        <span>{t(item.titleKey)}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {!preferences.hideConnectionSection && !isTrainer && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t('nav.trainer')}</SidebarGroupLabel>
+
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {connectionItems
+                  .filter((item) => !item.connectionOnly || hasConnection)
+                  .map((item) => (
+                    <SidebarMenuItem key={item.titleKey}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isSettingsActive(item.path)}
+                        tooltip={t(item.titleKey)}
+                      >
+                        <Link
+                          onClick={() => isMobile && setOpenMobile(false)}
+                          to={item.path}
+                        >
+                          <item.icon />
+
+                          <span>{t(item.titleKey)}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
         {isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>{t('nav.administration')}</SidebarGroupLabel>
@@ -325,6 +441,18 @@ export const AppSidebar = () => {
                 </DropdownMenuLabel>
 
                 <DropdownMenuSeparator />
+
+                {(isAdmin || isTrainer) && (
+                  <>
+                    <DropdownMenuItem disabled>
+                      <UserRound />
+
+                      {isAdmin ? t('nav.admin') : t('nav.trainer')}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                  </>
+                )}
 
                 <DropdownMenuItem onClick={() => logoutUser()}>
                   <LogOut />

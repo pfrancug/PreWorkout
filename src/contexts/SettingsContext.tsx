@@ -14,6 +14,7 @@ export interface UserPreferences {
   language: string;
   defaultCalendarView: 'month' | 'week';
   drinksSugarFilter: 'all' | 'sugar' | 'no-sugar';
+  hideConnectionSection: boolean;
 }
 
 export interface SettingsContextValue {
@@ -40,6 +41,7 @@ export const defaultPreferences: UserPreferences = {
   language: localStorage.getItem('i18nextLng') || 'en',
   defaultCalendarView: 'month',
   drinksSugarFilter: 'all',
+  hideConnectionSection: false,
 };
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null);

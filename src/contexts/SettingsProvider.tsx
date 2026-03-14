@@ -17,6 +17,7 @@ import {
   loadUserSettings,
   saveUserPreferences,
   saveUserSettings,
+  updateUserDisplayName,
 } from '../firebase/database';
 import {
   defaultPreferences,
@@ -46,7 +47,9 @@ const fetchUserPreferences = async (
 
   const firebasePreferences = await loadUserPreferences(userId);
 
-  return firebasePreferences ?? defaultPreferences;
+  return firebasePreferences
+    ? { ...defaultPreferences, ...firebasePreferences }
+    : defaultPreferences;
 };
 
 type SettingsState =
@@ -139,6 +142,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         try {
           await saveUserSettings(user.uid, newSettings);
+          // Sync display name to userDirectory so trainers/trainees see the updated name
+          updateUserDisplayName(user.uid, newSettings.name).catch(() => {});
           setState((prev) => {
             if (prev.status !== 'loaded') {
               return prev;

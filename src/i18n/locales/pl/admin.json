@@ -10,7 +10,11 @@
       "email": "Email",
       "name": "Imię",
       "lastLogin": "Ostatnie logowanie",
-      "dailyMessages": "Wiadomości dziennie"
+      "dailyMessages": "Wiadomości dziennie",
+      "trainer": "Trener",
+      "trainerGranted": "Rola trenera nadana. Użytkownik musi się ponownie zalogować.",
+      "trainerRevoked": "Rola trenera odebrana. Użytkownik musi się ponownie zalogować.",
+      "trainerToggleError": "Nie udało się zaktualizować roli trenera."
     },
     "invalidLimit": "Limit musi być liczbą od 0 do 50.",
     "limitSaved": "Limit zapisany pomyślnie.",

@@ -10,7 +10,11 @@
       "email": "Email",
       "name": "Name",
       "lastLogin": "Last Login",
-      "dailyMessages": "Daily Messages"
+      "dailyMessages": "Daily Messages",
+      "trainer": "Trainer",
+      "trainerGranted": "Trainer role granted. User must re-login.",
+      "trainerRevoked": "Trainer role revoked. User must re-login.",
+      "trainerToggleError": "Failed to update trainer role."
     },
     "invalidLimit": "Limit must be a number between 0 and 50.",
     "limitSaved": "Limit saved successfully.",

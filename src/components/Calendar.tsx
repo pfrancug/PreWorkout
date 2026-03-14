@@ -3,7 +3,9 @@ import type {
   CalendarActivity,
   CalendarData,
   CalendarNotes,
+  TrainerCalendarData,
 } from '../firebase/database';
+import type { ITrainingSession } from '../types/types';
 
 import {
   DropdownMenu,
@@ -40,11 +42,16 @@ import {
 import { useAuth } from '../contexts/useAuth';
 import { useSettings } from '../contexts/useSettings';
 import {
+  createTrainingSession,
   saveCalendarDay,
   saveCalendarNote,
   subscribeToActivityCategories,
   subscribeToCalendarData,
   subscribeToCalendarNotes,
+  subscribeToTraineeConnection,
+  subscribeToTrainerCalendar,
+  subscribeToTrainingSessions,
+  toggleTrainerCalendarDay,
 } from '../firebase/database';
 import { useIsMobile } from '../hooks/useMobile';
 import { ActivityIcon } from './ActivityIcon';
@@ -62,12 +69,31 @@ const getFirstDayOfWeek = (year: number, month: number) => {
 const formatDateKey = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-export const Calendar = () => {
+interface CalendarProps {
+  /** Override whose data to display (defaults to current user) */
+  userId?: string;
+  /** When true, disable all editing (activity toggles, notes) */
+  readOnly?: boolean;
+  /** Allow toggling trainer-linked activity even in readOnly mode (for trainer supervised view) */
+  allowTrainerToggle?: boolean;
+  /** The active trainer connection ID — needed for creating training sessions */
+  connectionId?: string;
+}
+
+export const Calendar = ({
+  allowTrainerToggle = false,
+  connectionId: connectionIdProp,
+  userId: propUserId,
+  readOnly = false,
+}: CalendarProps = {}) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { preferences } = useSettings();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  const targetUserId = propUserId || user?.uid;
+  const isOwnCalendar = !propUserId || propUserId === user?.uid;
 
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -76,12 +102,33 @@ export const Calendar = () => {
   const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
     null,
   );
+  const [trainerCalendar, setTrainerCalendar] =
+    useState<TrainerCalendarData | null>(null);
   const [categories, setCategories] = useState<ActivityCategory[]>([]);
+  const [trainingSessions, setTrainingSessions] = useState<ITrainingSession[]>(
+    [],
+  );
+  const [autoConnectionId, setAutoConnectionId] = useState<string | null>(null);
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [dropdownOpenDay, setDropdownOpenDay] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'week'>(
     preferences.defaultCalendarView,
   );
+
+  const connectionId = connectionIdProp ?? autoConnectionId ?? undefined;
+
+  // Auto-detect connectionId for the trainee's own calendar
+  useEffect(() => {
+    if (connectionIdProp || !isOwnCalendar || !user) {
+      return;
+    }
+
+    const unsub = subscribeToTraineeConnection(user.uid, (conn) => {
+      setAutoConnectionId(conn?.status === 'active' ? conn.id : null);
+    });
+
+    return unsub;
+  }, [connectionIdProp, isOwnCalendar, user]);
 
   // Week view state
   const [weekStart, setWeekStart] = useState<Date>(() => {
@@ -94,24 +141,36 @@ export const Calendar = () => {
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!targetUserId) {
       return;
     }
 
-    const unsubActivities = subscribeToCalendarData(user.uid, setCalendarData);
-    const unsubNotes = subscribeToCalendarNotes(user.uid, setCalendarNotes);
+    const unsubActivities = subscribeToCalendarData(
+      targetUserId,
+      setCalendarData,
+    );
+    const unsubNotes = subscribeToCalendarNotes(targetUserId, setCalendarNotes);
     const unsubCategories = subscribeToActivityCategories(
-      user.uid,
+      targetUserId,
       setCategories,
       DEFAULT_CATEGORIES,
     );
+    const unsubTrainerCal = subscribeToTrainerCalendar(
+      targetUserId,
+      setTrainerCalendar,
+    );
+    const unsubSessions = connectionId
+      ? subscribeToTrainingSessions(connectionId, setTrainingSessions)
+      : undefined;
 
     return () => {
       unsubActivities();
       unsubNotes();
       unsubCategories();
+      unsubTrainerCal();
+      unsubSessions?.();
     };
-  }, [user]);
+  }, [targetUserId, connectionId]);
 
   const todayKey = formatDateKey(
     today.getFullYear(),
@@ -212,9 +271,50 @@ export const Calendar = () => {
     return days;
   }, [weekStart, todayKey]);
 
+  // Trainer activity category (the one with trainerId set, not archived) — used for new toggles
+  const trainerCategory = useMemo(
+    () => categories.find((c) => c.trainerId && !c.archived) ?? null,
+    [categories],
+  );
+
+  // Any trainer category (prefer active, fall back to archived) — used to render historical trainer days
+  const trainerCategoryForDisplay = useMemo(
+    () => trainerCategory ?? categories.find((c) => !!c.trainerId) ?? null,
+    [categories, trainerCategory],
+  );
+
+  // Map training sessions by date for quick lookup
+  const sessionsByDate = useMemo(() => {
+    if (!connectionId) {
+      return new Map<string, ITrainingSession>();
+    }
+    const map = new Map<string, ITrainingSession>();
+    for (const s of trainingSessions) {
+      if (s.status !== 'cancelled') {
+        map.set(s.date, s);
+      }
+    }
+
+    return map;
+  }, [connectionId, trainingSessions]);
+
+  // Categories available for the activity picker (excludes archived and trainer-linked when not in trainer mode)
+  const pickableCategories = useMemo(
+    () =>
+      categories.filter(
+        (c) => !c.archived && !(c.trainerId && !allowTrainerToggle),
+      ),
+    [categories, allowTrainerToggle],
+  );
+
   const toggleActivity = useCallback(
     async (dateKey: string, activity: CalendarActivity) => {
-      if (!user) {
+      if (!user || readOnly) {
+        return;
+      }
+
+      // Trainer-linked activity: trainee cannot toggle it (only trainer manages via supervised view)
+      if (trainerCategory && activity === trainerCategory.id) {
         return;
       }
 
@@ -229,9 +329,82 @@ export const Calendar = () => {
         toast.error(t('common.saveError'));
       }
     },
-    [user, calendarData, t],
+    [user, calendarData, trainerCategory, t, readOnly],
   );
 
+  /** Merge regular calendar activities with trainer calendar data for a given date */
+  const getActivitiesForDay = useCallback(
+    (dateKey: string): CalendarActivity[] => {
+      const regular = calendarData?.[dateKey] ?? [];
+      if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
+        // Inject trainer activity if not already in the regular list
+        if (!regular.includes(trainerCategoryForDisplay.id)) {
+          return [...regular, trainerCategoryForDisplay.id];
+        }
+      }
+
+      return regular;
+    },
+    [calendarData, trainerCalendar, trainerCategoryForDisplay],
+  );
+
+  /** Add trainer-marked activity on a day (writes to trainerCalendar node + training session) */
+  const toggleTrainerActivity = useCallback(
+    async (dateKey: string) => {
+      if (!targetUserId || !trainerCategory || !connectionId || !user) {
+        return;
+      }
+
+      const isTrainerMarked = trainerCalendar?.[dateKey] === true;
+      const inRegular = (calendarData?.[dateKey] ?? []).includes(
+        trainerCategory.id,
+      );
+      const hasSession = sessionsByDate.has(dateKey);
+      const isActive = isTrainerMarked || inRegular || hasSession;
+
+      // Only allow adding — removal is done from sessions panel
+      if (isActive) {
+        return;
+      }
+
+      if (trainerToggleInFlight.current.has(dateKey)) {
+        return;
+      }
+      trainerToggleInFlight.current.add(dateKey);
+
+      try {
+        await toggleTrainerCalendarDay(targetUserId, dateKey, true);
+        await createTrainingSession(
+          connectionId,
+          trainerCategory.trainerId!,
+          targetUserId,
+          dateKey,
+        );
+      } catch {
+        // Roll back calendar marker if session creation failed
+        try {
+          await toggleTrainerCalendarDay(targetUserId, dateKey, false);
+        } catch {
+          // Ignore rollback failure
+        }
+        toast.error(t('common.saveError'));
+      } finally {
+        trainerToggleInFlight.current.delete(dateKey);
+      }
+    },
+    [
+      targetUserId,
+      calendarData,
+      trainerCalendar,
+      trainerCategory,
+      t,
+      connectionId,
+      user,
+      sessionsByDate,
+    ],
+  );
+
+  const trainerToggleInFlight = useRef(new Set<string>());
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Cleanup debounce timer on unmount
@@ -245,7 +418,7 @@ export const Calendar = () => {
 
   const handleNoteChange = useCallback(
     (dateKey: string, value: string) => {
-      if (!user) {
+      if (!user || readOnly) {
         return;
       }
 
@@ -260,7 +433,7 @@ export const Calendar = () => {
         }
       }, 500);
     },
-    [user, t],
+    [user, t, readOnly],
   );
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -399,8 +572,13 @@ export const Calendar = () => {
       {showWeekView ? (
         <div className={'flex flex-col gap-1.5'}>
           {weekDaysData.map(({ day, dateKey, dayName, isToday }) => {
-            const activities = calendarData?.[dateKey] ?? [];
+            const activities = getActivitiesForDay(dateKey);
             const note = calendarNotes?.[dateKey] ?? '';
+            const isTrainerDay =
+              trainerCalendar?.[dateKey] === true ||
+              (!!trainerCategory &&
+                (calendarData?.[dateKey] ?? []).includes(trainerCategory.id)) ||
+              sessionsByDate.has(dateKey);
 
             return (
               <div
@@ -441,13 +619,19 @@ export const Calendar = () => {
                       return null;
                     }
 
+                    const isTrainerActivity = !!category.trainerId;
+                    const sessionForDay = isTrainerActivity
+                      ? sessionsByDate.get(dateKey)
+                      : undefined;
+
                     return (
                       <div
                         key={activityId}
                         title={category.name}
-                        className={
-                          'flex h-7 w-7 items-center justify-center rounded'
-                        }
+                        className={cn(
+                          'relative flex h-7 w-7 items-center justify-center rounded',
+                          isTrainerActivity && 'ring-1 ring-primary/40',
+                        )}
                         style={{
                           backgroundColor: `${ACTIVITY_COLOR_MAP[category.color] ?? '#888'}26`,
                           color: ACTIVITY_COLOR_MAP[category.color],
@@ -457,6 +641,19 @@ export const Calendar = () => {
                           className={'h-4 w-4'}
                           iconId={category.icon}
                         />
+                        {sessionForDay && (
+                          <span
+                            className={cn(
+                              'absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-background',
+                              sessionForDay.paymentStatus === 'paid' &&
+                                'bg-green-500',
+                              sessionForDay.paymentStatus === 'pending' &&
+                                'bg-yellow-500',
+                              sessionForDay.paymentStatus === 'unpaid' &&
+                                'bg-red-500',
+                            )}
+                          />
+                        )}
                       </div>
                     );
                   })}
@@ -474,95 +671,134 @@ export const Calendar = () => {
                 </div>
 
                 {/* Action buttons - right side */}
-                <div className={'flex shrink-0 items-center gap-1'}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type={'button'}
-                        className={
-                          'flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
-                        }
-                      >
-                        <Pencil className={'h-3.5 w-3.5'} />
-                      </button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent
-                      align={'end'}
-                      className={'space-y-1'}
-                      sideOffset={4}
-                    >
-                      {categories.map((category) => {
-                        const isActive = activities.includes(category.id);
-
-                        return (
-                          <DropdownMenuItem
-                            className={cn(isActive && 'bg-accent')}
-                            key={category.id}
-                            onClick={() => toggleActivity(dateKey, category.id)}
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <ActivityIcon
-                              className={'h-4 w-4'}
-                              iconId={category.icon}
-                              style={{
-                                color: ACTIVITY_COLOR_MAP[category.color],
-                              }}
-                            />
-
-                            <span className={'flex-1'}>{category.name}</span>
-
-                            {isActive && (
-                              <X
-                                className={'h-3.5 w-3.5 text-muted-foreground'}
-                              />
-                            )}
-                          </DropdownMenuItem>
-                        );
-                      })}
-
-                      {categories.length > 0 && <DropdownMenuSeparator />}
-
-                      <DropdownMenuItem
-                        onClick={() => navigate('/settings/categories')}
-                      >
-                        <Settings2 className={'h-4 w-4'} />
-
-                        <span>{t('calendar.manageActivities')}</span>
-                      </DropdownMenuItem>
-
-                      <DropdownMenuSeparator />
-
-                      <div
-                        className={'px-2 py-1.5'}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      >
-                        <label
+                {!readOnly && (
+                  <div className={'flex shrink-0 items-center gap-1'}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type={'button'}
                           className={
-                            'mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground'
+                            'flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
                           }
                         >
-                          <StickyNote className={'h-3.5 w-3.5'} />
-                          {t('calendar.note')}
-                        </label>
+                          <Pencil className={'h-3.5 w-3.5'} />
+                        </button>
+                      </DropdownMenuTrigger>
 
-                        <input
-                          defaultValue={note}
-                          placeholder={t('calendar.notePlaceholder')}
-                          type={'text'}
-                          className={
-                            'w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50'
-                          }
-                          onChange={(e) =>
-                            handleNoteChange(dateKey, e.target.value)
-                          }
+                      <DropdownMenuContent
+                        align={'end'}
+                        className={'space-y-1'}
+                        sideOffset={4}
+                      >
+                        {pickableCategories.map((category) => {
+                          const isActive = activities.includes(category.id);
+
+                          return (
+                            <DropdownMenuItem
+                              className={cn(isActive && 'bg-accent')}
+                              key={category.id}
+                              onSelect={(e) => e.preventDefault()}
+                              onClick={() =>
+                                toggleActivity(dateKey, category.id)
+                              }
+                            >
+                              <ActivityIcon
+                                className={'h-4 w-4'}
+                                iconId={category.icon}
+                                style={{
+                                  color: ACTIVITY_COLOR_MAP[category.color],
+                                }}
+                              />
+
+                              <span className={'flex-1'}>{category.name}</span>
+
+                              {isActive && (
+                                <X
+                                  className={
+                                    'h-3.5 w-3.5 text-muted-foreground'
+                                  }
+                                />
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
+
+                        {pickableCategories.length > 0 && (
+                          <DropdownMenuSeparator />
+                        )}
+
+                        <DropdownMenuItem
+                          onClick={() => navigate('/settings/categories')}
+                        >
+                          <Settings2 className={'h-4 w-4'} />
+
+                          <span>{t('calendar.manageActivities')}</span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <div
+                          className={'px-2 py-1.5'}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <label
+                            className={
+                              'mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground'
+                            }
+                          >
+                            <StickyNote className={'h-3.5 w-3.5'} />
+                            {t('calendar.note')}
+                          </label>
+
+                          <input
+                            defaultValue={note}
+                            placeholder={t('calendar.notePlaceholder')}
+                            type={'text'}
+                            className={
+                              'w-full rounded-md border border-border bg-card px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50'
+                            }
+                            onChange={(e) =>
+                              handleNoteChange(dateKey, e.target.value)
+                            }
+                          />
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+
+                {/* Trainer toggle button (visible in trainer supervised view) */}
+                {allowTrainerToggle &&
+                  readOnly &&
+                  trainerCategory &&
+                  !isTrainerDay && (
+                    <div className={'flex shrink-0 items-center'}>
+                      <button
+                        aria-label={t('calendar.toggleTrainerSession')}
+                        onClick={() => toggleTrainerActivity(dateKey)}
+                        title={t('calendar.toggleTrainerSession')}
+                        type={'button'}
+                        className={cn(
+                          'flex h-7 w-7 cursor-pointer items-center justify-center rounded border transition-colors',
+                          isTrainerDay
+                            ? 'border-primary/50 bg-primary/10'
+                            : 'border-border bg-card hover:bg-accent',
+                        )}
+                        style={{
+                          color: isTrainerDay
+                            ? ACTIVITY_COLOR_MAP[trainerCategory.color]
+                            : undefined,
+                        }}
+                      >
+                        <ActivityIcon
+                          className={'h-4 w-4'}
+                          iconId={trainerCategory.icon}
                         />
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                      </button>
+                    </div>
+                  )}
               </div>
             );
           })}
@@ -586,9 +822,16 @@ export const Calendar = () => {
           {/* Calendar grid */}
           <div className={'grid grid-cols-7 gap-2'}>
             {calendarDays.map(({ day, dateKey, isCurrentMonth, isToday }) => {
-              const activities = calendarData?.[dateKey] ?? [];
+              const activities = getActivitiesForDay(dateKey);
               const note = calendarNotes?.[dateKey] ?? '';
               const isHovered = hoveredDay === dateKey;
+              const isTrainerDay =
+                trainerCalendar?.[dateKey] === true ||
+                (!!trainerCategory &&
+                  (calendarData?.[dateKey] ?? []).includes(
+                    trainerCategory.id,
+                  )) ||
+                sessionsByDate.has(dateKey);
 
               return (
                 <div
@@ -644,13 +887,19 @@ export const Calendar = () => {
                         return null;
                       }
 
+                      const isTrainerActivity = !!category.trainerId;
+                      const sessionForDay = isTrainerActivity
+                        ? sessionsByDate.get(dateKey)
+                        : undefined;
+
                       return (
                         <div
                           key={activityId}
                           title={category.name}
-                          className={
-                            'flex h-6 w-6 items-center justify-center rounded'
-                          }
+                          className={cn(
+                            'relative flex h-6 w-6 items-center justify-center rounded',
+                            isTrainerActivity && 'ring-1 ring-primary/40',
+                          )}
                           style={{
                             backgroundColor: `${ACTIVITY_COLOR_MAP[category.color] ?? '#888'}26`,
                             color: ACTIVITY_COLOR_MAP[category.color],
@@ -660,6 +909,19 @@ export const Calendar = () => {
                             className={'h-4 w-4'}
                             iconId={category.icon}
                           />
+                          {sessionForDay && (
+                            <span
+                              className={cn(
+                                'absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-background',
+                                sessionForDay.paymentStatus === 'paid' &&
+                                  'bg-green-500',
+                                sessionForDay.paymentStatus === 'pending' &&
+                                  'bg-yellow-500',
+                                sessionForDay.paymentStatus === 'unpaid' &&
+                                  'bg-red-500',
+                              )}
+                            />
+                          )}
                         </div>
                       );
                     })}
@@ -677,7 +939,7 @@ export const Calendar = () => {
                   </div>
 
                   {/* Centered + button, visible on hover */}
-                  {isCurrentMonth && isHovered && (
+                  {!readOnly && isCurrentMonth && isHovered && (
                     <div
                       className={
                         'absolute inset-0 flex items-center justify-center'
@@ -709,7 +971,7 @@ export const Calendar = () => {
                           className={'space-y-1'}
                           sideOffset={4}
                         >
-                          {categories.map((category) => {
+                          {pickableCategories.map((category) => {
                             const isActive = activities.includes(category.id);
 
                             return (
@@ -744,7 +1006,9 @@ export const Calendar = () => {
                             );
                           })}
 
-                          {categories.length > 0 && <DropdownMenuSeparator />}
+                          {pickableCategories.length > 0 && (
+                            <DropdownMenuSeparator />
+                          )}
 
                           <DropdownMenuItem
                             onClick={() => navigate('/settings/categories')}
@@ -787,6 +1051,43 @@ export const Calendar = () => {
                       </DropdownMenu>
                     </div>
                   )}
+
+                  {/* Trainer toggle - visible on hover in supervised view */}
+                  {allowTrainerToggle &&
+                    readOnly &&
+                    trainerCategory &&
+                    !isTrainerDay &&
+                    isCurrentMonth &&
+                    isHovered && (
+                      <div
+                        className={
+                          'absolute inset-0 flex items-center justify-center'
+                        }
+                      >
+                        <button
+                          aria-label={t('calendar.toggleTrainerSession')}
+                          onClick={() => toggleTrainerActivity(dateKey)}
+                          title={t('calendar.toggleTrainerSession')}
+                          type={'button'}
+                          className={cn(
+                            'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border shadow-sm transition-colors',
+                            isTrainerDay
+                              ? 'border-primary/50 bg-primary/10'
+                              : 'border-border bg-card hover:bg-accent',
+                          )}
+                          style={{
+                            color: isTrainerDay
+                              ? ACTIVITY_COLOR_MAP[trainerCategory.color]
+                              : undefined,
+                          }}
+                        >
+                          <ActivityIcon
+                            className={'h-4 w-4'}
+                            iconId={trainerCategory.icon}
+                          />
+                        </button>
+                      </div>
+                    )}
                 </div>
               );
             })}

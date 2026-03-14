@@ -2,11 +2,16 @@ import type {
   UserPreferences,
   UserSettings,
 } from '../contexts/SettingsContext';
+import type { ITrainerConnection, ITrainingSession } from '../types/types';
 import type { Message } from '@components/Chat';
 
 import {
+  equalTo,
   get,
   getDatabase,
+  orderByChild,
+  push,
+  query,
   ref,
   remove,
   runTransaction,
@@ -28,6 +33,16 @@ export interface ActivityCategory {
   icon: string;
   name: string;
   color: string;
+  /** Trainer user ID – present on auto-created trainer activity categories */
+  trainerId?: string;
+  /** True for categories auto-created by the system (e.g. on trainer connect) */
+  systemGenerated?: boolean;
+  /** Archived categories still render in calendar history but don't appear in the activity picker */
+  archived?: boolean;
+}
+
+export interface TrainerCalendarData {
+  [date: string]: boolean;
 }
 
 export interface CalendarData {
@@ -47,6 +62,8 @@ export interface AllUserData {
   calendar: CalendarData | null;
   calendarNotes: CalendarNotes | null;
   activityCategories: ActivityCategory[] | null;
+  energyDrinks: Record<string, unknown> | null;
+  trainerCalendar: Record<string, boolean> | null;
 }
 
 const database = getDatabase(app);
@@ -182,14 +199,18 @@ export const loadUserData = async (
 /**
  * Deletes all user data from the database.
  *
- * GDPR Compliance Note:
- * - Deletes all personal identifiable information (PII)
- * - Removes PII fields from userDirectory (email, displayName, lastLogin)
+ * GDPR Compliance Note (Option A — Anonymize shared data):
+ * - Deletes all personal data (settings, diary, calendar, preferences, etc.)
+ * - Removes PII fields from userDirectory (email, displayName, lastLogin, isTrainer)
  * - Retains userDirectory/{uid}/messageSends for anonymized analytics (GDPR Article 89)
+ * - Marks trainer connections as 'deleted' so the other side keeps session history
+ * - Training sessions are preserved (dates + payment data, no PII) under anonymized UIDs
+ * - Cleans up trainerId pointers on connected trainees/trainers
  * - Once Firebase Auth account is deleted, userId becomes a pseudonymous
  *   identifier that cannot be linked back to the individual
  */
 export const deleteAllUserData = async (userId: string): Promise<void> => {
+  // 1. Delete all personal user data
   await Promise.all([
     remove(getUserSettingsRef(userId)),
     remove(getUserPreferencesRef(userId)),
@@ -199,11 +220,77 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserCalendarRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
-    // Remove only PII fields from userDirectory, keep analytics (messageSends)
+    remove(ref(database, `users/${userId}/trainerCalendar`)),
+    remove(ref(database, `users/${userId}/energyDrinks`)),
+    remove(ref(database, `users/${userId}/trainerId`)),
+    remove(ref(database, `users/${userId}/trainerConnectionId`)),
+    // Remove PII fields from userDirectory, keep analytics (messageSends)
     remove(ref(database, `userDirectory/${userId}/email`)),
     remove(ref(database, `userDirectory/${userId}/displayName`)),
     remove(ref(database, `userDirectory/${userId}/lastLogin`)),
+    remove(ref(database, `userDirectory/${userId}/isTrainer`)),
   ]);
+
+  // 2. Handle trainer connections — mark as 'deleted', clean up other side
+  await cleanupConnectionsForDeletedUser(userId);
+};
+
+/**
+ * Finds all trainer connections involving this user (as trainer or trainee)
+ * and marks them as 'deleted'. Also cleans up trainerId on affected trainees.
+ */
+const cleanupConnectionsForDeletedUser = async (
+  userId: string,
+): Promise<void> => {
+  const connectionsRef = ref(database, 'trainerConnections');
+
+  // Find connections where user is the trainer
+  const asTrainerSnap = await get(
+    query(connectionsRef, orderByChild('trainerId'), equalTo(userId)),
+  );
+  // Find connections where user is the trainee
+  const asTraineeSnap = await get(
+    query(connectionsRef, orderByChild('traineeId'), equalTo(userId)),
+  );
+
+  const updates: Record<string, unknown> = {};
+
+  if (asTrainerSnap.exists()) {
+    const data = asTrainerSnap.val() as Record<string, ITrainerConnection>;
+    for (const [connId, conn] of Object.entries(data)) {
+      updates[`trainerConnections/${connId}/status`] = 'deleted';
+      // Remove trainerId + trainerConnectionId pointers from the trainee
+      if (conn.traineeId) {
+        updates[`users/${conn.traineeId}/trainerId`] = null;
+        updates[`users/${conn.traineeId}/trainerConnectionId`] = null;
+      }
+    }
+  }
+
+  if (asTraineeSnap.exists()) {
+    const data = asTraineeSnap.val() as Record<string, ITrainerConnection>;
+    for (const [connId] of Object.entries(data)) {
+      // Soft-delete so the trainer keeps session history
+      updates[`trainerConnections/${connId}/status`] = 'deleted';
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await update(ref(database), updates);
+  }
+
+  // Clean up any pending invites created by this user
+  const invitesRef = ref(database, 'trainerInvites');
+  const invitesSnap = await get(
+    query(invitesRef, orderByChild('trainerId'), equalTo(userId)),
+  );
+  if (invitesSnap.exists()) {
+    const inviteRemovals: Promise<void>[] = [];
+    invitesSnap.forEach((childSnap) => {
+      inviteRemovals.push(remove(childSnap.ref));
+    });
+    await Promise.all(inviteRemovals);
+  }
 };
 
 export const importAllUserData = async (
@@ -236,6 +323,19 @@ export const importAllUserData = async (
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
   }
+  if (data.energyDrinks) {
+    promises.push(
+      set(ref(database, `users/${userId}/energyDrinks`), data.energyDrinks),
+    );
+  }
+  if (data.trainerCalendar) {
+    promises.push(
+      set(
+        ref(database, `users/${userId}/trainerCalendar`),
+        data.trainerCalendar,
+      ),
+    );
+  }
 
   await Promise.all(promises);
 };
@@ -250,6 +350,8 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     calendar,
     calendarNotes,
     activityCategories,
+    energyDrinksSnap,
+    trainerCalendarSnap,
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
@@ -259,6 +361,8 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     loadCalendarData(userId),
     loadCalendarNotes(userId),
     loadActivityCategories(userId),
+    get(ref(database, `users/${userId}/energyDrinks`)),
+    get(ref(database, `users/${userId}/trainerCalendar`)),
   ]);
 
   return {
@@ -270,6 +374,10 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     calendar,
     calendarNotes,
     activityCategories,
+    energyDrinks: energyDrinksSnap.exists() ? energyDrinksSnap.val() : null,
+    trainerCalendar: trainerCalendarSnap.exists()
+      ? trainerCalendarSnap.val()
+      : null,
   };
 };
 
@@ -474,6 +582,37 @@ export const subscribeToCalendarNotes = (
   return unsubscribe;
 };
 
+// Trainer Calendar (trainer-marked activity days)
+export const subscribeToTrainerCalendar = (
+  userId: string,
+  callback: (data: TrainerCalendarData | null) => void,
+): (() => void) => {
+  const trainerCalRef = ref(database, `users/${userId}/trainerCalendar`);
+  const unsubscribe = onValue(trainerCalRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.val() as TrainerCalendarData);
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+export const toggleTrainerCalendarDay = async (
+  userId: string,
+  date: string,
+  active: boolean,
+): Promise<void> => {
+  const dayRef = ref(database, `users/${userId}/trainerCalendar/${date}`);
+
+  if (active) {
+    await set(dayRef, true);
+  } else {
+    await remove(dayRef);
+  }
+};
+
 // Activity Categories
 export const getActivityCategoriesRef = (userId: string) =>
   ref(database, `users/${userId}/activityCategories`);
@@ -561,6 +700,14 @@ export const updateUserDirectory = async (
     displayName,
     lastLogin: new Date().toISOString(),
   });
+};
+
+/** Update only the display name in userDirectory (for settings sync). */
+export const updateUserDisplayName = async (
+  userId: string,
+  displayName: string,
+): Promise<void> => {
+  await update(ref(database, `userDirectory/${userId}`), { displayName });
 };
 
 // Admin functions
@@ -728,4 +875,611 @@ export const subscribeToEnergyDrinks = (
   });
 
   return unsubscribe;
+};
+
+// ─── Trainer Feature ────────────────────────────────────────────────────────
+
+/** Generate a short random invite code (6 chars, alphanumeric uppercase) */
+const generateInviteCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I ambiguity
+  const randomValues = crypto.getRandomValues(new Uint8Array(6));
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[randomValues[i] % chars.length];
+  }
+
+  return code;
+};
+
+/**
+ * Trainer creates an invite code for a trainee to use.
+ * Returns the invite code and connection ID.
+ */
+export const createTrainerInvite = async (
+  trainerId: string,
+  note?: string,
+): Promise<{ inviteCode: string; connectionId: string }> => {
+  // Create the connection record first so we have a stable connectionId
+  const connectionsRef = ref(database, 'trainerConnections');
+  const newConnectionRef = push(connectionsRef);
+  const connectionId = newConnectionRef.key!;
+
+  // Reserve a unique invite code via transaction (retry on collision)
+  let inviteCode = '';
+  let reserved = false;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    inviteCode = generateInviteCode();
+    const inviteRef = ref(database, `trainerInvites/${inviteCode}`);
+    const { committed } = await runTransaction(inviteRef, (current) => {
+      if (current !== null) {
+        return; // abort — code already taken
+      }
+
+      // Write final shape atomically — no placeholder window
+      return { trainerId, connectionId };
+    });
+
+    if (committed) {
+      reserved = true;
+      break;
+    }
+  }
+
+  if (!reserved) {
+    throw new Error('Failed to generate unique invite code');
+  }
+
+  const connectionData: Record<string, unknown> = {
+    trainerId,
+    traineeId: '', // Will be filled when trainee accepts
+    status: 'pending' as const,
+    inviteCode,
+    createdAt: Date.now(),
+  };
+
+  if (note) {
+    connectionData.note = note;
+  }
+
+  try {
+    await set(newConnectionRef, connectionData);
+  } catch (err) {
+    // Clean up the reserved invite on failure
+    await remove(ref(database, `trainerInvites/${inviteCode}`)).catch(() => {});
+    throw err;
+  }
+
+  return { inviteCode, connectionId };
+};
+
+/**
+ * Trainee accepts a trainer invite by entering the invite code.
+ * Sets the connection to active and stores trainerId on the user.
+ */
+export const acceptTrainerInvite = async (
+  traineeId: string,
+  inviteCode: string,
+): Promise<{ success: boolean; error?: string }> => {
+  // Look up the invite
+  const inviteSnapshot = await get(
+    ref(database, `trainerInvites/${inviteCode.toUpperCase()}`),
+  );
+
+  if (!inviteSnapshot.exists()) {
+    return { success: false, error: 'invalid_code' };
+  }
+
+  const { trainerId, connectionId } = inviteSnapshot.val() as {
+    trainerId: string;
+    connectionId: string;
+  };
+
+  // Check if trainee already has a trainer
+  const existingTrainer = await get(
+    ref(database, `users/${traineeId}/trainerId`),
+  );
+  if (existingTrainer.exists()) {
+    return { success: false, error: 'already_has_trainer' };
+  }
+
+  // Claim the connection — security rules enforce that only a pending
+  // connection can transition to active with the caller's traineeId,
+  // so a race between two trainees is prevented server-side.
+  const connectionRef = ref(database, `trainerConnections/${connectionId}`);
+  try {
+    await update(connectionRef, { traineeId, status: 'active' });
+  } catch {
+    return { success: false, error: 'invite_already_used' };
+  }
+
+  // Set trainerId + trainerConnectionId atomically (validate requires both)
+  await update(ref(database), {
+    [`users/${traineeId}/trainerId`]: trainerId,
+    [`users/${traineeId}/trainerConnectionId`]: connectionId,
+  });
+
+  // Remove the invite code (one-time use)
+  await remove(ref(database, `trainerInvites/${inviteCode.toUpperCase()}`));
+
+  // Auto-create trainer activity category for the trainee
+  try {
+    const trainerName = (await getUserDisplayName(trainerId)) || 'Trainer';
+    const existingCategories = await loadActivityCategories(traineeId);
+    const categories = existingCategories ?? [];
+
+    // Check if a trainer category already exists (may be archived from previous connection)
+    const existingTrainerCat = categories.find(
+      (c) => c.trainerId === trainerId,
+    );
+    if (existingTrainerCat) {
+      // Unarchive existing category on reconnect
+      if (existingTrainerCat.archived) {
+        const updated = categories.map((c) => {
+          if (c.trainerId !== trainerId) {
+            return c;
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { archived: _, ...rest } = c;
+
+          return rest;
+        });
+        await saveActivityCategories(traineeId, updated);
+      }
+    } else {
+      const trainerCategory: ActivityCategory = {
+        id: `trainer-${trainerId}`,
+        icon: 'heart-pulse',
+        name: `Training with ${trainerName}`,
+        color: 'sky',
+        trainerId,
+        systemGenerated: true,
+      };
+      await saveActivityCategories(traineeId, [...categories, trainerCategory]);
+    }
+  } catch {
+    // Non-critical – connection still succeeds even if category creation fails
+  }
+
+  return { success: true };
+};
+
+/**
+ * Update the note on a pending invite / connection.
+ */
+export const updateConnectionNote = async (
+  connectionId: string,
+  note: string,
+): Promise<void> => {
+  await update(ref(database, `trainerConnections/${connectionId}`), { note });
+};
+
+/**
+ * Delete a pending invite (removes connection + invite lookup).
+ * Only hard-deletes truly pending connections; non-pending are soft-deleted.
+ */
+export const deletePendingInvite = async (
+  connectionId: string,
+): Promise<void> => {
+  const snap = await get(ref(database, `trainerConnections/${connectionId}`));
+  if (!snap.exists()) {
+    return;
+  }
+
+  const { inviteCode, status } = snap.val() as {
+    inviteCode?: string;
+    status?: string;
+  };
+
+  if (inviteCode) {
+    await remove(ref(database, `trainerInvites/${inviteCode}`));
+  }
+
+  if (status === 'pending') {
+    await remove(ref(database, `trainerConnections/${connectionId}`));
+  } else {
+    await update(ref(database, `trainerConnections/${connectionId}`), {
+      status: 'deleted',
+    });
+  }
+};
+
+/**
+ * Either party can disconnect the trainer–trainee relationship.
+ */
+export const disconnectTrainer = async (
+  connectionId: string,
+  traineeId: string,
+): Promise<void> => {
+  // Read the connection to find the trainerId before soft-deleting
+  const connSnap = await get(
+    ref(database, `trainerConnections/${connectionId}`),
+  );
+  const trainerId = connSnap.exists()
+    ? (connSnap.val() as ITrainerConnection).trainerId
+    : null;
+
+  // Soft-delete: preserve node so trainingSessions rules still resolve
+  await update(ref(database, `trainerConnections/${connectionId}`), {
+    status: 'deleted',
+  });
+
+  // Remove trainerId + trainerConnectionId from the user
+  await update(ref(database), {
+    [`users/${traineeId}/trainerId`]: null,
+    [`users/${traineeId}/trainerConnectionId`]: null,
+  });
+
+  // Archive trainer activity category (keeps historical calendar data intact)
+  if (trainerId) {
+    try {
+      const categories = await loadActivityCategories(traineeId);
+      if (categories) {
+        const updated = categories.map((c) =>
+          c.trainerId === trainerId ? { ...c, archived: true } : c,
+        );
+        await saveActivityCategories(traineeId, updated);
+      }
+    } catch {
+      // Non-critical – disconnect still succeeds
+    }
+  }
+};
+
+/**
+ * Subscribe to all connections where the given user is the trainer.
+ */
+export const subscribeToTrainerConnections = (
+  trainerId: string,
+  callback: (connections: ITrainerConnection[]) => void,
+): (() => void) => {
+  const connectionsRef = ref(database, 'trainerConnections');
+  const q = query(
+    connectionsRef,
+    orderByChild('trainerId'),
+    equalTo(trainerId),
+  );
+
+  const unsubscribe = onValue(q, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val() as Record<string, ITrainerConnection>;
+      const connections = Object.entries(data).map(([key, val]) => ({
+        ...val,
+        id: key,
+      }));
+      callback(connections);
+    } else {
+      callback([]);
+    }
+  });
+
+  return unsubscribe;
+};
+
+/**
+ * Subscribe to the trainee's active trainer connection.
+ */
+export const subscribeToTraineeConnection = (
+  traineeId: string,
+  callback: (connection: ITrainerConnection | null) => void,
+): (() => void) => {
+  const connectionsRef = ref(database, 'trainerConnections');
+  const q = query(
+    connectionsRef,
+    orderByChild('traineeId'),
+    equalTo(traineeId),
+  );
+
+  const unsubscribe = onValue(q, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val() as Record<string, ITrainerConnection>;
+      const active = Object.entries(data).find(
+        ([, val]) => val.status === 'active',
+      );
+      if (active) {
+        callback({ ...active[1], id: active[0] });
+      } else {
+        callback(null);
+      }
+    } else {
+      callback(null);
+    }
+  });
+
+  return unsubscribe;
+};
+
+/**
+ * Get user's trainerId (the trainer assigned to them).
+ */
+export const getTrainerId = async (userId: string): Promise<string | null> => {
+  const snapshot = await get(ref(database, `users/${userId}/trainerId`));
+
+  return snapshot.exists() ? (snapshot.val() as string) : null;
+};
+
+/**
+ * Get a single user directory entry (for looking up trainee/trainer info).
+ */
+export const getUserDirectoryEntry = async (
+  userId: string,
+): Promise<UserDirectoryEntry | null> => {
+  const snapshot = await get(ref(database, `userDirectory/${userId}`));
+
+  return snapshot.exists() ? (snapshot.val() as UserDirectoryEntry) : null;
+};
+
+/**
+ * Get a user's display name from the directory.
+ * Uses a field-level read so connected trainers/trainees can access it
+ * without exposing email/lastLogin.
+ */
+export const getUserDisplayName = async (
+  userId: string,
+): Promise<string | null> => {
+  const snapshot = await get(
+    ref(database, `userDirectory/${userId}/displayName`),
+  );
+
+  return snapshot.exists() ? (snapshot.val() as string) : null;
+};
+
+/**
+ * Get a user's profile avatar URL from their settings.
+ */
+export const getUserAvatarUrl = async (
+  userId: string,
+): Promise<string | null> => {
+  const snapshot = await get(
+    ref(database, `users/${userId}/settings/avatarUrl`),
+  );
+
+  return snapshot.exists() ? (snapshot.val() as string) : null;
+};
+
+/**
+ * Admin: set trainer custom claim via Cloud Function or server action.
+ * This is a client-side helper that stores a flag in userDirectory
+ * so the admin UI can display trainer status. The actual custom claim
+ * must be set server-side (via set-trainer.ts script or admin API).
+ */
+export const setTrainerFlagInDirectory = async (
+  userId: string,
+  isTrainer: boolean,
+): Promise<void> => {
+  await update(ref(database, `userDirectory/${userId}`), {
+    isTrainer,
+  });
+};
+
+/**
+ * Read trainer flag from user directory (for admin display).
+ */
+export const getTrainerFlagFromDirectory = async (
+  userId: string,
+): Promise<boolean> => {
+  const snapshot = await get(
+    ref(database, `userDirectory/${userId}/isTrainer`),
+  );
+
+  return snapshot.exists() ? (snapshot.val() as boolean) : false;
+};
+
+// ── Training Sessions ──────────────────────────────────────────────
+
+export const subscribeToTrainingSessions = (
+  connectionId: string,
+  callback: (sessions: ITrainingSession[]) => void,
+): (() => void) => {
+  const sessionsRef = ref(database, `trainingSessions/${connectionId}`);
+
+  const unsubscribe = onValue(sessionsRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val() as Record<string, ITrainingSession>;
+      const sessions = Object.entries(data).map(([id, val]) => ({
+        ...val,
+        id,
+      }));
+      sessions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
+      callback(sessions);
+    } else {
+      callback([]);
+    }
+  });
+
+  return unsubscribe;
+};
+
+export const createTrainingSession = async (
+  connectionId: string,
+  trainerId: string,
+  traineeId: string,
+  date: string,
+  time?: string | null,
+): Promise<string> => {
+  const sessionsRef = ref(database, `trainingSessions/${connectionId}`);
+  const newRef = push(sessionsRef);
+
+  const session: Omit<ITrainingSession, 'id'> = {
+    connectionId,
+    trainerId,
+    traineeId,
+    date,
+    time: time ?? null,
+    status: 'planned',
+    trainerConfirmed: true,
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
+    createdAt: Date.now(),
+    createdBy: 'trainer',
+  };
+
+  await set(newRef, session);
+
+  return newRef.key!;
+};
+
+export const completeSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    status: 'completed',
+  });
+};
+
+export const cancelSession = async (
+  connectionId: string,
+  sessionId: string,
+  cancelledBy: 'trainer' | 'trainee',
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    status: 'cancelled',
+    cancelledBy,
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
+  });
+};
+
+export const reactivateSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    status: 'planned',
+    cancelledBy: null,
+  });
+};
+
+export const updateSessionTime = async (
+  connectionId: string,
+  sessionId: string,
+  time: string | null,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, { time });
+};
+
+/** Trainer marks session as paid (immediate, no confirmation needed). */
+export const markSessionPaid = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    paymentStatus: 'paid',
+    paidMarkedBy: 'trainer',
+  });
+};
+
+/** Trainer marks session as unpaid (revert a payment). */
+export const markSessionUnpaid = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, {
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
+  });
+};
+
+export const deleteTrainingSession = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  await remove(ref(database, `trainingSessions/${connectionId}/${sessionId}`));
+};
+
+/** Group sessions into a package (shared packageId). */
+export const groupSessionsAsPackage = async (
+  connectionId: string,
+  sessionIds: string[],
+): Promise<string> => {
+  const packageId = push(
+    ref(database, `trainingSessions/${connectionId}`),
+  ).key!;
+  const updates: Record<string, string> = {};
+  for (const sid of sessionIds) {
+    updates[`trainingSessions/${connectionId}/${sid}/packageId`] = packageId;
+  }
+  await update(ref(database), updates);
+
+  return packageId;
+};
+
+/** Remove a session from its package. */
+export const removeFromPackage = async (
+  connectionId: string,
+  sessionId: string,
+): Promise<void> => {
+  await update(ref(database, `trainingSessions/${connectionId}/${sessionId}`), {
+    packageId: null,
+  });
+};
+
+/** Remove multiple sessions from their packages in a single write. */
+export const batchRemoveFromPackage = async (
+  connectionId: string,
+  sessionIds: string[],
+): Promise<void> => {
+  const updates: Record<string, null> = {};
+  for (const id of sessionIds) {
+    updates[`trainingSessions/${connectionId}/${id}/packageId`] = null;
+  }
+  await update(ref(database), updates);
+};
+
+/** Mark all sessions in a package as paid. */
+export const markPackagePaid = async (
+  connectionId: string,
+  packageId: string,
+  sessions: ITrainingSession[],
+): Promise<void> => {
+  const inPackage = sessions.filter((s) => s.packageId === packageId);
+  const updates: Record<string, unknown> = {};
+  for (const s of inPackage) {
+    updates[`trainingSessions/${connectionId}/${s.id}/paymentStatus`] = 'paid';
+    updates[`trainingSessions/${connectionId}/${s.id}/paidMarkedBy`] =
+      'trainer';
+  }
+  await update(ref(database), updates);
+};
+
+/** Mark all sessions in a package as unpaid. */
+export const markPackageUnpaid = async (
+  connectionId: string,
+  packageId: string,
+  sessions: ITrainingSession[],
+): Promise<void> => {
+  const inPackage = sessions.filter((s) => s.packageId === packageId);
+  const updates: Record<string, unknown> = {};
+  for (const s of inPackage) {
+    updates[`trainingSessions/${connectionId}/${s.id}/paymentStatus`] =
+      'unpaid';
+    updates[`trainingSessions/${connectionId}/${s.id}/paidMarkedBy`] = null;
+  }
+  await update(ref(database), updates);
 };
