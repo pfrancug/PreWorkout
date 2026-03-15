@@ -1,11 +1,11 @@
 import type { User } from 'firebase/auth';
 import type { ReactNode } from 'react';
 
+import { auth } from '@firebase-config/auth';
+import { updateUserDirectory } from '@firebase-config/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
-import { auth } from '../firebase/auth';
-import { updateUserDirectory } from '../firebase/database';
 import { AuthContext } from './AuthContext';
 
 interface Props {
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: Props) => {
           firebaseUser.email ?? '',
           firebaseUser.displayName ?? '',
         ).catch(() => {
-          // Silently fail — non-critical
+          // Silently fail â€” non-critical
         });
       } else {
         setIsAdmin(false);

@@ -1,5 +1,5 @@
-import type { ITrainingSession } from '../types/types';
 import type { TrainingSessionsProps } from './types';
+import type { ITrainingSession } from '@app-types/types';
 
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
@@ -24,6 +24,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@components/ui/select';
+import {
+  batchRemoveFromPackage,
+  cancelSession,
+  completeSession,
+  deleteTrainingSession,
+  groupSessionsAsPackage,
+  markPackagePaid,
+  markPackageUnpaid,
+  markSessionPaid,
+  markSessionUnpaid,
+  reactivateSession,
+  subscribeToTrainingSessions,
+  toggleTrainerCalendarDay,
+} from '@firebase-config/database';
 import { cn } from '@lib/utils';
 import {
   Ban,
@@ -40,21 +54,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-
-import {
-  batchRemoveFromPackage,
-  cancelSession,
-  completeSession,
-  deleteTrainingSession,
-  groupSessionsAsPackage,
-  markPackagePaid,
-  markPackageUnpaid,
-  markSessionPaid,
-  markSessionUnpaid,
-  reactivateSession,
-  subscribeToTrainingSessions,
-  toggleTrainerCalendarDay,
-} from '../firebase/database';
 
 export const TrainingSessions = ({
   connectionId,

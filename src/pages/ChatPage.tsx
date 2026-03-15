@@ -1,5 +1,5 @@
-import { Chat } from '../components/Chat';
-import { useDataSet } from '../hooks/useDataSet';
+import { Chat } from '@components/Chat';
+import { useDataSet } from '@contexts/useDataSet';
 
 export const ChatPage = () => {
   const { dataSet } = useDataSet();

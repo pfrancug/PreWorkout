@@ -1,10 +1,10 @@
-import type {
-  ActivityCategory,
-  CalendarEntries,
-  CalendarEntry,
-  CalendarNotes,
-} from '../firebase/database';
 import type { IRow } from '@app-types/types';
+import type {
+  IActivityCategory,
+  ICalendarEntries,
+  ICalendarEntry,
+  ICalendarNotes,
+} from '@firebase-config/database';
 
 import { ActivityIcon } from '@components/ActivityIcon';
 import {
@@ -18,17 +18,9 @@ import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
 import { Switch } from '@components/ui/switch';
 import { Textarea } from '@components/ui/textarea';
-import { Plus, Settings2, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-
-import {
-  ACTIVITY_COLOR_MAP,
-  DEFAULT_CATEGORIES,
-} from '../constants/activities';
-import { useAuth } from '../contexts/useAuth';
+import { ACTIVITY_COLOR_MAP, DEFAULT_CATEGORIES } from '@constants/activities';
+import { useAuth } from '@contexts/useAuth';
+import { useDataSet } from '@contexts/useDataSet';
 import {
   createCalendarEntry,
   deleteCalendarEntry,
@@ -36,8 +28,12 @@ import {
   subscribeToActivityCategories,
   subscribeToCalendarEntries,
   subscribeToCalendarNotes,
-} from '../firebase/database';
-import { useDataSet } from '../hooks/useDataSet';
+} from '@firebase-config/database';
+import { Plus, Settings2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const formatDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -59,11 +55,11 @@ export const TodayPanel = () => {
 
   // Calendar data (activities & notes)
   const [calendarEntries, setCalendarEntries] =
-    useState<CalendarEntries | null>(null);
-  const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
+    useState<ICalendarEntries | null>(null);
+  const [calendarNotes, setCalendarNotes] = useState<ICalendarNotes | null>(
     null,
   );
-  const [categories, setCategories] = useState<ActivityCategory[]>([]);
+  const [categories, setCategories] = useState<IActivityCategory[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -88,7 +84,7 @@ export const TodayPanel = () => {
     };
   }, [user]);
 
-  const todayEntries: CalendarEntry[] = calendarEntries?.[todayKey]
+  const todayEntries: ICalendarEntry[] = calendarEntries?.[todayKey]
     ? Object.values(calendarEntries[todayKey])
     : [];
   const activityEntries = todayEntries.filter(
@@ -289,7 +285,7 @@ export const TodayPanel = () => {
               className={'h-9'}
               min={0}
               onChange={(e) => handleNumericChange(key, e.target.value)}
-              placeholder={'—'}
+              placeholder={'â€”'}
               step={step}
               type={'number'}
               value={todayRow?.[key] ?? ''}

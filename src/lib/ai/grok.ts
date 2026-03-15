@@ -1,4 +1,4 @@
-import type { AIConfig, StreamCallbacks } from './types';
+import type { IAIConfig, StreamCallbacks } from './types';
 
 import { createXai } from '@ai-sdk/xai';
 import { streamText } from 'ai';
@@ -15,7 +15,7 @@ export const isGrokAvailable = (): boolean => {
 
 // Dev mode: call xAI API directly via AI SDK
 const streamDev = async (
-  config: AIConfig,
+  config: IAIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
   const xai = createXai({ apiKey: devApiKey! });
@@ -44,7 +44,7 @@ const streamDev = async (
 
 // Production: proxy through Vercel serverless function
 const streamProd = async (
-  config: AIConfig,
+  config: IAIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
   const { authToken, ...body } = config;

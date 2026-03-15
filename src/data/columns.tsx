@@ -1,8 +1,8 @@
-import type { IRow } from '../types/types';
+import type { IRow } from '@app-types/types';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TFunction } from 'i18next';
 
-import { EditableCell } from '@components/DataTable/EditableCell';
+import { EditableCell } from '@components/dataTable/EditableCell';
 import { Checkbox } from '@components/ui/checkbox';
 import { Switch } from '@components/ui/switch';
 

@@ -2,14 +2,14 @@ import type { NoteFormData } from './schemas';
 import type { NoteViewProps } from './types';
 import type { SubmitHandler } from 'react-hook-form';
 
+import { Button } from '@components/ui/button';
+import { DialogHeader, DialogTitle } from '@components/ui/dialog';
+import { Textarea } from '@components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '../ui/button';
-import { DialogHeader, DialogTitle } from '../ui/dialog';
-import { Textarea } from '../ui/textarea';
 import { noteSchema } from './schemas';
 
 export const NoteView = ({ note, onBack, onNoteChange }: NoteViewProps) => {

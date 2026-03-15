@@ -1,13 +1,12 @@
 import type { DayViewProps } from './types';
 
+import { ActivityIcon } from '@components/ActivityIcon';
+import { Button } from '@components/ui/button';
+import { DialogHeader, DialogTitle } from '@components/ui/dialog';
+import { ACTIVITY_COLOR_MAP } from '@constants/activities';
 import { cn } from '@lib/utils';
 import { Clock, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-import { ACTIVITY_COLOR_MAP } from '../../constants/activities';
-import { ActivityIcon } from '../ActivityIcon';
-import { Button } from '../ui/button';
-import { DialogHeader, DialogTitle } from '../ui/dialog';
 
 export const DayView = ({
   date,

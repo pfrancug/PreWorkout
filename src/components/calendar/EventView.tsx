@@ -2,18 +2,18 @@ import type { EditEntryFormData } from './schemas';
 import type { EventViewProps } from './types';
 import type { SubmitHandler } from 'react-hook-form';
 
+import { ActivityIcon } from '@components/ActivityIcon';
+import { Button } from '@components/ui/button';
+import { Checkbox } from '@components/ui/checkbox';
+import { DialogHeader, DialogTitle } from '@components/ui/dialog';
+import { Input } from '@components/ui/input';
+import { Textarea } from '@components/ui/textarea';
+import { ACTIVITY_COLOR_MAP } from '@constants/activities';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Clock, Pencil, Trash2 } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { ACTIVITY_COLOR_MAP } from '../../constants/activities';
-import { ActivityIcon } from '../ActivityIcon';
-import { Button } from '../ui/button';
-import { Checkbox } from '../ui/checkbox';
-import { DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
 import { editEntrySchema } from './schemas';
 
 export const EventView = ({
@@ -145,7 +145,7 @@ export const EventView = ({
             id={'editTime'}
             type={'time'}
           />
-          <span className={'text-sm text-muted-foreground'}>{'–'}</span>
+          <span className={'text-sm text-muted-foreground'}>{'â€“'}</span>
           <Input
             {...register('timeEnd')}
             className={'flex-1'}

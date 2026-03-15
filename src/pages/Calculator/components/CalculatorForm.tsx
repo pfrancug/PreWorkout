@@ -1,4 +1,4 @@
-import type { CalculatorFormProps } from '../types';
+import type { CalculatorFormProps } from '@pages/Calculator/types';
 
 import { Button } from '@components/ui/button';
 import { Card, CardContent } from '@components/ui/card';
@@ -11,9 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@components/ui/select';
+import { ActivityOptions } from '@pages/Calculator/constants/activity-options';
 import { useTranslation } from 'react-i18next';
-
-import { ActivityOptions } from '../constants/activity-options';
 
 export const CalculatorForm = ({ values, onChange }: CalculatorFormProps) => {
   const { t } = useTranslation();

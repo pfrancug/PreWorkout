@@ -2,17 +2,17 @@ import type { EditEntryFormData } from './schemas';
 import type { AddTrainingViewProps } from './types';
 import type { SubmitHandler } from 'react-hook-form';
 
+import { Button } from '@components/ui/button';
+import { Checkbox } from '@components/ui/checkbox';
+import { DialogHeader, DialogTitle } from '@components/ui/dialog';
+import { Input } from '@components/ui/input';
+import { Textarea } from '@components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '../ui/button';
-import { Checkbox } from '../ui/checkbox';
-import { DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
 import { editEntrySchema } from './schemas';
 
 export const AddTrainingView = ({
@@ -109,7 +109,7 @@ export const AddTrainingView = ({
               id={'trainingTime'}
               type={'time'}
             />
-            <span className={'text-sm text-muted-foreground'}>{'–'}</span>
+            <span className={'text-sm text-muted-foreground'}>{'â€“'}</span>
             <Input
               {...register('timeEnd')}
               className={'flex-1'}

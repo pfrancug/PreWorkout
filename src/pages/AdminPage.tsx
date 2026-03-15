@@ -1,7 +1,6 @@
-import type { UserDirectoryEntry } from '../firebase/database';
+import type { IUserWithLimits } from './admin/types';
+import type { IUserDirectoryEntry } from '@firebase-config/database';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
-import { Button } from '@components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,32 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@components/ui/card';
-import { Input } from '@components/ui/input';
-import { Label } from '@components/ui/label';
-import { Switch } from '@components/ui/switch';
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@components/ui/table';
-import {
-  Activity,
-  Loader2,
-  Save,
-  ShieldCheck,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Navigate } from 'react-router-dom';
-import { toast } from 'sonner';
-
-import { useAuth } from '../contexts/useAuth';
-import { auth as firebaseAuth } from '../firebase/auth';
+import { useAuth } from '@contexts/useAuth';
+import { auth as firebaseAuth } from '@firebase-config/auth';
 import {
   getTrainerFlagFromDirectory,
   getUserAvatarUrl,
@@ -43,29 +25,20 @@ import {
   setTrainerFlagInDirectory,
   setUserMaxLimitForAdmin,
   subscribeToUserDirectory,
-} from '../firebase/database';
+} from '@firebase-config/database';
+import { Activity, Loader2, ShieldCheck, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-interface UserWithLimits {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  avatarUrl: string | null;
-  lastLogin: string | null;
-  maxLimit: number;
-  deleted?: boolean;
-  isTrainer?: boolean;
-  stats?: {
-    todayMessages: number;
-    totalMessages: number;
-    averageDaily: number;
-    allTimeTotal: number;
-  } | null;
-}
+import { AdminAnalyticsCard } from './admin/AdminAnalyticsCard';
+import { AdminUserRow } from './admin/AdminUserRow';
 
 export const AdminPage = () => {
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
-  const [users, setUsers] = useState<UserWithLimits[]>([]);
+  const [users, setUsers] = useState<IUserWithLimits[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingLimits, setEditingLimits] = useState<Record<string, string>>(
     {},
@@ -79,7 +52,7 @@ export const AdminPage = () => {
     }
 
     const unsubscribe = subscribeToUserDirectory(
-      async (directory: Record<string, UserDirectoryEntry> | null) => {
+      async (directory: Record<string, IUserDirectoryEntry> | null) => {
         if (!directory) {
           setUsers([]);
           setLoading(false);
@@ -153,7 +126,6 @@ export const AdminPage = () => {
         );
 
         entries.sort((a, b) => {
-          // Deleted users (no lastLogin) go to the bottom
           if (!a.lastLogin && !b.lastLogin) {
             return 0;
           }
@@ -176,6 +148,10 @@ export const AdminPage = () => {
 
     return () => unsubscribe();
   }, [isAdmin]);
+
+  const handleLimitChange = useCallback((uid: string, value: string) => {
+    setEditingLimits((prev) => ({ ...prev, [uid]: value }));
+  }, []);
 
   const handleLimitSave = useCallback(
     async (uid: string) => {
@@ -238,7 +214,6 @@ export const AdminPage = () => {
           throw new Error('API error');
         }
 
-        // Update the directory flag for display
         await setTrainerFlagInDirectory(uid, !currentIsTrainer);
 
         setUsers((prev) =>
@@ -282,96 +257,7 @@ export const AdminPage = () => {
         <p className={'text-muted-foreground'}>{t('admin.description')}</p>
       </div>
 
-      {users.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className={'flex items-center gap-2'}>
-              <TrendingUp className={'h-5 w-5'} />
-              {t('admin.analytics.title')}
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent>
-            <div className={'grid gap-4 sm:grid-cols-2 lg:grid-cols-5'}>
-              <div className={'space-y-1'}>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('admin.analytics.allTimeTotal')}
-                </p>
-
-                <p className={'text-2xl font-bold'}>
-                  {users.reduce(
-                    (sum, u) => sum + (u.stats?.allTimeTotal ?? 0),
-                    0,
-                  )}
-                </p>
-              </div>
-
-              <div className={'space-y-1'}>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('admin.analytics.last30Days')}
-                </p>
-
-                <p className={'text-2xl font-bold'}>
-                  {users.reduce(
-                    (sum, u) => sum + (u.stats?.totalMessages ?? 0),
-                    0,
-                  )}
-                </p>
-              </div>
-
-              <div className={'space-y-1'}>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('admin.analytics.active30d')}
-                </p>
-
-                <p className={'text-2xl font-bold'}>
-                  {
-                    users.filter((u) => (u.stats?.totalMessages ?? 0) > 0)
-                      .length
-                  }
-                  <span className={'text-sm font-normal text-muted-foreground'}>
-                    {` / ${users.filter((u) => !u.deleted).length}`}
-                  </span>
-                </p>
-              </div>
-
-              <div className={'space-y-1'}>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('admin.analytics.avgPerUser')}
-                </p>
-
-                <p className={'text-2xl font-bold'}>
-                  {users.length > 0
-                    ? Math.round(
-                        users.reduce(
-                          (sum, u) => sum + (u.stats?.totalMessages ?? 0),
-                          0,
-                        ) / users.length,
-                      )
-                    : 0}
-                </p>
-              </div>
-
-              <div className={'space-y-1'}>
-                <p className={'text-sm text-muted-foreground'}>
-                  {t('admin.analytics.avgDailyUser')}
-                </p>
-
-                <p className={'text-2xl font-bold'}>
-                  {users.length > 0
-                    ? (
-                        users.reduce(
-                          (sum, u) => sum + (u.stats?.averageDaily ?? 0),
-                          0,
-                        ) / users.length
-                      ).toFixed(1)
-                    : '0.0'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {users.length > 0 && <AdminAnalyticsCard users={users} />}
 
       <Card>
         <CardHeader>
@@ -439,135 +325,21 @@ export const AdminPage = () => {
                 </TableHeader>
 
                 <TableBody>
-                  {users.map((user) => {
-                    const isEditing = editingLimits[user.uid] !== undefined;
-                    const currentMax =
-                      editingLimits[user.uid] ?? String(user.maxLimit);
-
-                    return (
-                      <TableRow key={user.uid}>
-                        <TableCell>
-                          <Avatar className={'h-8 w-8 rounded-lg'}>
-                            <AvatarImage
-                              alt={user.displayName ?? ''}
-                              src={user.avatarUrl ?? undefined}
-                            />
-                            <AvatarFallback className={'rounded-lg text-xs'}>
-                              {(user.displayName ?? user.email ?? '?')
-                                .charAt(0)
-                                .toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-
-                        <TableCell className={'font-mono text-sm'}>
-                          {user.email ?? (
-                            <span className={'text-muted-foreground italic'}>
-                              {t('admin.users.deleted')}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {user.displayName ?? (
-                            <span className={'text-muted-foreground'}>
-                              {'-'}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className={'text-sm'}>
-                          {user.lastLogin ? (
-                            new Date(user.lastLogin).toLocaleDateString()
-                          ) : (
-                            <span className={'text-muted-foreground'}>
-                              {'-'}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className={'text-sm font-medium'}>
-                          {user.stats?.allTimeTotal ?? (
-                            <span className={'text-muted-foreground'}>
-                              {'-'}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className={'text-sm font-medium'}>
-                          {user.stats?.totalMessages ?? (
-                            <span className={'text-muted-foreground'}>
-                              {'-'}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className={'text-sm font-medium'}>
-                          {user.stats?.todayMessages ?? (
-                            <span className={'text-muted-foreground'}>
-                              {'-'}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          <Label
-                            className={'sr-only'}
-                            htmlFor={`limit-${user.uid}`}
-                          >
-                            {t('admin.analytics.maxLimit')}
-                          </Label>
-
-                          <Input
-                            className={'w-20 h-8'}
-                            id={`limit-${user.uid}`}
-                            min={-1}
-                            type={'number'}
-                            value={currentMax}
-                            onChange={(e) =>
-                              setEditingLimits((prev) => ({
-                                ...prev,
-                                [user.uid]: e.target.value,
-                              }))
-                            }
-                          />
-                        </TableCell>
-
-                        <TableCell>
-                          <Button
-                            className={'h-8'}
-                            disabled={!isEditing || savingUser === user.uid}
-                            onClick={() => handleLimitSave(user.uid)}
-                            size={'sm'}
-                            variant={'outline'}
-                          >
-                            {savingUser === user.uid ? (
-                              <Loader2 className={'h-3.5 w-3.5 animate-spin'} />
-                            ) : (
-                              <Save className={'h-3.5 w-3.5'} />
-                            )}
-                          </Button>
-                        </TableCell>
-
-                        <TableCell>
-                          {togglingTrainer === user.uid ? (
-                            <Loader2 className={'h-4 w-4 animate-spin'} />
-                          ) : (
-                            <Switch
-                              checked={user.isTrainer ?? false}
-                              disabled={user.deleted}
-                              onCheckedChange={() =>
-                                handleTrainerToggle(
-                                  user.uid,
-                                  user.isTrainer ?? false,
-                                )
-                              }
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {users.map((user) => (
+                    <AdminUserRow
+                      isEditing={editingLimits[user.uid] !== undefined}
+                      isSaving={savingUser === user.uid}
+                      isTogglingTrainer={togglingTrainer === user.uid}
+                      key={user.uid}
+                      onLimitChange={handleLimitChange}
+                      onLimitSave={handleLimitSave}
+                      onTrainerToggle={handleTrainerToggle}
+                      user={user}
+                      currentMax={
+                        editingLimits[user.uid] ?? String(user.maxLimit)
+                      }
+                    />
+                  ))}
                 </TableBody>
               </Table>
             </div>

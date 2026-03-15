@@ -1,4 +1,4 @@
-import type { IRow } from '../types/types';
+import type { IRow } from '@app-types/types';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TFunction } from 'i18next';
 
@@ -13,7 +13,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
       const date = getValue() as Date;
 
       if (!date) {
-        return '—';
+        return 'â€”';
       }
 
       const y = date.getFullYear();
@@ -32,7 +32,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : '—';
+      return v != null ? v : 'â€”';
     },
     size: 80,
     minSize: 70,
@@ -44,7 +44,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : '—';
+      return v != null ? v : 'â€”';
     },
     size: 90,
     minSize: 80,
@@ -56,7 +56,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : '—';
+      return v != null ? v : 'â€”';
     },
     size: 80,
     minSize: 70,
@@ -68,7 +68,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : '—';
+      return v != null ? v : 'â€”';
     },
     size: 70,
     minSize: 60,
@@ -80,7 +80,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : '—';
+      return v != null ? v : 'â€”';
     },
     size: 70,
     minSize: 60,

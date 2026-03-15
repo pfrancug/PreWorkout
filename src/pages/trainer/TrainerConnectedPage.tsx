@@ -1,23 +1,22 @@
-import type { ITrainerConnection } from '../../types/types';
+import type { ITrainerConnection } from '@app-types/types';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { Skeleton } from '@components/ui/skeleton';
-import { ChevronRight, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-
-import { useAuth } from '../../contexts/useAuth';
+import { useAuth } from '@contexts/useAuth';
 import {
   disconnectTrainer,
   getUserAvatarUrl,
   getUserDisplayName,
   subscribeToTrainerConnections,
-} from '../../firebase/database';
+} from '@firebase-config/database';
+import { ChevronRight, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export const TrainerConnectedPage = () => {
   const { t } = useTranslation();

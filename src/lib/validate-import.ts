@@ -1,10 +1,10 @@
-import type { AllUserData } from '../firebase/database';
+import type { IAllUserData } from '@firebase-config/database';
 
 /**
  * Validates the shape of imported AllUserData.
  * Returns null if valid, or an error message describing the first problem found.
  */
-export const validateImportData = (data: unknown): data is AllUserData => {
+export const validateImportData = (data: unknown): data is IAllUserData => {
   if (!data || typeof data !== 'object') {
     return false;
   }

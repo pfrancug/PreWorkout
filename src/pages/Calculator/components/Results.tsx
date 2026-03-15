@@ -1,4 +1,4 @@
-import type { ResultRowProps, ResultsProps } from '../types';
+import type { ResultRowProps, ResultsProps } from '@pages/Calculator/types';
 
 import { ArrowDown, Scale, TrendingDown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
