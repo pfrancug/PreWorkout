@@ -1,8 +1,7 @@
 import { SparkChart } from '@components/charts/SparkChart';
 import { TodayPanel } from '@components/TodayPanel';
+import { useDataSet } from '@contexts/useDataSet';
 import { useTranslation } from 'react-i18next';
-
-import { useDataSet } from '../hooks/useDataSet';
 
 export const MainPage = () => {
   const { t } = useTranslation();

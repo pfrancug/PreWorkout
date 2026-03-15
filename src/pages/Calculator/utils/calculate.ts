@@ -1,6 +1,9 @@
-import type { ICalculateResult, ICalculatorForm } from '../types';
+import type {
+  ICalculateResult,
+  ICalculatorForm,
+} from '@pages/Calculator/types';
 
-import { BMR_CONSTANTS, CALORIE_DEFICITS } from '../../../constants/storage';
+import { BMR_CONSTANTS, CALORIE_DEFICITS } from '@constants/storage';
 
 export const calculate = (data: ICalculatorForm): ICalculateResult => {
   const W = BMR_CONSTANTS.WEIGHT_MULTIPLIER * data.weight;

@@ -1,4 +1,4 @@
-export interface ChatMessage {
+export interface IChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
@@ -9,9 +9,9 @@ export interface StreamCallbacks {
   onError: (error: Error) => void;
 }
 
-export interface AIConfig {
+export interface IAIConfig {
   systemInstruction: string;
-  messages: ChatMessage[];
+  messages: IChatMessage[];
   userMessage: string;
   authToken?: string;
   skipRateLimit?: boolean;

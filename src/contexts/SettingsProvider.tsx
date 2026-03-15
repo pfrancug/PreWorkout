@@ -1,6 +1,14 @@
-import type { UserPreferences, UserSettings } from './SettingsContext';
+import type { IUserPreferences, IUserSettings } from './SettingsContext';
 import type { ReactNode } from 'react';
 
+import { Loader } from '@components/Loader';
+import {
+  loadUserPreferences,
+  loadUserSettings,
+  saveUserPreferences,
+  saveUserSettings,
+  updateUserDisplayName,
+} from '@firebase-config/database';
 import {
   startTransition,
   useCallback,
@@ -11,14 +19,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { Loader } from '../components/Loader';
-import {
-  loadUserPreferences,
-  loadUserSettings,
-  saveUserPreferences,
-  saveUserSettings,
-  updateUserDisplayName,
-} from '../firebase/database';
 import {
   defaultPreferences,
   defaultSettings,
@@ -28,7 +28,7 @@ import { useAuth } from './useAuth';
 
 const fetchUserSettings = async (
   userId: string | null,
-): Promise<UserSettings> => {
+): Promise<IUserSettings> => {
   if (!userId) {
     return defaultSettings;
   }
@@ -40,7 +40,7 @@ const fetchUserSettings = async (
 
 const fetchUserPreferences = async (
   userId: string | null,
-): Promise<UserPreferences> => {
+): Promise<IUserPreferences> => {
   if (!userId) {
     return defaultPreferences;
   }
@@ -56,8 +56,8 @@ type SettingsState =
   | { status: 'loading' }
   | {
       status: 'loaded';
-      settings: UserSettings;
-      preferences: UserPreferences;
+      settings: IUserSettings;
+      preferences: IUserPreferences;
     };
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -109,7 +109,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   }, [user, i18n]);
 
   const updatePreference = useCallback(
-    (field: keyof UserPreferences, value: boolean | string) => {
+    (field: keyof IUserPreferences, value: boolean | string) => {
       setState((prev) => {
         if (prev.status !== 'loaded') {
           return prev;
@@ -138,7 +138,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const saveSettings = useCallback(
-    async (newSettings: UserSettings) => {
+    async (newSettings: IUserSettings) => {
       if (user) {
         try {
           await saveUserSettings(user.uid, newSettings);

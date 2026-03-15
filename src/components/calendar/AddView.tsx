@@ -1,9 +1,17 @@
-import type { ActivityIconId } from '../../constants/activities';
-import type { ActivityCategory } from '../../firebase/database';
 import type { AddEventFormData } from './schemas';
 import type { AddViewProps } from './types';
+import type { ActivityIconId } from '@constants/activities';
+import type { IActivityCategory } from '@firebase-config/database';
 import type { SubmitHandler } from 'react-hook-form';
 
+import { ActivityIcon } from '@components/ActivityIcon';
+import { IconColorPicker } from '@components/IconColorPicker';
+import { Button } from '@components/ui/button';
+import { Checkbox } from '@components/ui/checkbox';
+import { DialogHeader, DialogTitle } from '@components/ui/dialog';
+import { Input } from '@components/ui/input';
+import { Textarea } from '@components/ui/textarea';
+import { ACTIVITY_COLOR_MAP } from '@constants/activities';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@lib/utils';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
@@ -11,14 +19,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { ACTIVITY_COLOR_MAP } from '../../constants/activities';
-import { ActivityIcon } from '../ActivityIcon';
-import { IconColorPicker } from '../IconColorPicker';
-import { Button } from '../ui/button';
-import { Checkbox } from '../ui/checkbox';
-import { DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
 import { addEventSchema } from './schemas';
 
 export const AddView = ({
@@ -69,8 +69,8 @@ export const AddView = ({
 
   const { recentCategories, remainingCategories } = useMemo(() => {
     const recentSet = new Set(recentActivityIds);
-    const recent: ActivityCategory[] = [];
-    const remaining: ActivityCategory[] = [];
+    const recent: IActivityCategory[] = [];
+    const remaining: IActivityCategory[] = [];
 
     for (const id of recentActivityIds) {
       const cat = categories.find((c) => c.id === id);
@@ -124,7 +124,7 @@ export const AddView = ({
         activityId: data.activityId,
       });
     } else if (data.saveToActivities) {
-      const newCategory: ActivityCategory = {
+      const newCategory: IActivityCategory = {
         id: `custom-${crypto.randomUUID()}`,
         name: data.name!.trim(),
         icon: data.icon,
@@ -320,7 +320,7 @@ export const AddView = ({
               id={'eventTime'}
               type={'time'}
             />
-            <span className={'text-sm text-muted-foreground'}>{'–'}</span>
+            <span className={'text-sm text-muted-foreground'}>{'â€“'}</span>
             <Input
               {...register('timeEnd')}
               className={'flex-1'}

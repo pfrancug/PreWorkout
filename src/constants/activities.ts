@@ -1,4 +1,4 @@
-import type { ActivityCategory } from '../firebase/database';
+import type { IActivityCategory } from '@firebase-config/database';
 
 import {
   Bike,
@@ -81,7 +81,7 @@ export const getIconComponent = (iconId: string) => {
   return ICON_MAP[iconId] ?? Dumbbell;
 };
 
-export const DEFAULT_CATEGORIES: ActivityCategory[] = [
+export const DEFAULT_CATEGORIES: IActivityCategory[] = [
   {
     id: 'run',
     icon: 'footprints',

@@ -1,5 +1,5 @@
-import type { IRow } from '../../types/types';
 import type { DataTableProps } from './types';
+import type { IRow } from '@app-types/types';
 import type { SortingState } from '@tanstack/react-table';
 
 import {

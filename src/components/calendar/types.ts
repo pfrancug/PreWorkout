@@ -1,10 +1,10 @@
 import type { ITrainingSession } from '@app-types/types';
 import type {
-  ActivityCategory,
-  CalendarEntries,
-  CalendarEntry,
-  CalendarNotes,
-  TrainerCalendarData,
+  IActivityCategory,
+  ICalendarEntries,
+  ICalendarEntry,
+  ICalendarNotes,
+  ITrainerCalendarData,
 } from '@firebase-config/database';
 import type { TFunction } from 'i18next';
 
@@ -36,27 +36,27 @@ export interface AddTrainingViewProps {
 export interface AddViewProps {
   date: string;
   timePreset: TimePreset | null;
-  categories: ActivityCategory[];
+  categories: IActivityCategory[];
   recentActivityIds: string[];
   onBack: () => void;
-  onAddEntry: (entry: Omit<CalendarEntry, 'id'>) => Promise<void>;
-  onSaveNewCategory: (category: ActivityCategory) => Promise<void>;
+  onAddEntry: (entry: Omit<ICalendarEntry, 'id'>) => Promise<void>;
+  onSaveNewCategory: (category: IActivityCategory) => Promise<void>;
 }
 
 export interface MapCalendarEventsParams {
-  calendarEntries: CalendarEntries | null;
-  calendarNotes: CalendarNotes | null;
-  trainerCalendar: TrainerCalendarData | null;
-  categories: ActivityCategory[];
+  calendarEntries: ICalendarEntries | null;
+  calendarNotes: ICalendarNotes | null;
+  trainerCalendar: ITrainerCalendarData | null;
+  categories: IActivityCategory[];
   trainingSessions: ITrainingSession[];
-  trainerCategoryForDisplay: ActivityCategory | null;
+  trainerCategoryForDisplay: IActivityCategory | null;
   t: TFunction;
 }
 
 export interface DayViewProps {
   date: string;
-  categories: ActivityCategory[];
-  entries: CalendarEntry[];
+  categories: IActivityCategory[];
+  entries: ICalendarEntry[];
   note: string;
   readOnly?: boolean;
   onTrainerToggle?: (
@@ -73,8 +73,8 @@ export interface DayViewProps {
 
 export interface EventViewProps {
   date: string;
-  entry: CalendarEntry;
-  categories: ActivityCategory[];
+  entry: ICalendarEntry;
+  categories: IActivityCategory[];
   onBack: () => void;
   onDelete: () => void;
   onUpdateNote: (note: string) => void;
@@ -89,8 +89,8 @@ export interface NoteViewProps {
 
 export interface GetDrawerEntriesParams {
   date: string | null;
-  calendarEntries: CalendarEntries | null;
-  trainerCalendar: TrainerCalendarData | null;
-  trainerCategoryForDisplay: ActivityCategory | null;
+  calendarEntries: ICalendarEntries | null;
+  trainerCalendar: ITrainerCalendarData | null;
+  trainerCategoryForDisplay: IActivityCategory | null;
   trainingSessions: ITrainingSession[];
 }

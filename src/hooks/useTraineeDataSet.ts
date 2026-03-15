@@ -1,9 +1,8 @@
-import type { IRow } from '../types/types';
+import type { IRow } from '@app-types/types';
 
+import { loadUserData } from '@firebase-config/database';
+import { fromFirebaseFormat } from '@lib/data-format';
 import { useEffect, useState } from 'react';
-
-import { loadUserData } from '../firebase/database';
-import { fromFirebaseFormat } from '../lib/data-format';
 
 /**
  * Hook to load a trainee's diary data (read-only).

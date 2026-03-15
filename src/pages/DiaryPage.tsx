@@ -1,9 +1,8 @@
+import { DataTable } from '@components/dataTable/DataTable';
+import { useDataSet } from '@contexts/useDataSet';
+import { getColumns } from '@data/columns';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { DataTable } from '../components/DataTable/DataTable';
-import { getColumns } from '../data/columns';
-import { useDataSet } from '../hooks/useDataSet';
 
 export const DiaryPage = () => {
   const { t } = useTranslation();

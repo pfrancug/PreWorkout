@@ -1,19 +1,19 @@
-import type { FullCalendarEventMeta } from '../types/types';
 import type { DrawerView, TimePreset } from './calendar/types';
 import type { FullCalendarViewProps } from './types';
+import type { IFullCalendarEventMeta } from '@app-types/types';
 import type { DateSelectArg, EventClickArg } from '@fullcalendar/core';
 import type { DateClickArg } from '@fullcalendar/interaction';
 
+import { useSettings } from '@contexts/useSettings';
 import plLocale from '@fullcalendar/core/locales/pl';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import { useCalendarData } from '@hooks/useCalendarData';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useSettings } from '../contexts/useSettings';
-import { useCalendarData } from '../hooks/useCalendarData';
 import { ActivityNoteModal } from './ActivityNoteModal';
 import {
   getDrawerEntries,
@@ -66,7 +66,7 @@ export const FullCalendarView = ({
     return clearTimers;
   }, [drawerView?.date, clearTimers]);
 
-  // ── Event mapping ──────────────────────────────────────────────────────────
+  // â”€â”€ Event mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const events = useMemo(
     () =>
@@ -90,7 +90,7 @@ export const FullCalendarView = ({
     ],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
     const date = formatDateKey(arg.date);
@@ -122,7 +122,7 @@ export const FullCalendarView = ({
         ?.querySelector<HTMLButtonElement>('.fc-popover-close')
         ?.click();
 
-      const meta = arg.event.extendedProps as FullCalendarEventMeta;
+      const meta = arg.event.extendedProps as IFullCalendarEventMeta;
       if (meta.type === 'entry' && arg.event.start) {
         const date = formatDateKey(arg.event.start);
         const entryId = meta.entry?.id;
@@ -187,7 +187,7 @@ export const FullCalendarView = ({
     [t],
   );
 
-  // ── Derived drawer state ───────────────────────────────────────────────────
+  // â”€â”€ Derived drawer state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const drawerDate = drawerView?.date ?? null;
 

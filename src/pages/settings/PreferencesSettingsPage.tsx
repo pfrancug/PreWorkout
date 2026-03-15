@@ -14,9 +14,8 @@ import {
   SelectValue,
 } from '@components/ui/select';
 import { Switch } from '@components/ui/switch';
+import { useSettings } from '@contexts/useSettings';
 import { useTranslation } from 'react-i18next';
-
-import { useSettings } from '../../contexts/useSettings';
 
 export const PreferencesSettingsPage = () => {
   const { t, i18n } = useTranslation();

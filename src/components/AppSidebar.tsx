@@ -20,6 +20,10 @@ import {
   SidebarMenuItem,
 } from '@components/ui/sidebar';
 import { useSidebar } from '@components/ui/sidebar-context';
+import { useAuth } from '@contexts/useAuth';
+import { useSettings } from '@contexts/useSettings';
+import { logoutUser } from '@firebase-config/auth';
+import { subscribeToTraineeConnection } from '@firebase-config/database';
 import {
   BookOpen,
   Calculator,
@@ -45,11 +49,6 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
-
-import { useAuth } from '../contexts/useAuth';
-import { useSettings } from '../contexts/useSettings';
-import { logoutUser } from '../firebase/auth';
-import { subscribeToTraineeConnection } from '../firebase/database';
 
 const menuItems = [
   {

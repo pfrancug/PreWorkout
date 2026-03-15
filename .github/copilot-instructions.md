@@ -21,11 +21,11 @@ npm run format       # prettier --write
 src/
   components/     # React components (PascalCase files)
     ui/           # shadcn/ui primitives (New York style, lucide icons)
-    DataTable/    # TanStack Table wrappers
+    dataTable/    # TanStack Table wrappers
     charts/       # Recharts wrappers
-  contexts/       # React Context — split: *Context.tsx (def), *Provider.tsx (impl), use*() hooks
-  firebase/       # All Firebase operations in database.ts, config in config.ts
-  hooks/          # Custom hooks
+  contexts/       # React Context — split: *Context.tsx (def), *Provider.tsx (impl), use*() hooks (useAuth, useSettings, useDataSet)
+  firebase/       # Domain modules (settings, calendar, trainer, etc.) re-exported via database.ts barrel; config in config.ts, shared db instance in db.ts
+  hooks/          # Custom hooks (useCalendarData, useCalendarHandlers, useMobile, etc.)
   pages/          # Route pages, nested folders for settings/ and trainer/
   i18n/           # i18next — en.ts + pl.ts in locales/
   types/          # Shared types in types.ts
@@ -37,7 +37,7 @@ api/              # Vercel serverless functions (proxied via /api in dev)
   lib/            # Shared API helpers (auth, rate-limit)
 ```
 
-**Provider hierarchy** (top → bottom): BrowserRouter → AuthProvider → SettingsProvider → DataProvider → RightPanelProvider → SidebarProvider
+**Provider hierarchy** (top → bottom in `App.tsx`): BrowserRouter → AuthProvider → SettingsProvider → DataProvider. Layout providers (`RightPanelProvider` → `SidebarProvider`) live in `AuthenticatedLayout.tsx`.
 
 **Data flow**: Firebase Realtime Database ↔ Context providers with debounced saves (500ms). Client types use `Date` objects (`IRow`); Firebase types use ISO strings (`IRowData`).
 
@@ -70,7 +70,7 @@ api/              # Vercel serverless functions (proxied via /api in dev)
 - **Forms**: react-hook-form + zod schemas — define schema above the form component, use `zodResolver`
 - **UI components**: Use shadcn/ui from `@components/ui/`; style with Tailwind + `cn()` utility
 - **Icons**: lucide-react; activity icons via `ICON_MAP` / `ActivityIcon` component
-- **Firebase DB helpers**: `get*Ref()` for paths, `save*` / `load*` / `subscribe*` for operations — all in `firebase/database.ts`
+- **Firebase DB helpers**: `get*Ref()` for paths, `save*` / `load*` / `subscribe*` for operations — split into domain modules under `firebase/` (e.g. `calendar.ts`, `trainer.ts`, `settings.ts`) and re-exported via `firebase/database.ts` barrel
 - **API auth**: Bearer token → `verifyAuthToken()` in serverless functions
 - **Date handling**: Convert to `YYYY-MM-DD` in local timezone to avoid UTC shifts
 - **No backward compatibility** — when removing features, do a clean removal (no legacy keys, no deprecated fallbacks) unless explicitly told to preserve backward compatibility

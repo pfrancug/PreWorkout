@@ -1,4 +1,7 @@
-import type { ActivityCategory, CalendarEntry } from '../firebase/database';
+import type {
+  IActivityCategory,
+  ICalendarEntry,
+} from '@firebase-config/database';
 
 export interface IRow {
   id: number;
@@ -57,12 +60,12 @@ export interface ITrainingSession {
 
 export type FCEventType = 'entry' | 'trainingSession' | 'note';
 
-export interface FullCalendarEventMeta {
+export interface IFullCalendarEventMeta {
   type: FCEventType;
   /** The calendar entry (for 'entry' type events) */
-  entry?: CalendarEntry;
+  entry?: ICalendarEntry;
   /** Resolved category (for activity-type entries and virtual trainer events) */
-  category?: ActivityCategory;
+  category?: IActivityCategory;
   session?: ITrainingSession;
   /** Used by note events to carry the YYYY-MM-DD key */
   dateKey?: string;

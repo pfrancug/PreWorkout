@@ -1,11 +1,11 @@
 import type { SidebarContextProps } from './types';
 
-import React from 'react';
+import { createContext, useContext } from 'react';
 
-const SidebarContext = React.createContext<SidebarContextProps | null>(null);
+const SidebarContext = createContext<SidebarContextProps | null>(null);
 
 const useSidebar = () => {
-  const context = React.useContext(SidebarContext);
+  const context = useContext(SidebarContext);
   if (!context) {
     throw new Error('useSidebar must be used within a SidebarProvider.');
   }

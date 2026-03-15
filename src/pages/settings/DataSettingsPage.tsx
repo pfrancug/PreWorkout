@@ -9,20 +9,19 @@ import {
   CardTitle,
 } from '@components/ui/card';
 import { Separator } from '@components/ui/separator';
+import { useAuth } from '@contexts/useAuth';
+import { deleteAccount, reauthenticate } from '@firebase-config/auth';
+import {
+  deleteAllUserData,
+  importAllUserData,
+  loadAllUserData,
+} from '@firebase-config/database';
+import { validateImportData } from '@lib/validate-import';
 import { Download, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-
-import { useAuth } from '../../contexts/useAuth';
-import { deleteAccount, reauthenticate } from '../../firebase/auth';
-import {
-  deleteAllUserData,
-  importAllUserData,
-  loadAllUserData,
-} from '../../firebase/database';
-import { validateImportData } from '../../lib/validate-import';
 
 export const DataSettingsPage = () => {
   const { t } = useTranslation();
@@ -116,7 +115,7 @@ export const DataSettingsPage = () => {
 
     setIsDeleting(true);
     try {
-      // Re-auth first — if user cancels popup, no data is lost
+      // Re-auth first â€” if user cancels popup, no data is lost
       await reauthenticate();
       // Delete data while user still has valid auth token
       await deleteAllUserData(user.uid);

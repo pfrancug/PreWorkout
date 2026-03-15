@@ -1,4 +1,4 @@
-import type { IRow } from '../../types/types';
+import type { IRow } from '@app-types/types';
 import type { CellContext, ColumnDef, Table } from '@tanstack/react-table';
 import type { Dispatch, SetStateAction } from 'react';
 

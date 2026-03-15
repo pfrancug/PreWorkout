@@ -5,6 +5,29 @@ description: 'Use when working on Firebase database operations, refs, subscripti
 
 # Firebase Data Layer
 
+## File Structure
+
+```
+firebase/
+  config.ts              # Firebase app initialization
+  db.ts                  # Shared database instance (getDatabase)
+  database.ts            # Barrel — re-exports all domain modules
+  types.ts               # Shared Firebase data interfaces (IRowData, ICalendarEntry, etc.)
+  settings.ts            # User settings & preferences CRUD
+  diary.ts               # User diary data (IRowData) CRUD
+  calendar.ts            # Calendar entries, notes, trainer calendar
+  activity-categories.ts # Activity categories CRUD + subscription + auto-seeding
+  messages.ts            # Chat messages CRUD + subscription
+  message-limits.ts      # Daily AI message limits & rate checking
+  trainer.ts             # Trainer connections, invites, accept/disconnect
+  training-sessions.ts   # Training session CRUD, packages, payment status
+  user-directory.ts      # User directory, display name, avatar, trainer flag
+  user-management.ts     # Bulk operations (deleteAll, importAll, loadAll)
+  admin.ts               # Admin limit management & usage stats
+```
+
+New operations go in the appropriate domain module. The `database.ts` barrel re-exports everything, so consumers import from `@firebase-config/database` unchanged.
+
 ## Ref Helpers
 
 All database paths go through `get*Ref()` functions. Path pattern: `users/{userId}/{section}`.

@@ -1,15 +1,14 @@
-import type { CalendarEntry } from '../../firebase/database';
-import type { FullCalendarEventMeta } from '../../types/types';
 import type { GetDrawerEntriesParams } from './types';
 import type { MapCalendarEventsParams } from './types';
+import type { IFullCalendarEventMeta } from '@app-types/types';
+import type { ICalendarEntry } from '@firebase-config/database';
 import type { EventContentArg, EventInput } from '@fullcalendar/core';
 import type { TFunction } from 'i18next';
 
+import { ActivityIcon } from '@components/ActivityIcon';
+import { ACTIVITY_COLOR_MAP } from '@constants/activities';
 import { cn } from '@lib/utils';
 import { Dumbbell, Pencil, StickyNote } from 'lucide-react';
-
-import { ACTIVITY_COLOR_MAP } from '../../constants/activities';
-import { ActivityIcon } from '../ActivityIcon';
 
 export const mapCalendarEvents = ({
   calendarEntries,
@@ -33,7 +32,7 @@ export const mapCalendarEvents = ({
       : [];
 
     // Virtual trainer-day event (only if not already logged as an entry
-    // AND no timed session exists — timed sessions get their own event below)
+    // AND no timed session exists â€” timed sessions get their own event below)
     if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
       const alreadyLogged = dayEntries.some(
         (e) =>
@@ -61,9 +60,9 @@ export const mapCalendarEvents = ({
               type: 'activity',
               activityId: trainerCategoryForDisplay.id,
               time: null,
-            } satisfies CalendarEntry,
+            } satisfies ICalendarEntry,
             category: trainerCategoryForDisplay,
-          } as FullCalendarEventMeta,
+          } as IFullCalendarEventMeta,
         });
       }
     }
@@ -98,12 +97,12 @@ export const mapCalendarEvents = ({
           type: 'entry',
           entry,
           category,
-        } as FullCalendarEventMeta,
+        } as IFullCalendarEventMeta,
       });
     }
   }
 
-  // Training session events — only timed sessions get their own event
+  // Training session events â€” only timed sessions get their own event
   // (sessions without a time are already represented by the trainer activity above)
   for (const session of trainingSessions) {
     if (session.status === 'cancelled' || !session.time) {
@@ -129,7 +128,7 @@ export const mapCalendarEvents = ({
       extendedProps: {
         type: 'trainingSession',
         session,
-      } as FullCalendarEventMeta,
+      } as IFullCalendarEventMeta,
     });
   }
 
@@ -149,17 +148,17 @@ export const mapCalendarEvents = ({
       extendedProps: {
         type: 'note',
         dateKey,
-      } as FullCalendarEventMeta,
+      } as IFullCalendarEventMeta,
     });
   }
 
   return result;
 };
 
-// ── Custom event renderer ────────────────────────────────────────────────────
+// â”€â”€ Custom event renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const renderEventContent = (arg: EventContentArg, t: TFunction) => {
-  const meta = arg.event.extendedProps as FullCalendarEventMeta;
+  const meta = arg.event.extendedProps as IFullCalendarEventMeta;
 
   if (meta.type === 'entry') {
     const entry = meta.entry;
@@ -233,7 +232,7 @@ export const renderEventContent = (arg: EventContentArg, t: TFunction) => {
   );
 };
 
-// ── Drawer entries helper ────────────────────────────────────────────────────
+// â”€â”€ Drawer entries helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const getDrawerEntries = ({
   date,
@@ -241,7 +240,7 @@ export const getDrawerEntries = ({
   trainerCalendar,
   trainerCategoryForDisplay,
   trainingSessions,
-}: GetDrawerEntriesParams): CalendarEntry[] => {
+}: GetDrawerEntriesParams): ICalendarEntry[] => {
   if (!date) {
     return [];
   }
