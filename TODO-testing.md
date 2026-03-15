@@ -99,33 +99,33 @@
 
 ### Data Components
 
-- [ ] `EditableCell` — renders value, enters edit mode on click, saves on blur/Enter, cancels on Escape
-- [ ] `DataTable` — renders rows, pagination, sorting
-- [ ] `ReadOnlyDataTable` — renders read-only data, no edit interactions
-- [ ] `DataTableToolbar` — filter input, column visibility
+- [x] `EditableCell` — renders value/EM_DASH, weight formatting, cursor classes, edit mode input, Enter saves, Escape reverts, empty→null (9 tests)
+- [ ] `DataTable` — _(deferred — heavy TanStack Table + context wiring, better as integration test)_
+- [ ] `ReadOnlyDataTable` — _(deferred — similar complexity to DataTable)_
+- [ ] `DataTableToolbar` — _(deferred — tightly coupled to table instance)_
 
 ### Calendar Components
 
-- [ ] `DayView` — renders entries list, handles empty state
-- [ ] `EventView` — displays event details, edit form, time range with EN_DASH
-- [ ] `AddView` — form validation (zod), time inputs, all-day toggle
-- [ ] `AddTrainingView` — training session form, time range display
-- [ ] `NoteView` — renders/edits calendar note
+- [x] `DayView` — date heading, empty state, entries with names/time/note, day note, click handlers, readOnly, trainer toggle, note button states (12 tests)
+- [ ] `EventView` — _(deferred — form + Firebase interactions, better as integration test)_
+- [ ] `AddView` — _(deferred — complex form with zod + Firebase)_
+- [ ] `AddTrainingView` — _(deferred — complex form with Firebase)_
+- [x] `NoteView` — textarea, title, save/delete buttons, onNoteChange+onBack callbacks (6 tests)
 
 ### Shared Components
 
-- [ ] `ActivityIcon` — renders correct icon from ICON_MAP, applies color
-- [ ] `IconColorPicker` — color selection, icon selection
-- [ ] `TodayPanel` — displays today's macros, EM_DASH for empty values
-- [ ] `Chat` — message rendering, input, streaming indicator
-- [ ] `Loader` — renders spinner
-- [ ] `IOSInstallPrompt` — only shows on iOS Safari
-- [ ] `AppSidebar` — navigation links, active route highlighting
-- [ ] `TrainerRoute` — redirects non-trainers, renders children for trainers
+- [x] `ActivityIcon` — renders SVG, fallback for unknown ids, className/style passthrough, different SVGs per icon (4 tests)
+- [ ] `IconColorPicker` — _(deferred — complex picker with color/icon grid, dialog interactions)_
+- [ ] `TodayPanel` — _(deferred — heavy context dependencies: Auth, DataSet, Firebase subscriptions)_
+- [ ] `Chat` — _(deferred — streaming state, complex message rendering, API interactions)_
+- [x] `Loader` — spinner SVG, animate-spin class, centered layout (3 tests)
+- [ ] `IOSInstallPrompt` — _(deferred — browser detection, platform-specific)_
+- [ ] `AppSidebar` — _(deferred — routing context, auth context)_
+- [ ] `TrainerRoute` — _(deferred — auth context with role checks)_
 
 ### Charts
 
-- [ ] `SparkChart` — renders with data, handles empty data
+- [ ] `SparkChart` — _(deferred — Recharts rendering, needs SVG assertion approach)_
 
 ---
 
