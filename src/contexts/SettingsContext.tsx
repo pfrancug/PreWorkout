@@ -13,7 +13,6 @@ export interface UserPreferences {
   chatPanelOpen: boolean;
   language: string;
   defaultCalendarView: 'month' | 'week';
-  drinksSugarFilter: 'all' | 'sugar' | 'no-sugar';
   hideConnectionSection: boolean;
 }
 
@@ -40,7 +39,6 @@ export const defaultPreferences: UserPreferences = {
   chatPanelOpen: false,
   language: localStorage.getItem('i18nextLng') || 'en',
   defaultCalendarView: 'month',
-  drinksSugarFilter: 'all',
   hideConnectionSection: false,
 };
 

@@ -1,4 +1,5 @@
-// scripts/migrate-sugar-filter.ts
+// migrations/migrate-remove-energy-drinks.ts
+// Removes energyDrinks data and drinksSugarFilter preference for all users
 import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -9,14 +10,13 @@ const serviceAccount = JSON.parse(
   readFileSync(join(__dirname, '../secrets/google-credentials.json'), 'utf-8'),
 );
 
-// Load database URL from .env file
 const envFile = readFileSync(join(__dirname, '../.env'), 'utf-8');
 const databaseURL = envFile
   .split('\n')
   .find((line) => line.startsWith('VITE_FIREBASE_DATABASE_URL='))
   ?.split('=')[1]
   ?.trim()
-  ?.replace(/^['"]|['"]$/g, ''); // Strip quotes
+  ?.replace(/^['"]|['"]$/g, '');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -35,14 +35,14 @@ async function migrate() {
     return;
   }
 
-  const updates: Record<string, unknown> = {};
+  const updates: Record<string, null> = {};
 
   for (const [uid, userData] of Object.entries(users as Record<string, any>)) {
-    const prefs = userData?.preferences;
-    if (prefs?.monsterSugarFilter && !prefs?.drinksSugarFilter) {
-      updates[`users/${uid}/preferences/drinksSugarFilter`] =
-        prefs.monsterSugarFilter;
-      updates[`users/${uid}/preferences/monsterSugarFilter`] = null; // Delete old key
+    if (userData?.energyDrinks) {
+      updates[`users/${uid}/energyDrinks`] = null;
+    }
+    if (userData?.preferences?.drinksSugarFilter !== undefined) {
+      updates[`users/${uid}/preferences/drinksSugarFilter`] = null;
     }
   }
 
@@ -51,7 +51,9 @@ async function migrate() {
     return;
   }
 
-  console.log(`Migrating ${Object.keys(updates).length / 2} users...`);
+  console.log(
+    `Removing energy drinks data for ${Object.keys(updates).length} paths...`,
+  );
   await db.ref().update(updates);
   console.log('Done!');
 }

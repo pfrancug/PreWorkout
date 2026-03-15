@@ -27,14 +27,6 @@
         "description": "Choose the default view when opening the calendar.",
         "label": "Default View"
       },
-      "drinks": {
-        "title": "Energy Drinks",
-        "description": "Configure default filters for the energy drinks page.",
-        "sugarFilterLabel": "Default Sugar Filter",
-        "all": "All",
-        "sugar": "With Sugar",
-        "noSugar": "Sugar Free"
-      },
       "menu": {
         "title": "Menu",
         "description": "Customize which sections appear in the sidebar menu.",

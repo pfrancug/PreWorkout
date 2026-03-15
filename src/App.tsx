@@ -53,7 +53,6 @@ import { ChatPage } from './pages/ChatPage';
 import { DiaryPage } from './pages/DiaryPage';
 import { LoginPage } from './pages/LoginPage';
 import { MainPage } from './pages/MainPage';
-import { MonsterPage } from './pages/MonsterPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
 
@@ -78,7 +77,6 @@ const pageTitleKeys: Record<string, string> = {
   '/calendar': 'nav.calendar',
   '/calculator': 'nav.calculator',
   '/chat': 'nav.chat',
-  '/drinks': 'nav.drinks',
   '/settings/profile': 'nav.settingsProfile',
   '/settings/categories': 'nav.settingsCategories',
   '/settings/preferences': 'nav.settingsPreferences',
@@ -220,8 +218,6 @@ const AppRoutes = () => {
                 <Route element={<CalendarPage />} path={'/calendar'} />
 
                 <Route element={<CalculatorPage />} path={'/calculator'} />
-
-                <Route element={<MonsterPage />} path={'/drinks'} />
 
                 <Route
                   element={<Navigate replace to={'/settings/profile'} />}
