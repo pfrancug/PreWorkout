@@ -147,7 +147,7 @@ export const DayView = ({
                     >
                       <Clock className={'h-3 w-3'} />
                       {entry.time}
-                      {entry.timeEnd && ` â€“ ${entry.timeEnd}`}
+                      {entry.timeEnd && ` – ${entry.timeEnd}`}
                     </span>
                   )}
                 </div>

@@ -127,7 +127,7 @@ export const EventView = ({
           >
             <Clock className={'h-3.5 w-3.5'} />
             {entry.time}
-            {entry.timeEnd && ` â€“ ${entry.timeEnd}`}
+            {entry.timeEnd && ` – ${entry.timeEnd}`}
           </span>
         )}
       </div>
