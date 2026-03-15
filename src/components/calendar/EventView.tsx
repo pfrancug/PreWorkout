@@ -76,6 +76,7 @@ export const EventView = ({
       <DialogHeader>
         <div className={'flex items-center gap-2'}>
           <button
+            aria-label={t('calendar.back')}
             onClick={onBack}
             type={'button'}
             className={

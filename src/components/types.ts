@@ -57,7 +57,7 @@ export interface FullCalendarViewProps {
 }
 
 export interface IconColorPickerProps {
-  icon: string;
+  icon: ActivityIconId;
   color: string;
   onIconChange: (icon: ActivityIconId) => void;
   onColorChange: (color: string) => void;

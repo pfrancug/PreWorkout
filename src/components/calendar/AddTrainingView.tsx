@@ -48,7 +48,14 @@ export const AddTrainingView = ({
   const allDay = useWatch({ control, name: 'allDay' });
 
   useEffect(() => {
-    if (!timePreset || timePreset.allDay) {
+    if (!timePreset) {
+      return;
+    }
+    if (timePreset.allDay) {
+      setValue('allDay', true);
+      setValue('time', '');
+      setValue('timeEnd', '');
+
       return;
     }
     setValue('allDay', false);
@@ -71,6 +78,7 @@ export const AddTrainingView = ({
       <DialogHeader>
         <div className={'flex items-center gap-2'}>
           <button
+            aria-label={t('calendar.back')}
             onClick={onBack}
             type={'button'}
             className={

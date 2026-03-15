@@ -30,6 +30,7 @@ export const NoteView = ({ note, onBack, onNoteChange }: NoteViewProps) => {
       <DialogHeader>
         <div className={'flex items-center gap-2'}>
           <button
+            aria-label={t('calendar.back')}
             onClick={onBack}
             type={'button'}
             className={

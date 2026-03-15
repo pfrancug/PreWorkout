@@ -1,3 +1,4 @@
+import type { ActivityIconId } from '../../constants/activities';
 import type { ActivityCategory } from '../../firebase/database';
 import type { AddEventFormData } from './schemas';
 import type { AddViewProps } from './types';
@@ -59,7 +60,7 @@ export const AddView = ({
   const watchedActivityId = useWatch({ control, name: 'activityId' });
   const nameValue = useWatch({ control, name: 'name' });
   const allDay = useWatch({ control, name: 'allDay' });
-  const iconValue = useWatch({ control, name: 'icon' });
+  const iconValue = useWatch({ control, name: 'icon' }) as ActivityIconId;
   const colorValue = useWatch({ control, name: 'color' });
 
   const canSaveToActivities = !watchedActivityId && !!nameValue?.trim();
@@ -95,9 +96,9 @@ export const AddView = ({
       return;
     }
     if (timePreset.allDay) {
-      setValue('allDay', false);
-      setValue('time', '13:00');
-      setValue('timeEnd', '14:00');
+      setValue('allDay', true);
+      setValue('time', '');
+      setValue('timeEnd', '');
     } else {
       setValue('allDay', false);
       if (timePreset.startStr.length >= 16) {
@@ -153,6 +154,7 @@ export const AddView = ({
       <DialogHeader>
         <div className={'flex items-center gap-2'}>
           <button
+            aria-label={t('calendar.back')}
             onClick={onBack}
             type={'button'}
             className={

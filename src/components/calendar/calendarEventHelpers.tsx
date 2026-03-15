@@ -80,8 +80,10 @@ export const mapCalendarEvents = ({
           : '#94a3b8';
       const title =
         entry.type === 'activity'
-          ? (category?.name ?? entry.activityId ?? 'Activity')
-          : (entry.name ?? 'Custom');
+          ? (category?.name ??
+            entry.activityId ??
+            t('calendar.fallbackActivityTitle'))
+          : (entry.name ?? t('calendar.fallbackCustomTitle'));
 
       result.push({
         id: `entry-${dateKey}-${entry.id}`,

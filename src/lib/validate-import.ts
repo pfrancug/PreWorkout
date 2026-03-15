@@ -18,7 +18,6 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     'messages',
     'data',
     'limits',
-    'calendar', // legacy — accepted for backward compat with old exports
     'calendarEntries',
     'calendarNotes',
     'activityCategories',
@@ -145,28 +144,6 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     const l = d.limits as Record<string, unknown>;
     if (typeof l.max !== 'number') {
       return false;
-    }
-  }
-
-  // Validate calendar (legacy format — accepted for backward compat with old exports)
-  if (d.calendar != null) {
-    if (typeof d.calendar !== 'object') {
-      return false;
-    }
-    for (const [date, activities] of Object.entries(
-      d.calendar as Record<string, unknown>,
-    )) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return false;
-      }
-      if (!Array.isArray(activities)) {
-        return false;
-      }
-      for (const a of activities) {
-        if (typeof a !== 'string') {
-          return false;
-        }
-      }
     }
   }
 

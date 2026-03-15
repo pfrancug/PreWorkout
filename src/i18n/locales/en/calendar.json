@@ -42,6 +42,8 @@
     "colorLabel": "Color",
     "allActivitiesLogged": "All your activities are already logged today",
     "back": "Back",
+    "fallbackActivityTitle": "Activity",
+    "fallbackCustomTitle": "Custom",
     "editEvent": "Edit",
     "saveChanges": "Save changes",
     "deleteEvent": "Delete",
