@@ -1,13 +1,13 @@
 import type { IconColorPickerProps } from './types';
 
-import { cn } from '@lib/utils';
-import { useTranslation } from 'react-i18next';
-
 import {
   ACTIVITY_COLOR_MAP,
   ACTIVITY_COLORS,
   AVAILABLE_ICONS,
-} from '../constants/activities';
+} from '@constants/activities';
+import { cn } from '@lib/utils';
+import { useTranslation } from 'react-i18next';
+
 import { ActivityIcon } from './ActivityIcon';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
@@ -66,7 +66,7 @@ export const IconColorPicker = ({
 
         <div className={'grid grid-cols-5 gap-2'}>
           {AVAILABLE_ICONS.map(({ id, icon: Icon, label }) => (
-            // Intentionally does NOT close the popover — users often pick
+            // Intentionally does NOT close the popover â€” users often pick
             // an icon and then switch the color, so keeping it open avoids
             // having to re-open the picker.
             <button

@@ -7,13 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@components/ui/card';
+import { signInWithGoogle } from '@firebase-config/auth';
 import { cn } from '@lib/utils';
 import { Dumbbell, Globe, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-
-import { signInWithGoogle } from '../firebase/auth';
 
 export const LoginPage = () => {
   const { t, i18n } = useTranslation();
@@ -94,7 +93,7 @@ export const LoginPage = () => {
         >
           {t('legal.privacyPolicy')}
         </Link>
-        <span className={'mx-2'}>{'•'}</span>
+        <span className={'mx-2'}>{'â€˘'}</span>
         <Link
           className={'underline underline-offset-4 hover:text-primary'}
           to={'/terms'}

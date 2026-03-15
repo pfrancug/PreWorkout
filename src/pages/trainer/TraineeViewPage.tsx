@@ -1,25 +1,24 @@
 import type { Tab } from './types';
 
+import { ReadOnlyDataTable } from '@components/dataTable/ReadOnlyDataTable';
+import { FullCalendarView } from '@components/FullCalendarView';
+import { TrainingSessions } from '@components/TrainingSessions';
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { Skeleton } from '@components/ui/skeleton';
-import { ArrowLeft, BookOpen, CalendarDays, Dumbbell } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
-
-import { ReadOnlyDataTable } from '../../components/DataTable/ReadOnlyDataTable';
-import { FullCalendarView } from '../../components/FullCalendarView';
-import { TrainingSessions } from '../../components/TrainingSessions';
-import { useAuth } from '../../contexts/useAuth';
-import { getReadOnlyColumns } from '../../data/readOnlyColumns';
+import { useAuth } from '@contexts/useAuth';
+import { getReadOnlyColumns } from '@data/readOnlyColumns';
 import {
   getUserAvatarUrl,
   getUserDisplayName,
   subscribeToTrainerConnections,
-} from '../../firebase/database';
-import { useTraineeDataSet } from '../../hooks/useTraineeDataSet';
+} from '@firebase-config/database';
+import { useTraineeDataSet } from '@hooks/useTraineeDataSet';
+import { ArrowLeft, BookOpen, CalendarDays, Dumbbell } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export const TraineeViewPage = () => {
   const { t } = useTranslation();
@@ -56,7 +55,7 @@ export const TraineeViewPage = () => {
         setTraineeAvatar(avatar);
       })
       .catch(() => {
-        // Silently ignore — name/avatar are non-critical
+        // Silently ignore â€” name/avatar are non-critical
       })
       .finally(() => {
         if (!cancelled) {

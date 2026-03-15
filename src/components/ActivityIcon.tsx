@@ -1,9 +1,8 @@
 import type { ComponentProps } from 'react';
 
+import { AVAILABLE_ICONS } from '@constants/activities';
 import { Dumbbell } from 'lucide-react';
 import { memo } from 'react';
-
-import { AVAILABLE_ICONS } from '../constants/activities';
 
 const ICON_MAP: Record<string, typeof Dumbbell> = Object.fromEntries(
   AVAILABLE_ICONS.map(({ id, icon }) => [id, icon]),

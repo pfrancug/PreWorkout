@@ -1,10 +1,9 @@
+import { TrainingSessions } from '@components/TrainingSessions';
 import { Skeleton } from '@components/ui/skeleton';
+import { useAuth } from '@contexts/useAuth';
+import { subscribeToTraineeConnection } from '@firebase-config/database';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { TrainingSessions } from '../../components/TrainingSessions';
-import { useAuth } from '../../contexts/useAuth';
-import { subscribeToTraineeConnection } from '../../firebase/database';
 
 export const TrainerSessionsPage = () => {
   const { t } = useTranslation();

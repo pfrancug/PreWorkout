@@ -1,6 +1,8 @@
-import type { ActivityIconId } from '../../constants/activities';
-import type { ActivityCategory } from '../../firebase/database';
+import type { ActivityIconId } from '@constants/activities';
+import type { IActivityCategory } from '@firebase-config/database';
 
+import { ActivityIcon } from '@components/ActivityIcon';
+import { IconColorPicker } from '@components/IconColorPicker';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import {
@@ -11,6 +13,18 @@ import {
   CardTitle,
 } from '@components/ui/card';
 import { Input } from '@components/ui/input';
+import {
+  ACTIVITY_COLOR_MAP,
+  ACTIVITY_COLORS,
+  DEFAULT_CATEGORIES,
+} from '@constants/activities';
+import { useAuth } from '@contexts/useAuth';
+import {
+  loadCalendarEntries,
+  saveActivityCategories,
+  subscribeToActivityCategories,
+  subscribeToTraineeConnection,
+} from '@firebase-config/database';
 import {
   Archive,
   ArchiveRestore,
@@ -24,25 +38,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { ActivityIcon } from '../../components/ActivityIcon';
-import { IconColorPicker } from '../../components/IconColorPicker';
-import {
-  ACTIVITY_COLOR_MAP,
-  ACTIVITY_COLORS,
-  DEFAULT_CATEGORIES,
-} from '../../constants/activities';
-import { useAuth } from '../../contexts/useAuth';
-import {
-  loadCalendarEntries,
-  saveActivityCategories,
-  subscribeToActivityCategories,
-  subscribeToTraineeConnection,
-} from '../../firebase/database';
-
 export const CategoriesSettingsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [categories, setCategories] = useState<ActivityCategory[]>([]);
+  const [categories, setCategories] = useState<IActivityCategory[]>([]);
   const [usedActivityIds, setUsedActivityIds] = useState<Set<string>>(
     new Set(),
   );
@@ -147,7 +146,7 @@ export const CategoriesSettingsPage = () => {
     }
   };
 
-  const startEdit = (category: ActivityCategory) => {
+  const startEdit = (category: IActivityCategory) => {
     setEditingId(category.id);
     setEditName(category.name);
     setEditIcon(category.icon as ActivityIconId);

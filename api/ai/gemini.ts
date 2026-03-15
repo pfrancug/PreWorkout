@@ -5,14 +5,14 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { verifyAuthToken } from '../lib/auth.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 
-interface ChatMessage {
+interface IChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
 interface RequestBody {
   systemInstruction: string;
-  messages: ChatMessage[];
+  messages: IChatMessage[];
   userMessage: string;
   skipRateLimit?: boolean;
 }
@@ -59,7 +59,7 @@ const handler = async (
     return;
   }
 
-  const messages: ChatMessage[] = [
+  const messages: IChatMessage[] = [
     { role: 'system', content: body.systemInstruction },
     ...body.messages,
     { role: 'user', content: body.userMessage },

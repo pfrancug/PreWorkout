@@ -1,4 +1,4 @@
-import type { UserSettings } from '../../contexts/SettingsContext';
+import type { IUserSettings } from '@contexts/SettingsContext';
 import type { ChangeEvent } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
@@ -14,20 +14,19 @@ import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@components/ui/radio-group';
 import { Separator } from '@components/ui/separator';
+import { useAuth } from '@contexts/useAuth';
+import { useSettings } from '@contexts/useSettings';
+import { cropToSquareDataUrl } from '@lib/image';
 import { Camera, Loader2, Save } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { useAuth } from '../../contexts/useAuth';
-import { useSettings } from '../../contexts/useSettings';
-import { cropToSquareDataUrl } from '../../lib/image';
-
 export const ProfileSettingsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { settings, saveSettings } = useSettings();
-  const [formData, setFormData] = useState<UserSettings>(settings);
+  const [formData, setFormData] = useState<IUserSettings>(settings);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,7 +47,7 @@ export const ProfileSettingsPage = () => {
     [formData, settings],
   );
 
-  const handleChange = (field: keyof UserSettings, value: string) => {
+  const handleChange = (field: keyof IUserSettings, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

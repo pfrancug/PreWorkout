@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-export interface UserSettings {
+export interface IUserSettings {
   name: string;
   age: string;
   height: string;
@@ -8,7 +8,7 @@ export interface UserSettings {
   avatarUrl?: string;
 }
 
-export interface UserPreferences {
+export interface IUserPreferences {
   sidebarOpen: boolean;
   chatPanelOpen: boolean;
   language: string;
@@ -17,24 +17,24 @@ export interface UserPreferences {
 }
 
 export interface SettingsContextValue {
-  settings: UserSettings;
-  preferences: UserPreferences;
+  settings: IUserSettings;
+  preferences: IUserPreferences;
   updatePreference: (
-    field: keyof UserPreferences,
+    field: keyof IUserPreferences,
     value: boolean | string,
   ) => void;
-  saveSettings: (newSettings: UserSettings) => Promise<void>;
+  saveSettings: (newSettings: IUserSettings) => Promise<void>;
   changeLanguage: (lang: string) => void;
 }
 
-export const defaultSettings: UserSettings = {
+export const defaultSettings: IUserSettings = {
   name: '',
   age: '',
   height: '',
   sex: '',
 };
 
-export const defaultPreferences: UserPreferences = {
+export const defaultPreferences: IUserPreferences = {
   sidebarOpen: true,
   chatPanelOpen: false,
   language: localStorage.getItem('i18nextLng') || 'en',

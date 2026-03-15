@@ -1,5 +1,5 @@
-import type { IRow } from '../../types/types';
 import type { EditableCellProps, TableMeta } from './types';
+import type { IRow } from '@app-types/types';
 import type { KeyboardEvent } from 'react';
 
 import { Calendar } from '@components/ui/calendar';

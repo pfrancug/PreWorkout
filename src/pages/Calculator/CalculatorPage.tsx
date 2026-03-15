@@ -1,11 +1,11 @@
 import type { ICalculatorForm } from './types';
 
+import { CALCULATOR_DEFAULTS } from '@constants/storage';
+import { useDataSet } from '@contexts/useDataSet';
+import { useSettings } from '@contexts/useSettings';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { CALCULATOR_DEFAULTS } from '../../constants/storage';
-import { useSettings } from '../../contexts/useSettings';
-import { useDataSet } from '../../hooks/useDataSet';
 import { CalculatorForm } from './components/CalculatorForm';
 import { Equation } from './components/Equation';
 import { Results } from './components/Results';

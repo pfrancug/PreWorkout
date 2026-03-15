@@ -1,5 +1,5 @@
 import type { AIProvider, ChatProps, Message } from './types';
-import type { AIConfig } from '@lib/ai/types';
+import type { IAIConfig } from '@lib/ai/types';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@components/ui/alert';
@@ -12,6 +12,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@components/ui/tooltip';
+import { CHAT_ROLES } from '@constants/storage';
+import { useAuth } from '@contexts/useAuth';
+import { useSettings } from '@contexts/useSettings';
+import {
+  clearUserMessages,
+  getRemainingMessages,
+  saveUserMessages,
+  subscribeToUserMessages,
+} from '@firebase-config/database';
+import {
+  isGeminiAvailable,
+  isGrokAvailable,
+  streamFromGemini,
+  streamFromGrok,
+} from '@lib/ai';
 import { cn } from '@lib/utils';
 import { BicepsFlexed, Database, Send, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -19,22 +34,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Streamdown } from 'streamdown';
-
-import { CHAT_ROLES } from '../constants/storage';
-import { useAuth } from '../contexts/useAuth';
-import { useSettings } from '../contexts/useSettings';
-import {
-  clearUserMessages,
-  getRemainingMessages,
-  saveUserMessages,
-  subscribeToUserMessages,
-} from '../firebase/database';
-import {
-  isGeminiAvailable,
-  isGrokAvailable,
-  streamFromGemini,
-  streamFromGrok,
-} from '../lib/ai';
 
 const LoadingDots = () => (
   <div className={'flex items-center gap-1 py-1'}>
@@ -298,7 +297,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
       content: m.parts[0].text,
     }));
 
-    const aiConfig: AIConfig = {
+    const aiConfig: IAIConfig = {
       systemInstruction,
       messages: aiMessages,
       userMessage: userMessageContent,
@@ -356,7 +355,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
         finalMessages = [...messages, newUserMessage, emptyModelMessage];
         setMessages(finalMessages);
 
-        // Skip rate limit on fallback — primary already counted
+        // Skip rate limit on fallback â€” primary already counted
         aiConfig.skipRateLimit = true;
         success = await tryProvider(fallbackProvider);
       }

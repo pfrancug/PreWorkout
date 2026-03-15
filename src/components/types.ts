@@ -1,13 +1,16 @@
-import type { ActivityIconId } from '../constants/activities';
-import type { ActivityCategory, CalendarEntry } from '../firebase/database';
-import type { IRow } from '../types/types';
 import type { DrawerView } from './calendar/types';
+import type { IRow } from '@app-types/types';
+import type { ActivityIconId } from '@constants/activities';
+import type {
+  IActivityCategory,
+  ICalendarEntry,
+} from '@firebase-config/database';
 
 export interface ActivityNoteModalProps {
   drawerView: DrawerView;
-  categories: ActivityCategory[];
-  pickableCategories?: ActivityCategory[];
-  entries: CalendarEntry[];
+  categories: IActivityCategory[];
+  pickableCategories?: IActivityCategory[];
+  entries: ICalendarEntry[];
   recentActivityIds: string[];
   note: string;
   readOnly?: boolean;
@@ -20,7 +23,7 @@ export interface ActivityNoteModalProps {
   onNavigate: (next: DrawerView) => void;
   onClose: () => void;
   onNoteChange: (value: string) => void;
-  onAddEntry: (entry: Omit<CalendarEntry, 'id'>) => Promise<void>;
+  onAddEntry: (entry: Omit<ICalendarEntry, 'id'>) => Promise<void>;
   onDeleteEntry: (entryId: string, date: string) => Promise<void>;
   onUpdateEntryNote: (entryId: string, date: string, note: string) => void;
   onUpdateEntryTime: (
@@ -29,7 +32,7 @@ export interface ActivityNoteModalProps {
     time: string | null,
     timeEnd?: string | null,
   ) => void;
-  onSaveNewCategory: (category: ActivityCategory) => Promise<void>;
+  onSaveNewCategory: (category: IActivityCategory) => Promise<void>;
 }
 
 export type AIProvider = 'gemini' | 'grok';
@@ -52,7 +55,7 @@ export interface FullCalendarViewProps {
   readOnly?: boolean;
   /** Allow toggling trainer-linked activity even in readOnly mode */
   allowTrainerToggle?: boolean;
-  /** The active trainer connection ID — needed for creating training sessions */
+  /** The active trainer connection ID â€” needed for creating training sessions */
   connectionId?: string;
 }
 

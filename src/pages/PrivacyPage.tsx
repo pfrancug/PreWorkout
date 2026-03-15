@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
+import { useAuth } from '@contexts/useAuth';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
-
-import { useAuth } from '../contexts/useAuth';
 
 const formatBold = (text: string): ReactNode[] =>
   text
@@ -91,12 +90,12 @@ export const PrivacyPage = () => {
                 onClick={() => navigate(-1)}
                 type={'button'}
               >
-                {'← '}
+                {'â† '}
                 {t('legal.backToSettings')}
               </button>
             ) : (
               <Link className={'text-primary hover:underline'} to={'/login'}>
-                {'← '}
+                {'â† '}
                 {t('legal.backToLogin')}
               </Link>
             )}

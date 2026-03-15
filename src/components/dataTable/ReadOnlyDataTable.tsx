@@ -1,5 +1,5 @@
-import type { IRow } from '../../types/types';
 import type { ReadOnlyDataTableProps } from './types';
+import type { IRow } from '@app-types/types';
 import type { SortingState } from '@tanstack/react-table';
 
 import {
@@ -24,7 +24,7 @@ import { DataTablePagination } from './DataTablePagination';
 
 const EMPTY_ARRAY: IRow[] = [];
 
-/** Read-only data table — no toolbar, no row selection, no editing */
+/** Read-only data table â€” no toolbar, no row selection, no editing */
 export const ReadOnlyDataTable = ({
   columns,
   data,

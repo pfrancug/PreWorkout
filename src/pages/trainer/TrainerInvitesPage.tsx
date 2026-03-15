@@ -1,4 +1,4 @@
-import type { ITrainerConnection } from '../../types/types';
+import type { ITrainerConnection } from '@app-types/types';
 
 import { Button } from '@components/ui/button';
 import {
@@ -10,20 +10,19 @@ import {
 } from '@components/ui/card';
 import { Input } from '@components/ui/input';
 import { Skeleton } from '@components/ui/skeleton';
-import { ClipboardCopy, Trash2, UserPlus } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-
-import { useAuth } from '../../contexts/useAuth';
+import { useAuth } from '@contexts/useAuth';
 import {
   createTrainerInvite,
   deletePendingInvite,
   subscribeToTrainerConnections,
   updateConnectionNote,
-} from '../../firebase/database';
+} from '@firebase-config/database';
+import { ClipboardCopy, Trash2, UserPlus } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
-// ── Invite Card ───────────────────────────────────────────────────────────
+// â”€â”€ Invite Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const InviteCard = ({
   connection,
@@ -136,7 +135,7 @@ const InviteCard = ({
   );
 };
 
-// ── Page ──────────────────────────────────────────────────────────────────
+// â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const TrainerInvitesPage = () => {
   const { t } = useTranslation();
