@@ -92,7 +92,7 @@ export const TodayPanel = () => {
     ? Object.values(calendarEntries[todayKey])
     : [];
   const activityEntries = todayEntries.filter(
-    (e) => e.type === 'activity' && e.activityId,
+    (e) => e.type === 'activity' && e.activityId && e.time == null,
   );
   const note = calendarNotes?.[todayKey] ?? '';
 

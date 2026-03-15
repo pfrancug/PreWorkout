@@ -105,6 +105,7 @@ export const DayView = ({
                     isClickable
                       ? (e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
                             onNavigateToEvent(entry.id);
                           }
                         }
