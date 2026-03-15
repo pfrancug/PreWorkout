@@ -73,3 +73,4 @@ api/              # Vercel serverless functions (proxied via /api in dev)
 - **Firebase DB helpers**: `get*Ref()` for paths, `save*` / `load*` / `subscribe*` for operations — all in `firebase/database.ts`
 - **API auth**: Bearer token → `verifyAuthToken()` in serverless functions
 - **Date handling**: Convert to `YYYY-MM-DD` in local timezone to avoid UTC shifts
+- **No backward compatibility** — when removing features, do a clean removal (no legacy keys, no deprecated fallbacks) unless explicitly told to preserve backward compatibility
