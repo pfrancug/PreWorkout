@@ -56,7 +56,7 @@ api/              # Vercel serverless functions (proxied via /api in dev)
 
 - **One component per file** — each React component gets its own `.tsx` file, named after the component
 - **Keep files short** — if a file exceeds ~300 lines, split it into smaller modules. Extract sub-components, helpers, constants, and types
-- **Types belong in `types/`** — shared interfaces and types go in `src/types/`, grouped by domain (e.g. `types.ts` for core data, additional files like `trainer.ts`, `calendar.ts` when a domain grows). Component-local types used by multiple files must be extracted there
+- **Types colocated per directory** — every directory with `.tsx`/`.ts` files keeps its own `types.ts` for interfaces and types used by files in that folder (e.g. `src/components/types.ts`, `src/components/calendar/types.ts`, `src/components/DataTable/types.ts`, `src/hooks/types.ts`, `src/pages/trainer/types.ts`). Cross-cutting types shared across multiple directories go in `src/types/` grouped by domain
 - **Zod schemas** stay colocated with the form component that uses them (exception to the types rule)
 - **Hooks in `hooks/`** — custom hooks go in `src/hooks/`, one hook per file
 - **Constants in `constants/`** — app constants go in `src/constants/`, grouped by domain
