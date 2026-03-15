@@ -1,10 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import admin from 'firebase-admin';
-import { verifyAuthToken } from '../lib/auth.js';
-
-// Ensure the admin app is initialized (done as side-effect in auth.ts import).
-// Use the first initialized app for all admin calls.
-const getAuth = () => admin.auth(admin.apps[0]!);
+import { adminAuth, verifyAuthToken } from '../lib/auth.js';
 
 /**
  * POST /api/admin/set-trainer
@@ -29,41 +24,41 @@ const handler = async (
     return;
   }
 
-  // Verify the caller is an admin
-  const callerRecord = await getAuth().getUser(uid);
-  if (!callerRecord.customClaims?.admin) {
-    res.status(403).json({ error: 'Forbidden: admin only' });
-    return;
-  }
-
-  const { targetUid, isTrainer } = req.body as {
-    targetUid: string;
-    isTrainer: boolean;
-  };
-
-  if (
-    typeof targetUid !== 'string' ||
-    targetUid.length === 0 ||
-    targetUid.length > 128 ||
-    typeof isTrainer !== 'boolean'
-  ) {
-    res.status(400).json({ error: 'Invalid request body' });
-    return;
-  }
-
   try {
+    // Verify the caller is an admin
+    const callerRecord = await adminAuth.getUser(uid);
+    if (!callerRecord.customClaims?.admin) {
+      res.status(403).json({ error: 'Forbidden: admin only' });
+      return;
+    }
+
+    const { targetUid, isTrainer } = req.body as {
+      targetUid: string;
+      isTrainer: boolean;
+    };
+
+    if (
+      typeof targetUid !== 'string' ||
+      targetUid.length === 0 ||
+      targetUid.length > 128 ||
+      typeof isTrainer !== 'boolean'
+    ) {
+      res.status(400).json({ error: 'Invalid request body' });
+      return;
+    }
+
     // Preserve existing claims
-    const targetUser = await getAuth().getUser(targetUid);
+    const targetUser = await adminAuth.getUser(targetUid);
     const existingClaims = targetUser.customClaims ?? {};
 
     if (isTrainer) {
-      await getAuth().setCustomUserClaims(targetUid, {
+      await adminAuth.setCustomUserClaims(targetUid, {
         ...existingClaims,
         trainer: true,
       });
     } else {
       const { trainer: _, ...rest } = existingClaims;
-      await getAuth().setCustomUserClaims(targetUid, rest);
+      await adminAuth.setCustomUserClaims(targetUid, rest);
     }
 
     res.status(200).json({ success: true });
