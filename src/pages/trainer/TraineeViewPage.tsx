@@ -1,3 +1,5 @@
+import type { Tab } from './types';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
@@ -18,8 +20,6 @@ import {
   subscribeToTrainerConnections,
 } from '../../firebase/database';
 import { useTraineeDataSet } from '../../hooks/useTraineeDataSet';
-
-type Tab = 'calendar' | 'diary' | 'sessions';
 
 export const TraineeViewPage = () => {
   const { t } = useTranslation();

@@ -1,14 +1,6 @@
-import React from 'react';
+import type { SidebarContextProps } from './types';
 
-type SidebarContextProps = {
-  state: 'expanded' | 'collapsed';
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  openMobile: boolean;
-  setOpenMobile: (open: boolean) => void;
-  isMobile: boolean;
-  toggleSidebar: () => void;
-};
+import React from 'react';
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
 
@@ -22,4 +14,4 @@ const useSidebar = () => {
 };
 
 export { SidebarContext, useSidebar };
-export type { SidebarContextProps };
+export type { SidebarContextProps } from './types';

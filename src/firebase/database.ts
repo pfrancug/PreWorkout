@@ -3,7 +3,7 @@ import type {
   UserSettings,
 } from '../contexts/SettingsContext';
 import type { ITrainerConnection, ITrainingSession } from '../types/types';
-import type { Message } from '@components/Chat';
+import type { Message } from '@components/types';
 
 import {
   equalTo,

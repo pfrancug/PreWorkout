@@ -1,4 +1,4 @@
-import type { IRow } from '../types/types';
+import type { AIProvider, ChatProps, Message } from './types';
 import type { AIConfig } from '@lib/ai/types';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 
@@ -36,8 +36,6 @@ import {
   streamFromGrok,
 } from '../lib/ai';
 
-type AIProvider = 'gemini' | 'grok';
-
 const LoadingDots = () => (
   <div className={'flex items-center gap-1 py-1'}>
     <span
@@ -58,18 +56,7 @@ const LoadingDots = () => (
   </div>
 );
 
-interface Props {
-  dataset: IRow[] | null;
-  variant?: 'drawer' | 'page';
-}
-
-export interface Message {
-  attachedDataset?: IRow[];
-  parts: { text: string }[];
-  role: string;
-}
-
-export const Chat = ({ dataset, variant = 'drawer' }: Props) => {
+export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();

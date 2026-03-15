@@ -1,6 +1,6 @@
 import type { IRow } from '../../types/types';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
-import type { Dispatch, SetStateAction } from 'react';
+import type { DataTableProps } from './types';
+import type { SortingState } from '@tanstack/react-table';
 
 import {
   Table,
@@ -23,15 +23,9 @@ import { useTranslation } from 'react-i18next';
 import { DataTablePagination } from './DataTablePagination';
 import { DataTableToolbar } from './DataTableToolbar';
 
-interface Props {
-  columns: ColumnDef<IRow>[];
-  dataSet: IRow[] | null;
-  setDataSet: Dispatch<SetStateAction<IRow[] | null>>;
-}
-
 const EMPTY_ARRAY: IRow[] = [];
 
-export const DataTable = ({ columns, dataSet, setDataSet }: Props) => {
+export const DataTable = ({ columns, dataSet, setDataSet }: DataTableProps) => {
   const { t } = useTranslation();
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'date', desc: true },

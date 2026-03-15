@@ -1,4 +1,4 @@
-import type { Table } from '@tanstack/react-table';
+import type { DataTablePaginationProps } from './types';
 
 import { Button } from '@components/ui/button';
 import {
@@ -9,11 +9,9 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-interface Props<TData> {
-  table: Table<TData>;
-}
-
-export const DataTablePagination = <TData,>({ table }: Props<TData>) => {
+export const DataTablePagination = <TData,>({
+  table,
+}: DataTablePaginationProps<TData>) => {
   const { t } = useTranslation();
 
   return (

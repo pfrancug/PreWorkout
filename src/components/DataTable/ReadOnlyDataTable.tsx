@@ -1,5 +1,6 @@
 import type { IRow } from '../../types/types';
-import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import type { ReadOnlyDataTableProps } from './types';
+import type { SortingState } from '@tanstack/react-table';
 
 import {
   Table,
@@ -21,15 +22,13 @@ import { useTranslation } from 'react-i18next';
 
 import { DataTablePagination } from './DataTablePagination';
 
-interface Props {
-  columns: ColumnDef<IRow>[];
-  data: IRow[] | null;
-}
-
 const EMPTY_ARRAY: IRow[] = [];
 
 /** Read-only data table — no toolbar, no row selection, no editing */
-export const ReadOnlyDataTable = ({ columns, data }: Props) => {
+export const ReadOnlyDataTable = ({
+  columns,
+  data,
+}: ReadOnlyDataTableProps) => {
   const { t } = useTranslation();
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'date', desc: true },

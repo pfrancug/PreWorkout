@@ -1,4 +1,4 @@
-import type { ICalculatorForm } from '../types/form';
+import type { CalculatorFormProps } from '../types';
 
 import { Button } from '@components/ui/button';
 import { Card, CardContent } from '@components/ui/card';
@@ -14,14 +14,6 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { ActivityOptions } from '../constants/activity-options';
-
-interface CalculatorFormProps {
-  values: ICalculatorForm;
-  onChange: <K extends keyof ICalculatorForm>(
-    field: K,
-    value: ICalculatorForm[K],
-  ) => void;
-}
 
 export const CalculatorForm = ({ values, onChange }: CalculatorFormProps) => {
   const { t } = useTranslation();

@@ -1,4 +1,4 @@
-import type { ActivityIconId } from '../constants/activities';
+import type { IconColorPickerProps } from './types';
 
 import { cn } from '@lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -10,13 +10,6 @@ import {
 } from '../constants/activities';
 import { ActivityIcon } from './ActivityIcon';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-
-interface IconColorPickerProps {
-  icon: string;
-  color: string;
-  onIconChange: (icon: ActivityIconId) => void;
-  onColorChange: (color: string) => void;
-}
 
 export const IconColorPicker = ({
   icon,

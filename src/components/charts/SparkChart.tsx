@@ -1,5 +1,5 @@
 import type { IRow } from '@app-types/types';
-import type { ChartConfig } from '@components/ui/chart';
+import type { ChartConfig } from '@components/ui/types';
 
 import { Badge } from '@components/ui/badge';
 import {
