@@ -7,6 +7,7 @@ import {
   orderByChild,
   query,
   ref,
+  set,
   update,
 } from 'firebase/database';
 import { onValue } from 'firebase/database';
@@ -132,9 +133,7 @@ export const setTrainerFlagInDirectory = async (
   userId: string,
   isTrainer: boolean,
 ): Promise<void> => {
-  await update(ref(database, `userDirectory/${userId}`), {
-    isTrainer,
-  });
+  await set(ref(database, `userDirectory/${userId}/isTrainer`), isTrainer);
 };
 
 export const getTrainerFlagFromDirectory = async (

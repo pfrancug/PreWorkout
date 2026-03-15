@@ -58,6 +58,9 @@ const getAdminApp = () => {
 
 const adminApp = getAdminApp();
 
+export const adminAuth = admin.auth(adminApp);
+export const adminDb = admin.database(adminApp);
+
 /**
  * Verifies a Firebase ID token from the Authorization header.
  * Returns the decoded token's UID, or null if invalid/missing.
@@ -72,7 +75,7 @@ export const verifyAuthToken = async (
   const idToken = authHeader.slice(7);
 
   try {
-    const decoded = await admin.auth(adminApp).verifyIdToken(idToken);
+    const decoded = await adminAuth.verifyIdToken(idToken);
     return decoded.uid;
   } catch {
     return null;

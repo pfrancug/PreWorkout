@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { adminDb } from './auth.js';
 
 const DEFAULT_DAILY_LIMIT = 5;
 
@@ -10,7 +10,7 @@ const DEFAULT_DAILY_LIMIT = 5;
 export const checkRateLimit = async (
   uid: string,
 ): Promise<{ allowed: boolean; remaining: number }> => {
-  const db = admin.database();
+  const db = adminDb;
   const today = new Date().toISOString().split('T')[0];
   const yearMonth = today.substring(0, 7);
   const day = today.substring(8);
