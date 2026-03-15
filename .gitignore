@@ -25,8 +25,6 @@ Desktop.ini
 
 # Private directories
 .claude/
-migrations/
-scripts/
 secrets/
 .vercel
 .env*.local
