@@ -80,7 +80,6 @@ export interface AllUserData {
   calendarEntries: CalendarEntries | null;
   calendarNotes: CalendarNotes | null;
   activityCategories: ActivityCategory[] | null;
-  energyDrinks: Record<string, unknown> | null;
   trainerCalendar: Record<string, boolean> | null;
 }
 
@@ -239,7 +238,6 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
     remove(ref(database, `users/${userId}/trainerCalendar`)),
-    remove(ref(database, `users/${userId}/energyDrinks`)),
     remove(ref(database, `users/${userId}/trainerId`)),
     remove(ref(database, `users/${userId}/trainerConnectionId`)),
     // Remove PII fields from userDirectory, keep analytics (messageSends)
@@ -341,11 +339,6 @@ export const importAllUserData = async (
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
   }
-  if (data.energyDrinks) {
-    promises.push(
-      set(ref(database, `users/${userId}/energyDrinks`), data.energyDrinks),
-    );
-  }
   if (data.trainerCalendar) {
     promises.push(
       set(
@@ -369,7 +362,6 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     calendarEntriesSnap,
     calendarNotes,
     activityCategories,
-    energyDrinksSnap,
     trainerCalendarSnap,
   ] = await Promise.all([
     loadUserSettings(userId),
@@ -380,7 +372,6 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     get(getUserCalendarEntriesRef(userId)),
     loadCalendarNotes(userId),
     loadActivityCategories(userId),
-    get(ref(database, `users/${userId}/energyDrinks`)),
     get(ref(database, `users/${userId}/trainerCalendar`)),
   ]);
 
@@ -395,7 +386,6 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
       : null,
     calendarNotes,
     activityCategories,
-    energyDrinks: energyDrinksSnap.exists() ? energyDrinksSnap.val() : null,
     trainerCalendar: trainerCalendarSnap.exists()
       ? trainerCalendarSnap.val()
       : null,
@@ -884,78 +874,6 @@ export const getUserUsageStats = async (
     averageDaily,
     allTimeTotal,
   };
-};
-
-// Energy Drinks Tracking
-export interface EnergyDrinksData {
-  [date: string]: string[]; // date -> array of drink IDs
-}
-
-export const getEnergyDrinksRef = (userId: string) =>
-  ref(database, `users/${userId}/energyDrinks`);
-
-export const loadEnergyDrinks = async (
-  userId: string,
-): Promise<EnergyDrinksData | null> => {
-  const drinksRef = getEnergyDrinksRef(userId);
-  const snapshot = await get(drinksRef);
-
-  if (snapshot.exists()) {
-    return snapshot.val() as EnergyDrinksData;
-  }
-
-  return null;
-};
-
-export const addEnergyDrink = async (
-  userId: string,
-  drinkId: string,
-  date?: string,
-): Promise<void> => {
-  const targetDate = date ?? getTodayDateString();
-  const dayRef = ref(database, `users/${userId}/energyDrinks/${targetDate}`);
-
-  await runTransaction(dayRef, (currentDrinks: string[] | null) => {
-    if (!currentDrinks) {
-      return [drinkId];
-    }
-
-    return [...currentDrinks, drinkId];
-  });
-};
-
-export const removeEnergyDrink = async (
-  userId: string,
-  date: string,
-  drinkIndex: number,
-): Promise<void> => {
-  const dayRef = ref(database, `users/${userId}/energyDrinks/${date}`);
-
-  await runTransaction(dayRef, (currentDrinks: string[] | null) => {
-    if (!currentDrinks || currentDrinks.length === 0) {
-      return null;
-    }
-    const newDrinks = [...currentDrinks];
-    newDrinks.splice(drinkIndex, 1);
-
-    return newDrinks.length > 0 ? newDrinks : null;
-  });
-};
-
-export const subscribeToEnergyDrinks = (
-  userId: string,
-  callback: (data: EnergyDrinksData | null) => void,
-): (() => void) => {
-  const drinksRef = getEnergyDrinksRef(userId);
-  const unsubscribe = onValue(drinksRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val() as EnergyDrinksData);
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
 };
 
 // ─── Trainer Feature ────────────────────────────────────────────────────────

@@ -21,7 +21,6 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     'calendarEntries',
     'calendarNotes',
     'activityCategories',
-    'energyDrinks',
     'trainerCalendar',
   ]);
 
@@ -189,28 +188,6 @@ export const validateImportData = (data: unknown): data is AllUserData => {
       }
       if (typeof note !== 'string') {
         return false;
-      }
-    }
-  }
-
-  // Validate energyDrinks (date-keyed object with string arrays)
-  if (d.energyDrinks != null) {
-    if (typeof d.energyDrinks !== 'object') {
-      return false;
-    }
-    for (const [date, drinks] of Object.entries(
-      d.energyDrinks as Record<string, unknown>,
-    )) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return false;
-      }
-      if (!Array.isArray(drinks)) {
-        return false;
-      }
-      for (const drink of drinks) {
-        if (typeof drink !== 'string') {
-          return false;
-        }
       }
     }
   }

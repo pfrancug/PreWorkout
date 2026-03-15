@@ -157,50 +157,6 @@ export const PreferencesSettingsPage = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('settings.preferences.drinks.title')}</CardTitle>
-
-          <CardDescription>
-            {t('settings.preferences.drinks.description')}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className={'space-y-4'}>
-          <div className={'space-y-2'}>
-            <Label>{t('settings.preferences.drinks.sugarFilterLabel')}</Label>
-
-            <Select
-              value={preferences.drinksSugarFilter || 'all'}
-              onValueChange={(value) =>
-                updatePreference(
-                  'drinksSugarFilter',
-                  value as 'all' | 'sugar' | 'no-sugar',
-                )
-              }
-            >
-              <SelectTrigger className={'w-48'}>
-                <SelectValue />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value={'all'}>
-                  {t('settings.preferences.drinks.all')}
-                </SelectItem>
-
-                <SelectItem value={'sugar'}>
-                  {t('settings.preferences.drinks.sugar')}
-                </SelectItem>
-
-                <SelectItem value={'no-sugar'}>
-                  {t('settings.preferences.drinks.noSugar')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>{t('settings.preferences.menu.title')}</CardTitle>
 
           <CardDescription>

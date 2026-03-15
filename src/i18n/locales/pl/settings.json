@@ -27,14 +27,6 @@
         "description": "Wybierz domyślny widok po otwarciu kalendarza.",
         "label": "Domyślny widok"
       },
-      "drinks": {
-        "title": "Energetyki",
-        "description": "Skonfiguruj domyślne filtry dla strony energetyków.",
-        "sugarFilterLabel": "Domyślny filtr cukru",
-        "all": "Wszystkie",
-        "sugar": "Z cukrem",
-        "noSugar": "Bez cukru"
-      },
       "menu": {
         "title": "Menu",
         "description": "Dostosuj które sekcje pojawiają się w menu bocznym.",
