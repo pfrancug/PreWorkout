@@ -355,7 +355,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
         finalMessages = [...messages, newUserMessage, emptyModelMessage];
         setMessages(finalMessages);
 
-        // Skip rate limit on fallback â€” primary already counted
+        // Skip rate limit on fallback — primary already counted
         aiConfig.skipRateLimit = true;
         success = await tryProvider(fallbackProvider);
       }

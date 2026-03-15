@@ -12,6 +12,7 @@ import { DialogHeader, DialogTitle } from '@components/ui/dialog';
 import { Input } from '@components/ui/input';
 import { Textarea } from '@components/ui/textarea';
 import { ACTIVITY_COLOR_MAP } from '@constants/activities';
+import { EM_DASH } from '@constants/display';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@lib/utils';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
@@ -320,7 +321,7 @@ export const AddView = ({
               id={'eventTime'}
               type={'time'}
             />
-            <span className={'text-sm text-muted-foreground'}>{'â€“'}</span>
+            <span className={'text-sm text-muted-foreground'}>{EM_DASH}</span>
             <Input
               {...register('timeEnd')}
               className={'flex-1'}

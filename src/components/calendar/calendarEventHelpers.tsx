@@ -32,7 +32,7 @@ export const mapCalendarEvents = ({
       : [];
 
     // Virtual trainer-day event (only if not already logged as an entry
-    // AND no timed session exists â€” timed sessions get their own event below)
+    // AND no timed session exists — timed sessions get their own event below)
     if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
       const alreadyLogged = dayEntries.some(
         (e) =>
@@ -102,7 +102,7 @@ export const mapCalendarEvents = ({
     }
   }
 
-  // Training session events â€” only timed sessions get their own event
+  // Training session events — only timed sessions get their own event
   // (sessions without a time are already represented by the trainer activity above)
   for (const session of trainingSessions) {
     if (session.status === 'cancelled' || !session.time) {
@@ -155,7 +155,7 @@ export const mapCalendarEvents = ({
   return result;
 };
 
-// â”€â”€ Custom event renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Custom event renderer ────────────────────────────────────────────────────
 
 export const renderEventContent = (arg: EventContentArg, t: TFunction) => {
   const meta = arg.event.extendedProps as IFullCalendarEventMeta;
@@ -232,7 +232,7 @@ export const renderEventContent = (arg: EventContentArg, t: TFunction) => {
   );
 };
 
-// â”€â”€ Drawer entries helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Drawer entries helper ────────────────────────────────────────────────────
 
 export const getDrawerEntries = ({
   date,

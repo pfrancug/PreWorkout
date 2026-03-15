@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: Props) => {
           firebaseUser.email ?? '',
           firebaseUser.displayName ?? '',
         ).catch(() => {
-          // Silently fail â€” non-critical
+          // Silently fail — non-critical
         });
       } else {
         setIsAdmin(false);

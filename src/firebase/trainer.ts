@@ -55,10 +55,10 @@ export const createTrainerInvite = async (
     const inviteRef = ref(database, `trainerInvites/${inviteCode}`);
     const { committed } = await runTransaction(inviteRef, (current) => {
       if (current !== null) {
-        return; // abort â€” code already taken
+        return; // abort — code already taken
       }
 
-      // Write final shape atomically â€” no placeholder window
+      // Write final shape atomically — no placeholder window
       return { trainerId, connectionId };
     });
 
@@ -125,7 +125,7 @@ export const acceptTrainerInvite = async (
     return { success: false, error: 'already_has_trainer' };
   }
 
-  // Claim the connection â€” security rules enforce that only a pending
+  // Claim the connection — security rules enforce that only a pending
   // connection can transition to active with the caller's traineeId,
   // so a race between two trainees is prevented server-side.
   const connectionRef = ref(database, `trainerConnections/${connectionId}`);
@@ -180,7 +180,7 @@ export const acceptTrainerInvite = async (
       await saveActivityCategories(traineeId, [...categories, trainerCategory]);
     }
   } catch {
-    // Non-critical â€“ connection still succeeds even if category creation fails
+    // Non-critical — connection still succeeds even if category creation fails
   }
 
   return { success: true };
@@ -227,7 +227,7 @@ export const deletePendingInvite = async (
 };
 
 /**
- * Either party can disconnect the trainerâ€“trainee relationship.
+ * Either party can disconnect the trainer–trainee relationship.
  */
 export const disconnectTrainer = async (
   connectionId: string,
@@ -263,7 +263,7 @@ export const disconnectTrainer = async (
         await saveActivityCategories(traineeId, updated);
       }
     } catch {
-      // Non-critical â€“ disconnect still succeeds
+      // Non-critical — disconnect still succeeds
     }
   }
 };

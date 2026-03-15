@@ -115,7 +115,7 @@ export const DataSettingsPage = () => {
 
     setIsDeleting(true);
     try {
-      // Re-auth first â€” if user cancels popup, no data is lost
+      // Re-auth first — if user cancels popup, no data is lost
       await reauthenticate();
       // Delete data while user still has valid auth token
       await deleteAllUserData(user.uid);

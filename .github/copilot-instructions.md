@@ -73,4 +73,10 @@ api/              # Vercel serverless functions (proxied via /api in dev)
 - **Firebase DB helpers**: `get*Ref()` for paths, `save*` / `load*` / `subscribe*` for operations — split into domain modules under `firebase/` (e.g. `calendar.ts`, `trainer.ts`, `settings.ts`) and re-exported via `firebase/database.ts` barrel
 - **API auth**: Bearer token → `verifyAuthToken()` in serverless functions
 - **Date handling**: Convert to `YYYY-MM-DD` in local timezone to avoid UTC shifts
+- **Special characters**: Never use raw Unicode or ASCII symbols in JSX/string literals — use constants from `@constants/display` and lucide icons instead:
+  - `EM_DASH` — empty-value placeholders (table cells, inputs)
+  - `HYPHEN` — date string delimiters (`split(HYPHEN)`), general separators
+  - `MINUS` — negative number display (deficit values)
+  - `<Dot>` from lucide-react — bullet separators (instead of `•`)
+  - `<ArrowLeft>` from lucide-react — back navigation (instead of `←`)
 - **No backward compatibility** — when removing features, do a clean removal (no legacy keys, no deprecated fallbacks) unless explicitly told to preserve backward compatibility

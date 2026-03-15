@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@components/ui/card';
 import { useAuth } from '@contexts/useAuth';
+import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 
@@ -90,12 +91,12 @@ export const PrivacyPage = () => {
                 onClick={() => navigate(-1)}
                 type={'button'}
               >
-                {'â† '}
+                <ArrowLeft className={'mr-1 inline size-4'} />
                 {t('legal.backToSettings')}
               </button>
             ) : (
               <Link className={'text-primary hover:underline'} to={'/login'}>
-                {'â† '}
+                <ArrowLeft className={'mr-1 inline size-4'} />
                 {t('legal.backToLogin')}
               </Link>
             )}

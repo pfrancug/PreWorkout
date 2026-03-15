@@ -66,7 +66,7 @@ export const IconColorPicker = ({
 
         <div className={'grid grid-cols-5 gap-2'}>
           {AVAILABLE_ICONS.map(({ id, icon: Icon, label }) => (
-            // Intentionally does NOT close the popover â€” users often pick
+            // Intentionally does NOT close the popover — users often pick
             // an icon and then switch the color, so keeping it open avoids
             // having to re-open the picker.
             <button

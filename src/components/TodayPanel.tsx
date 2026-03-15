@@ -19,6 +19,7 @@ import { Label } from '@components/ui/label';
 import { Switch } from '@components/ui/switch';
 import { Textarea } from '@components/ui/textarea';
 import { ACTIVITY_COLOR_MAP, DEFAULT_CATEGORIES } from '@constants/activities';
+import { EM_DASH } from '@constants/display';
 import { useAuth } from '@contexts/useAuth';
 import { useDataSet } from '@contexts/useDataSet';
 import {
@@ -285,7 +286,7 @@ export const TodayPanel = () => {
               className={'h-9'}
               min={0}
               onChange={(e) => handleNumericChange(key, e.target.value)}
-              placeholder={'â€”'}
+              placeholder={EM_DASH}
               step={step}
               type={'number'}
               value={todayRow?.[key] ?? ''}

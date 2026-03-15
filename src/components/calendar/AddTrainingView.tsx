@@ -7,6 +7,7 @@ import { Checkbox } from '@components/ui/checkbox';
 import { DialogHeader, DialogTitle } from '@components/ui/dialog';
 import { Input } from '@components/ui/input';
 import { Textarea } from '@components/ui/textarea';
+import { EM_DASH } from '@constants/display';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect } from 'react';
@@ -109,7 +110,7 @@ export const AddTrainingView = ({
               id={'trainingTime'}
               type={'time'}
             />
-            <span className={'text-sm text-muted-foreground'}>{'â€“'}</span>
+            <span className={'text-sm text-muted-foreground'}>{EM_DASH}</span>
             <Input
               {...register('timeEnd')}
               className={'flex-1'}
