@@ -59,7 +59,7 @@ const getAdminApp = () => {
 const adminApp = getAdminApp();
 
 export const adminAuth = admin.auth(adminApp);
-export const getAdminDb = () => admin.database(adminApp);
+export const adminDb = admin.database(adminApp);
 
 /**
  * Verifies a Firebase ID token from the Authorization header.
