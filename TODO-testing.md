@@ -131,19 +131,25 @@
 
 ## Phase 5 — Context & Hook Tests
 
+### Context Consumer Hooks
+
+- [x] `useAuth` — throws when used outside AuthProvider (1 test)
+- [x] `useSettings` — throws when used outside SettingsProvider (1 test)
+- [x] `useDataSet` — throws when used outside DataProvider (1 test)
+
 ### Context Providers (mock Firebase, wrap in providers)
 
-- [ ] `AuthProvider` — sets user on auth state change, exposes isAdmin/isTrainer from claims
-- [ ] `SettingsProvider` — loads/saves settings, debounced sync
-- [ ] `DataProvider` — loads diary data, debounced save on row change
+- [x] `AuthProvider` — loading state, user/admin/trainer claims, sign-out reset, updateUserDirectory call, unsubscribe on unmount (6 tests)
+- [x] `SettingsProvider` — loads settings/preferences from Firebase, default for null user, default for null prefs, saveSettings persists, updatePreference persists, changeLanguage (6 tests)
+- [x] `DataProvider` — loads data, loading state for null user, null from Firebase, debounced save, function updater (5 tests)
 
 ### Custom Hooks (renderHook with provider wrappers)
 
-- [ ] `useCalendarData` — subscribes to entries/notes/categories/trainer calendar/sessions, cleans up
-- [ ] `useCalendarHandlers` — CRUD operations call correct Firebase functions
-- [ ] `useMobile` — returns true/false based on viewport width
-- [ ] `useSwipeToOpenSidebar` — detects left-edge swipe gesture
-- [ ] `useTraineeDataSet` — loads trainee data, caches result
+- [x] `useMobile` — true below 1024, false at 1024+, updates on matchMedia change, boundary (4 tests)
+- [x] `useSwipeToOpenSidebar` — opens on left-edge swipe, ignores outside edge, below threshold, disabled, vertical, removes listeners (6 tests)
+- [x] `useTraineeDataSet` — loading state, loads data, no traineeId, null Firebase, reloads on id change, error handling (6 tests)
+- [ ] `useCalendarData` — _(deferred — orchestrator with 6 Firebase subscriptions + useAuth + useCalendarHandlers, better as integration/E2E test)_
+- [ ] `useCalendarHandlers` — _(deferred — many async Firebase operations with debounced timers, refs, toast notifications)_
 
 ---
 
