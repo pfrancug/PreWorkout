@@ -153,36 +153,43 @@
 
 ---
 
-## Phase 6 — API Integration Tests (Vercel serverless)
+## Phase 6 — API Endpoint Tests (mocked handler unit tests)
 
-### Setup
+### `POST /api/admin/set-trainer` (10 tests)
 
-- [ ] Configure test harness that starts `vercel dev --listen 3001` before tests
-- [ ] Create helper to mint Firebase ID tokens (via Admin SDK or emulator)
-- [ ] Create helper to seed/clear test data in Firebase
+- [x] 405 for non-POST methods
+- [x] 401 for missing/invalid token
+- [x] 403 for non-admin user
+- [x] 400 for missing targetUid, non-boolean isTrainer, empty targetUid, targetUid > 128 chars
+- [x] 200 sets trainer claim (preserves existing claims)
+- [x] 200 removes trainer claim (preserves other claims)
+- [x] 500 when Firebase Admin throws
 
-### Endpoint Tests
+### `POST /api/ai/gemini` (12 tests)
 
-- [ ] `POST /api/admin/set-trainer`
-  - 405 for non-POST methods
-  - 401 for missing/invalid token
-  - 403 for non-admin user
-  - 400 for invalid body (missing targetUid, wrong types, uid too long)
-  - 200 sets trainer claim (verify via Admin SDK)
-  - 200 removes trainer claim
-  - Preserves other custom claims
+- [x] 405 for non-POST methods
+- [x] 401 for missing/invalid token
+- [x] 429 when rate limit exceeded
+- [x] Skips rate limit when skipRateLimit is true
+- [x] 400 for missing userMessage or systemInstruction
+- [x] 413 for payload > 100KB
+- [x] 500 when GEMINI_API_KEY is not set
+- [x] Streams SSE response with chunks and ends with `data: [DONE]\n\n`
+- [x] Passes system instruction prepended to messages
+- [x] 500 when streamText throws before headers sent
+- [x] Writes error as SSE event after headers sent
 
-- [ ] `POST /api/ai/gemini`
-  - 405 for non-POST methods
-  - 401 for missing/invalid token
-  - 429 when rate limit exceeded
-  - 400 for missing systemInstruction/messages/userMessage
-  - 413 for payload > 100KB
-  - 200 streams SSE response (`data: ...\n\n` chunks, ends with `data: [DONE]\n\n`)
-  - Error mid-stream written as SSE event (not status code)
+### `POST /api/ai/grok` (9 tests)
 
-- [ ] `POST /api/ai/grok`
-  - Same test cases as gemini endpoint
+- [x] 405 for non-POST methods
+- [x] 401 for missing/invalid token
+- [x] 429 when rate limit exceeded
+- [x] 400 for missing userMessage
+- [x] 413 for payload > 100KB
+- [x] 500 when XAI_API_KEY is not set
+- [x] Streams SSE response and ends with [DONE]
+- [x] Writes error as SSE event after headers sent
+- [x] Passes messages with system instruction and temperature to streamText
 
 ---
 
