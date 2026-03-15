@@ -14,4 +14,3 @@ const useSidebar = () => {
 };
 
 export { SidebarContext, useSidebar };
-export type { SidebarContextProps } from './types';
