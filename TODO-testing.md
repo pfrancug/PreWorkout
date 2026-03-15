@@ -2,16 +2,13 @@
 
 ## Phase 1 — Setup
 
-- [ ] Install Vitest + React Testing Library
-  ```bash
-  npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event
-  ```
-- [ ] Create `vitest.config.ts` (extend `vite.config.ts` aliases, set `jsdom` environment)
-- [ ] Create `src/test/setup.ts` (import `@testing-library/jest-dom`)
-- [ ] Add scripts to `package.json`: `"test"`, `"test:watch"`, `"test:coverage"`
-- [ ] Configure Firebase Emulator Suite in `firebase.json` (Auth + Realtime Database)
-- [ ] Install Playwright for E2E: `npm install -D @playwright/test`
-- [ ] Create `playwright.config.ts`
+- [x] Install Vitest + React Testing Library
+- [x] Create `vitest.config.ts` (extend `vite.config.ts` aliases, set `jsdom` environment)
+- [x] Create `src/test/setup.ts` (import `@testing-library/jest-dom`)
+- [x] Add scripts to `package.json`: `"test"`, `"test:watch"`, `"test:coverage"`
+- [x] Configure Firebase Emulator Suite in `firebase.json` (Auth + Realtime Database)
+- [x] Install Playwright for E2E: `npm install -D @playwright/test`
+- [x] Create `playwright.config.ts`
 
 ---
 
