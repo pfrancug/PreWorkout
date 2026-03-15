@@ -70,39 +70,28 @@
 
 ### API Helpers (mock `firebase-admin`)
 
-- [ ] `api/lib/auth.ts` — `verifyAuthToken()`
-  - Valid Bearer token → returns uid
-  - Missing Authorization header → returns null
-  - Malformed header (no "Bearer " prefix) → returns null
-  - Expired/invalid token → returns null
-  - Empty string token → returns null
-
-- [ ] `api/lib/rate-limit.ts` — `checkRateLimit()`
-  - Under limit → `{ allowed: true, remaining: N }`
-  - At limit → `{ allowed: false, remaining: 0 }`
-  - Unlimited user (max = -1) → always allowed
-  - Default limit (no config) → uses DEFAULT_DAILY_LIMIT (5)
-  - Day rollover resets count
-  - Atomic increment on allow
+- [x] `api/lib/auth.ts` — `verifyAuthToken()` (6 tests)
+- [x] `api/lib/rate-limit.ts` — `checkRateLimit()` (7 tests)
 
 ### Firebase Database Functions (mock Firebase RTDB)
 
-- [ ] `src/firebase/settings.ts` — save/load user settings & preferences
-- [ ] `src/firebase/diary.ts` — save/load diary data, ref paths
-- [ ] `src/firebase/calendar.ts` — CRUD entries, notes, subscriptions
-- [ ] `src/firebase/messages.ts` — save/clear/subscribe messages
-- [ ] `src/firebase/message-limits.ts` — limit config, `isMessageLimitReached()`
-- [ ] `src/firebase/trainer.ts` — invite flow, accept, disconnect
-- [ ] `src/firebase/training-sessions.ts` — session CRUD, package grouping, payment status
-- [ ] `src/firebase/activity-categories.ts` — save/load/subscribe + `_initialized` seeding logic
-- [ ] `src/firebase/user-directory.ts` — display name, avatar, trainer flag
-- [ ] `src/firebase/user-management.ts` — deleteAll, importAll, loadAll
-- [ ] `src/firebase/admin.ts` — get/set user limits, usage stats
+- [x] `src/firebase/settings.ts` — save/load user settings & preferences (6 tests)
+- [x] `src/firebase/diary.ts` — save/load diary data, date sorting (5 tests)
+- [x] `src/firebase/calendar.ts` — CRUD entries, notes, time updates (10 tests)
+- [x] `src/firebase/messages.ts` — save/clear/subscribe, undefined cleanup (8 tests)
+- [x] `src/firebase/message-limits.ts` — isMessageLimitReached, getRemainingMessages, loadConfig (11 tests)
+- [x] `src/firebase/activity-categories.ts` — load (array/object normalisation), save, subscribe + auto-seed (8 tests)
+- [x] `src/firebase/admin.ts` — getUserUsageStats aggregation, get/set limits (6 tests)
+- [ ] `src/firebase/trainer.ts` — _(deferred — complex multi-step invite flow, better suited for integration/emulator tests)_
+- [ ] `src/firebase/training-sessions.ts` — _(deferred — thin CRUD wrappers with minimal logic)_
+- [ ] `src/firebase/user-directory.ts` — _(deferred — complex cross-module propagation)_
+- [ ] `src/firebase/user-management.ts` — _(deferred — orchestration of many modules)_
 
 ### AI Client Functions (mock fetch/SDK)
 
-- [ ] `src/lib/ai/gemini.ts` — `streamFromGemini()` streaming, error detection
-- [ ] `src/lib/ai/grok.ts` — `streamFromGrok()` streaming, error detection
+- [x] `src/lib/ai/gemini.ts` — `isRateLimitError()` (6 tests)
+- [ ] `src/lib/ai/gemini.ts` — `streamFromGemini()` _(deferred — module-level env binding makes SSE parsing hard to isolate)_
+- [ ] `src/lib/ai/grok.ts` — `streamFromGrok()` _(deferred — same pattern as gemini, no unique pure functions)_
 
 ---
 
