@@ -16,7 +16,7 @@
 
 ### Utilities
 
-- [ ] `src/lib/validate-import.ts` — `validateImportData()`
+- [x] `src/lib/validate-import.ts` — `validateImportData()` (54 tests)
   - Valid complete data object
   - Missing top-level keys (settings, preferences, data, etc.)
   - Invalid settings (wrong types, invalid sex enum, negative age/height)
@@ -31,7 +31,7 @@
   - Null/undefined/empty inputs
   - Extra/unexpected fields (should still pass)
 
-- [ ] `src/lib/data-format.ts` — `fromFirebaseFormat()`
+- [x] `src/lib/data-format.ts` — `fromFirebaseFormat()` (8 tests)
   - Legacy ISO string format (`2024-01-15T00:00:00.000Z`)
   - New YYYY-MM-DD format
   - Date parsed in local timezone (no UTC shift)
@@ -39,20 +39,16 @@
   - Null/empty input handling
   - All numeric fields preserved (kcal, protein, carbs, fat, weight)
 
-- [ ] `src/lib/utils.ts` — `cn()`
+- [x] `src/lib/utils.ts` — `cn()` (6 tests)
   - Merges multiple class strings
   - Handles conditional classes (falsy values)
   - tailwind-merge deduplication (e.g. `p-2` + `p-4` → `p-4`)
 
-- [ ] `src/lib/image.ts` — `cropToSquareDataUrl()`
-  - Landscape image crops to centered square
-  - Portrait image crops to centered square
-  - Square image passes through
-  - Output is 256×256 JPEG data URL
+- [ ] `src/lib/image.ts` — `cropToSquareDataUrl()` _(deferred to Phase 3 — needs Canvas/Image mocking)_
 
 ### Calculator
 
-- [ ] `src/pages/Calculator/utils/calculate.ts` — `calculate()`
+- [x] `src/pages/Calculator/utils/calculate.ts` — `calculate()` (11 tests)
   - Male BMR calculation (Mifflin-St Jeor)
   - Female BMR calculation
   - Maintenance = BMR × activity multiplier
@@ -61,14 +57,12 @@
 
 ### Constants
 
-- [ ] `src/constants/display.ts` — verify character values
-  - `EM_DASH` is U+2014, `EN_DASH` is U+2013, `HYPHEN` is U+002D, `MINUS` is U+2212
+- [x] `src/constants/display.ts` — verify character values (4 tests)
 
 ### Calendar Helpers
 
-- [ ] `src/components/calendar/calendarEventHelpers.tsx`
-  - `mapCalendarEvents()` — maps entries to FullCalendar events
-  - `getDrawerEntries()` — filters entries for a given date
+- [x] `src/components/calendar/calendarEventHelpers.tsx` — `getDrawerEntries()` (17 tests)
+  - `mapCalendarEvents()` deferred to Phase 4 (JSX + i18n dependencies)
 
 ---
 
