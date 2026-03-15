@@ -9,6 +9,7 @@ import { DialogHeader, DialogTitle } from '@components/ui/dialog';
 import { Input } from '@components/ui/input';
 import { Textarea } from '@components/ui/textarea';
 import { ACTIVITY_COLOR_MAP } from '@constants/activities';
+import { EN_DASH } from '@constants/display';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Clock, Pencil, Trash2 } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -127,7 +128,7 @@ export const EventView = ({
           >
             <Clock className={'h-3.5 w-3.5'} />
             {entry.time}
-            {entry.timeEnd && ` – ${entry.timeEnd}`}
+            {entry.timeEnd && ` ${EN_DASH} ${entry.timeEnd}`}
           </span>
         )}
       </div>
@@ -145,7 +146,7 @@ export const EventView = ({
             id={'editTime'}
             type={'time'}
           />
-          <span className={'text-sm text-muted-foreground'}>{'â€“'}</span>
+          <span className={'text-sm text-muted-foreground'}>{EN_DASH}</span>
           <Input
             {...register('timeEnd')}
             className={'flex-1'}

@@ -6,6 +6,7 @@ import { Input } from '@components/ui/input';
 import { Label } from '@components/ui/label';
 import { Switch } from '@components/ui/switch';
 import { TableCell, TableRow } from '@components/ui/table';
+import { EM_DASH } from '@constants/display';
 import { Loader2, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -56,7 +57,7 @@ export const AdminUserRow = ({
 
       <TableCell>
         {user.displayName ?? (
-          <span className={'text-muted-foreground'}>{'-'}</span>
+          <span className={'text-muted-foreground'}>{EM_DASH}</span>
         )}
       </TableCell>
 
@@ -64,25 +65,25 @@ export const AdminUserRow = ({
         {user.lastLogin ? (
           new Date(user.lastLogin).toLocaleDateString()
         ) : (
-          <span className={'text-muted-foreground'}>{'-'}</span>
+          <span className={'text-muted-foreground'}>{EM_DASH}</span>
         )}
       </TableCell>
 
       <TableCell className={'text-sm font-medium'}>
         {user.stats?.allTimeTotal ?? (
-          <span className={'text-muted-foreground'}>{'-'}</span>
+          <span className={'text-muted-foreground'}>{EM_DASH}</span>
         )}
       </TableCell>
 
       <TableCell className={'text-sm font-medium'}>
         {user.stats?.totalMessages ?? (
-          <span className={'text-muted-foreground'}>{'-'}</span>
+          <span className={'text-muted-foreground'}>{EM_DASH}</span>
         )}
       </TableCell>
 
       <TableCell className={'text-sm font-medium'}>
         {user.stats?.todayMessages ?? (
-          <span className={'text-muted-foreground'}>{'-'}</span>
+          <span className={'text-muted-foreground'}>{EM_DASH}</span>
         )}
       </TableCell>
 

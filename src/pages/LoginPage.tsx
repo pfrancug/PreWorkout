@@ -9,7 +9,7 @@ import {
 } from '@components/ui/card';
 import { signInWithGoogle } from '@firebase-config/auth';
 import { cn } from '@lib/utils';
-import { Dumbbell, Globe, X } from 'lucide-react';
+import { Dot, Dumbbell, Globe, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -93,7 +93,7 @@ export const LoginPage = () => {
         >
           {t('legal.privacyPolicy')}
         </Link>
-        <span className={'mx-2'}>{'â€˘'}</span>
+        <Dot className={'mx-1 inline size-4'} />
         <Link
           className={'underline underline-offset-4 hover:text-primary'}
           to={'/terms'}

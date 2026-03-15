@@ -13,7 +13,7 @@ export interface IActivityCategory {
   icon: string;
   name: string;
   color: string;
-  /** Trainer user ID â€“ present on auto-created trainer activity categories */
+  /** Trainer user ID — present on auto-created trainer activity categories */
   trainerId?: string;
   /** True for categories auto-created by the system (e.g. on trainer connect) */
   systemGenerated?: boolean;

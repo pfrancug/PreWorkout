@@ -1,5 +1,6 @@
 import type { ResultRowProps, ResultsProps } from '@pages/Calculator/types';
 
+import { MINUS } from '@constants/display';
 import { ArrowDown, Scale, TrendingDown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -50,7 +51,7 @@ const ResultRow = ({
 
           {deficit > 0 && (
             <p className={'text-xs text-muted-foreground'}>
-              {'-'}
+              {MINUS}
               {deficit}
               {t('calculator.results.deficit')}
             </p>

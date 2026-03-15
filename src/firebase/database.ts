@@ -1,6 +1,5 @@
-// Barrel file â€” re-exports all Firebase database operations from domain modules.
-// Existing imports from '@firebase-config/database' or '@firebase-config/database'
-// continue to work without changes.
+// Barrel file — re-exports all Firebase database operations from domain modules.
+// Existing imports from '@firebase-config/database' continue to work without changes.
 
 export * from './activity-categories';
 export * from './admin';

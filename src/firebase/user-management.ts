@@ -42,7 +42,7 @@ import {
 /**
  * Deletes all user data from the database.
  *
- * GDPR Compliance Note (Option A â€” Anonymize shared data):
+ * GDPR Compliance Note (Option A — Anonymize shared data):
  * - Deletes all personal data (settings, diary, calendar, preferences, etc.)
  * - Removes PII fields from userDirectory (email, displayName, lastLogin, isTrainer)
  * - Retains userDirectory/{uid}/messageSends for anonymized analytics (GDPR Article 89)
@@ -73,7 +73,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(ref(database, `userDirectory/${userId}/isTrainer`)),
   ]);
 
-  // 2. Handle trainer connections â€” mark as 'deleted', clean up other side
+  // 2. Handle trainer connections — mark as 'deleted', clean up other side
   await cleanupConnectionsForDeletedUser(userId);
 };
 

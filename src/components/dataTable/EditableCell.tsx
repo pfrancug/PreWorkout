@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@components/ui/popover';
+import { EM_DASH } from '@constants/display';
 import { useEffect, useRef, useState } from 'react';
 
 export const EditableCell = ({
@@ -156,7 +157,7 @@ export const EditableCell = ({
                     month: '2-digit',
                     day: '2-digit',
                   }).format(dateObj)
-                : '-'}
+                : EM_DASH}
             </div>
           </PopoverTrigger>
 
@@ -197,7 +198,7 @@ export const EditableCell = ({
 
   const displayValue = (() => {
     if (value === null || value === undefined || value === '') {
-      return '-';
+      return EM_DASH;
     }
     if (columnId === 'date' && value instanceof Date) {
       return new Intl.DateTimeFormat(undefined, {

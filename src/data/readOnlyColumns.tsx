@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { TFunction } from 'i18next';
 
 import { Badge } from '@components/ui/badge';
+import { EM_DASH } from '@constants/display';
 
 /** Read-only columns for the trainee diary view (no select, no editable cells, no completed toggle) */
 export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
@@ -13,7 +14,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
       const date = getValue() as Date;
 
       if (!date) {
-        return 'â€”';
+        return EM_DASH;
       }
 
       const y = date.getFullYear();
@@ -32,7 +33,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : 'â€”';
+      return v != null ? v : EM_DASH;
     },
     size: 80,
     minSize: 70,
@@ -44,7 +45,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : 'â€”';
+      return v != null ? v : EM_DASH;
     },
     size: 90,
     minSize: 80,
@@ -56,7 +57,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : 'â€”';
+      return v != null ? v : EM_DASH;
     },
     size: 80,
     minSize: 70,
@@ -68,7 +69,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : 'â€”';
+      return v != null ? v : EM_DASH;
     },
     size: 70,
     minSize: 60,
@@ -80,7 +81,7 @@ export const getReadOnlyColumns = (t: TFunction): ColumnDef<IRow>[] => [
     cell: ({ getValue }) => {
       const v = getValue() as number | null;
 
-      return v != null ? v : 'â€”';
+      return v != null ? v : EM_DASH;
     },
     size: 70,
     minSize: 60,

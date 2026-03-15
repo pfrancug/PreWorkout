@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@components/ui/select';
+import { HYPHEN } from '@constants/display';
 import {
   batchRemoveFromPackage,
   cancelSession,
@@ -292,7 +293,7 @@ export const TrainingSessions = ({
   };
 
   const formatDate = (dateStr: string) => {
-    const [y, m, d] = dateStr.split('-').map(Number);
+    const [y, m, d] = dateStr.split(HYPHEN).map(Number);
     const date = new Date(y, m - 1, d);
 
     return date.toLocaleDateString(i18n.language, {
@@ -508,7 +509,7 @@ export const TrainingSessions = ({
                     {t('sessions.allMonths')}
                   </SelectItem>
                   {availableMonths.map((m) => {
-                    const [y, mo] = m.split('-').map(Number);
+                    const [y, mo] = m.split(HYPHEN).map(Number);
                     const label = new Date(y, mo - 1).toLocaleDateString(
                       i18n.language,
                       { month: 'long', year: 'numeric' },

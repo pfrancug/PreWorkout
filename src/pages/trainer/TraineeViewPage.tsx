@@ -55,7 +55,7 @@ export const TraineeViewPage = () => {
         setTraineeAvatar(avatar);
       })
       .catch(() => {
-        // Silently ignore â€” name/avatar are non-critical
+        // Silently ignore — name/avatar are non-critical
       })
       .finally(() => {
         if (!cancelled) {
