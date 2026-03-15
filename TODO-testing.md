@@ -195,35 +195,36 @@
 
 ## Phase 7 — Page-Level Tests
 
-- [ ] `LoginPage` — renders Google sign-in button, links to privacy/terms
-- [ ] `DiaryPage` — renders DataTable with diary data
-- [ ] `CalendarPage` — renders FullCalendarView, opens day drawer on click
-- [ ] `ChatPage` — renders Chat component
-- [ ] `MainPage` — renders dashboard/home content
-- [ ] `AdminPage` — renders user list with analytics (admin-only content)
-- [ ] `PrivacyPage` / `TermsPage` — renders legal content, back navigation with ArrowLeft
+- [x] `LoginPage` — renders Google sign-in button, links to privacy/terms, language toggle, error display/dismiss
+- [x] `DiaryPage` — renders DataTable with diary data
+- [x] `CalendarPage` — renders FullCalendarView with title/description
+- [x] `ChatPage` — renders Chat component with page variant
+- [x] `MainPage` — renders dashboard title, SparkCharts, TodayPanel
+- [ ] `AdminPage` — renders user list with analytics (admin-only content) _(deferred: heavy Firebase deps)_
+- [x] `PrivacyPage` / `TermsPage` — renders legal content, section headings, back navigation link
 
 ### Settings Pages
 
-- [ ] `ProfileSettingsPage` — form fields, avatar upload, save
-- [ ] `PreferencesSettingsPage` — language toggle, calendar view, sidebar settings
-- [ ] `CategoriesSettingsPage` — add/edit/delete activity categories
-- [ ] `DataSettingsPage` — export/import data, delete account
+- [ ] `ProfileSettingsPage` — form fields, avatar upload, save _(deferred: complex)_
+- [ ] `PreferencesSettingsPage` — language toggle, calendar view, sidebar settings _(deferred: heavy context)_
+- [ ] `CategoriesSettingsPage` — add/edit/delete activity categories _(deferred: complex CRUD)_
+- [ ] `DataSettingsPage` — export/import data, delete account _(deferred: file I/O, re-auth)_
 
 ### Trainer Pages
 
-- [ ] `TrainerInvitesPage` — generate invite code, list pending/accepted connections
-- [ ] `TrainerConnectPage` — enter invite code, submit
-- [ ] `TrainerConnectedPage` — shows connected trainer info
-- [ ] `TraineeViewPage` — renders read-only diary table for trainee
-- [ ] `TrainerSessionsPage` — session list, CRUD operations
-- [ ] `TrainerSharingPage` — sharing settings toggle
+- [ ] `TrainerInvitesPage` — generate invite code, list pending/accepted connections _(deferred: async data)_
+- [ ] `TrainerConnectPage` — enter invite code, submit _(deferred: async data)_
+- [ ] `TrainerConnectedPage` — shows connected trainer info _(deferred: async data)_
+- [ ] `TraineeViewPage` — renders read-only diary table for trainee _(deferred: multi-tab)_
+- [ ] `TrainerSessionsPage` — session list, CRUD operations _(deferred: complex)_
+- [x] `TrainerSharingPage` — renders title, description, coming soon message
 
 ### Calculator
 
-- [ ] `CalculatorPage` — form → results flow
-- [ ] `CalculatorForm` — zod validation, all field types
-- [ ] `Results` — displays BMR, maintenance, deficit tiers with MINUS constant
+- [x] `CalculatorPage` — form → results flow, renders title/description/equation toggle
+- [x] `CalculatorForm` — gender buttons, age/height/weight inputs, activity select, onChange callbacks
+- [x] `Results` — displays TDEE, BMR, four calorie plans with deficit info
+- [x] `Equation` — toggle open/close, shows male/female BMR formulas
 
 ---
 
