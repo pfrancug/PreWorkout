@@ -1,3 +1,5 @@
+import type { Tab } from './types';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
@@ -7,8 +9,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { Calendar } from '../../components/Calendar';
 import { ReadOnlyDataTable } from '../../components/DataTable/ReadOnlyDataTable';
+import { FullCalendarView } from '../../components/FullCalendarView';
 import { TrainingSessions } from '../../components/TrainingSessions';
 import { useAuth } from '../../contexts/useAuth';
 import { getReadOnlyColumns } from '../../data/readOnlyColumns';
@@ -18,8 +20,6 @@ import {
   subscribeToTrainerConnections,
 } from '../../firebase/database';
 import { useTraineeDataSet } from '../../hooks/useTraineeDataSet';
-
-type Tab = 'calendar' | 'diary' | 'sessions';
 
 export const TraineeViewPage = () => {
   const { t } = useTranslation();
@@ -169,7 +169,7 @@ export const TraineeViewPage = () => {
 
       {/* Tab content */}
       {activeTab === 'calendar' && (
-        <Calendar
+        <FullCalendarView
           allowTrainerToggle
           readOnly
           connectionId={connectionId ?? undefined}

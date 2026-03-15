@@ -1,4 +1,4 @@
-import type { SidebarContextProps } from './sidebar-context';
+import type { SidebarContextProps } from './types';
 import type { VariantProps } from 'class-variance-authority';
 import type { ComponentProps, CSSProperties } from 'react';
 

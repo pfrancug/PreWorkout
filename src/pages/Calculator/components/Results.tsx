@@ -1,20 +1,7 @@
-import type { ICalculateResult } from '../utils/calculate';
-import type { ReactNode } from 'react';
+import type { ResultRowProps, ResultsProps } from '../types';
 
 import { ArrowDown, Scale, TrendingDown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-interface ResultsProps {
-  result: ICalculateResult;
-}
-
-interface ResultRowProps {
-  title: string;
-  calories: number;
-  deficit: number;
-  color: 'emerald' | 'yellow' | 'orange' | 'red';
-  icon: ReactNode;
-}
 
 const colorMap = {
   emerald: {

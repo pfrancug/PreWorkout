@@ -1,7 +1,7 @@
 import type {
   ActivityCategory,
-  CalendarActivity,
-  CalendarData,
+  CalendarEntries,
+  CalendarEntry,
   CalendarNotes,
 } from '../firebase/database';
 import type { IRow } from '@app-types/types';
@@ -30,10 +30,11 @@ import {
 } from '../constants/activities';
 import { useAuth } from '../contexts/useAuth';
 import {
-  saveCalendarDay,
+  createCalendarEntry,
+  deleteCalendarEntry,
   saveCalendarNote,
   subscribeToActivityCategories,
-  subscribeToCalendarData,
+  subscribeToCalendarEntries,
   subscribeToCalendarNotes,
 } from '../firebase/database';
 import { useDataSet } from '../hooks/useDataSet';
@@ -57,7 +58,8 @@ export const TodayPanel = () => {
   });
 
   // Calendar data (activities & notes)
-  const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
+  const [calendarEntries, setCalendarEntries] =
+    useState<CalendarEntries | null>(null);
   const [calendarNotes, setCalendarNotes] = useState<CalendarNotes | null>(
     null,
   );
@@ -68,7 +70,10 @@ export const TodayPanel = () => {
       return;
     }
 
-    const unsubActivities = subscribeToCalendarData(user.uid, setCalendarData);
+    const unsubEntries = subscribeToCalendarEntries(
+      user.uid,
+      setCalendarEntries,
+    );
     const unsubNotes = subscribeToCalendarNotes(user.uid, setCalendarNotes);
     const unsubCategories = subscribeToActivityCategories(
       user.uid,
@@ -77,33 +82,43 @@ export const TodayPanel = () => {
     );
 
     return () => {
-      unsubActivities();
+      unsubEntries();
       unsubNotes();
       unsubCategories();
     };
   }, [user]);
 
-  const activities = calendarData?.[todayKey] ?? [];
+  const todayEntries: CalendarEntry[] = calendarEntries?.[todayKey]
+    ? Object.values(calendarEntries[todayKey])
+    : [];
+  const activityEntries = todayEntries.filter(
+    (e) => e.type === 'activity' && e.activityId && e.time == null,
+  );
   const note = calendarNotes?.[todayKey] ?? '';
 
   const toggleActivity = useCallback(
-    async (activity: CalendarActivity) => {
+    async (activityId: string) => {
       if (!user) {
         return;
       }
 
-      const current = calendarData?.[todayKey] ?? [];
-      const updated = current.includes(activity)
-        ? current.filter((a) => a !== activity)
-        : [...current, activity];
+      const existing = activityEntries.find((e) => e.activityId === activityId);
 
       try {
-        await saveCalendarDay(user.uid, todayKey, updated);
+        if (existing) {
+          await deleteCalendarEntry(user.uid, todayKey, existing.id);
+        } else {
+          await createCalendarEntry(user.uid, todayKey, {
+            type: 'activity',
+            activityId,
+            time: null,
+          });
+        }
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, calendarData, todayKey, t],
+    [user, activityEntries, todayKey, t],
   );
 
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -290,7 +305,7 @@ export const TodayPanel = () => {
         </span>
 
         <div className={'flex flex-wrap items-center gap-1.5'}>
-          {activities.length === 0 && (
+          {activityEntries.length === 0 && (
             <span
               className={
                 'flex h-8 items-center rounded-md border border-dashed border-border px-2.5 text-xs text-muted-foreground'
@@ -300,8 +315,8 @@ export const TodayPanel = () => {
             </span>
           )}
 
-          {activities.map((activityId) => {
-            const category = categories.find((c) => c.id === activityId);
+          {activityEntries.map((entry) => {
+            const category = categories.find((c) => c.id === entry.activityId);
 
             if (!category) {
               return null;
@@ -309,8 +324,8 @@ export const TodayPanel = () => {
 
             return (
               <button
-                key={activityId}
-                onClick={() => toggleActivity(activityId)}
+                key={entry.id}
+                onClick={() => toggleActivity(entry.activityId!)}
                 title={category.name}
                 type={'button'}
                 className={
@@ -344,7 +359,9 @@ export const TodayPanel = () => {
 
             <DropdownMenuContent align={'start'} sideOffset={4}>
               {categories
-                .filter((c) => !activities.includes(c.id))
+                .filter(
+                  (c) => !activityEntries.some((e) => e.activityId === c.id),
+                )
                 .map((category) => (
                   <DropdownMenuItem
                     key={category.id}
@@ -362,8 +379,9 @@ export const TodayPanel = () => {
                   </DropdownMenuItem>
                 ))}
 
-              {categories.filter((c) => !activities.includes(c.id)).length >
-                0 && <DropdownMenuSeparator />}
+              {categories.filter(
+                (c) => !activityEntries.some((e) => e.activityId === c.id),
+              ).length > 0 && <DropdownMenuSeparator />}
 
               <DropdownMenuItem
                 onClick={() => navigate('/settings/categories')}

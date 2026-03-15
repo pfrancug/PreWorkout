@@ -1,9 +1,5 @@
-import type {
-  ComponentProps,
-  ComponentType,
-  CSSProperties,
-  ReactNode,
-} from 'react';
+import type { ChartConfig, ChartContextProps } from './types';
+import type { ComponentProps, CSSProperties } from 'react';
 import type {
   LegendPayload,
   TooltipContentProps as RechartsTooltipContentProps,
@@ -19,20 +15,6 @@ import { Legend, ResponsiveContainer, Tooltip } from 'recharts';
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
-
-export type ChartConfig = {
-  [k in string]: {
-    label?: ReactNode;
-    icon?: ComponentType;
-  } & (
-    | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  );
-};
-
-type ChartContextProps = {
-  config: ChartConfig;
-};
 
 const ChartContext = createContext<ChartContextProps | null>(null);
 
@@ -200,7 +182,7 @@ const ChartTooltipContent = ({
 
             return (
               <div
-                key={item.dataKey}
+                key={key}
                 className={cn(
                   '[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5',
                   indicator === 'dot' && 'items-center',

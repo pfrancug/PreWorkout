@@ -1,16 +1,6 @@
-import { BMR_CONSTANTS, CALORIE_DEFICITS } from '../../../constants/storage';
-import { type ICalculatorForm } from '../types/form';
+import type { ICalculateResult, ICalculatorForm } from '../types';
 
-export interface ICalculateResult {
-  bmr: number;
-  maintain: number;
-  mid: number;
-  midDeficit: number;
-  loss: number;
-  lossDeficit: number;
-  extreme: number;
-  extremeDeficit: number;
-}
+import { BMR_CONSTANTS, CALORIE_DEFICITS } from '../../../constants/storage';
 
 export const calculate = (data: ICalculatorForm): ICalculateResult => {
   const W = BMR_CONSTANTS.WEIGHT_MULTIPLIER * data.weight;

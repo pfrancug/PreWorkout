@@ -1,5 +1,5 @@
 import type { IRow } from '../../types/types';
-import type { CellContext } from '@tanstack/react-table';
+import type { EditableCellProps, TableMeta } from './types';
 import type { KeyboardEvent } from 'react';
 
 import { Calendar } from '@components/ui/calendar';
@@ -10,20 +10,6 @@ import {
   PopoverTrigger,
 } from '@components/ui/popover';
 import { useEffect, useRef, useState } from 'react';
-
-interface TableMeta {
-  updateData?: (rowIndex: number, columnId: string, value: unknown) => void;
-  editingCell?: { rowId: string; columnId: string } | null;
-  setEditingCell?: (cell: { rowId: string; columnId: string } | null) => void;
-  editableColumns?: string[];
-}
-
-interface EditableCellProps {
-  getValue: () => unknown;
-  row: CellContext<IRow, unknown>['row'];
-  column: CellContext<IRow, unknown>['column'];
-  table: CellContext<IRow, unknown>['table'];
-}
 
 export const EditableCell = ({
   getValue,

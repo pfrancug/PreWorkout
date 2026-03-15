@@ -149,23 +149,27 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-/* Style native date input */
-input[type='date']::-webkit-calendar-picker-indicator {
+/* Style native date/time input */
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
   filter: var(--date-picker-filter, none);
   cursor: pointer;
   opacity: 0.6;
 }
 
-input[type='date']::-webkit-calendar-picker-indicator:hover {
+input[type='date']::-webkit-calendar-picker-indicator:hover,
+input[type='time']::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
 :root {
   --date-picker-filter: none;
+  color-scheme: light;
 }
 
 .dark {
-  --date-picker-filter: invert(1);
+  --date-picker-filter: none;
+  color-scheme: dark;
 }
 
 @keyframes ios-slide-in {

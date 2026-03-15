@@ -3,7 +3,7 @@ import type {
   UserSettings,
 } from '../contexts/SettingsContext';
 import type { ITrainerConnection, ITrainingSession } from '../types/types';
-import type { Message } from '@components/Chat';
+import type { Message } from '@components/types';
 
 import {
   equalTo,
@@ -26,8 +26,6 @@ export interface MessageLimitConfig {
   max: number;
 }
 
-export type CalendarActivity = string;
-
 export interface ActivityCategory {
   id: string;
   icon: string;
@@ -45,13 +43,32 @@ export interface TrainerCalendarData {
   [date: string]: boolean;
 }
 
-export interface CalendarData {
-  [date: string]: CalendarActivity[];
-}
-
 export interface CalendarNotes {
   [date: string]: string;
 }
+
+export interface CalendarEntry {
+  id: string;
+  type: 'activity' | 'custom';
+  /** activityId of a known category; required when type = 'activity' */
+  activityId?: string;
+  /** Display name; required when type = 'custom' */
+  name?: string;
+  /** Icon id for custom entries */
+  icon?: string;
+  /** Color id for custom entries */
+  color?: string;
+  /** HH:mm, or null for all-day */
+  time: string | null;
+  /** HH:mm end time, or null/undefined */
+  timeEnd?: string | null;
+  /** Optional note for this occurrence */
+  note?: string;
+}
+
+export type CalendarEntries = {
+  [date: string]: { [entryId: string]: CalendarEntry };
+};
 
 export interface AllUserData {
   settings: UserSettings | null;
@@ -59,7 +76,8 @@ export interface AllUserData {
   messages: Message[] | null;
   data: IRowData[] | null;
   limits: MessageLimitConfig | null;
-  calendar: CalendarData | null;
+  /** Unified calendar entries */
+  calendarEntries: CalendarEntries | null;
   calendarNotes: CalendarNotes | null;
   activityCategories: ActivityCategory[] | null;
   energyDrinks: Record<string, unknown> | null;
@@ -217,7 +235,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserMessagesRef(userId)),
     remove(getUserDataRef(userId)),
     remove(getUserLimitsRef(userId)),
-    remove(getUserCalendarRef(userId)),
+    remove(getUserCalendarEntriesRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
     remove(ref(database, `users/${userId}/trainerCalendar`)),
@@ -314,8 +332,8 @@ export const importAllUserData = async (
   if (data.limits) {
     promises.push(set(getUserLimitsRef(userId), { max: data.limits.max }));
   }
-  if (data.calendar) {
-    promises.push(set(getUserCalendarRef(userId), data.calendar));
+  if (data.calendarEntries) {
+    promises.push(set(getUserCalendarEntriesRef(userId), data.calendarEntries));
   }
   if (data.calendarNotes) {
     promises.push(set(getUserCalendarNotesRef(userId), data.calendarNotes));
@@ -340,6 +358,7 @@ export const importAllUserData = async (
   await Promise.all(promises);
 };
 
+// NOTE: loadAllUserData only reads calendarEntries.
 export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
   const [
     settings,
@@ -347,7 +366,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     messages,
     data,
     limits,
-    calendar,
+    calendarEntriesSnap,
     calendarNotes,
     activityCategories,
     energyDrinksSnap,
@@ -358,7 +377,7 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     loadUserMessages(userId),
     loadUserData(userId),
     loadMessageLimitConfig(userId),
-    loadCalendarData(userId),
+    get(getUserCalendarEntriesRef(userId)),
     loadCalendarNotes(userId),
     loadActivityCategories(userId),
     get(ref(database, `users/${userId}/energyDrinks`)),
@@ -371,7 +390,9 @@ export const loadAllUserData = async (userId: string): Promise<AllUserData> => {
     messages,
     data,
     limits,
-    calendar,
+    calendarEntries: calendarEntriesSnap.exists()
+      ? (calendarEntriesSnap.val() as CalendarEntries)
+      : null,
     calendarNotes,
     activityCategories,
     energyDrinks: energyDrinksSnap.exists() ? energyDrinksSnap.val() : null,
@@ -471,70 +492,6 @@ export const getRemainingMessages = async (userId: string): Promise<number> => {
   return Math.max(0, max - count);
 };
 
-export const subscribeToUserData = (
-  userId: string,
-  callback: (data: IRowData[] | null) => void,
-): (() => void) => {
-  const dataRef = getUserDataRef(userId);
-  const unsubscribe = onValue(dataRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      callback(Array.isArray(data) ? data : Object.values(data));
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
-};
-
-// Calendar
-export const getUserCalendarRef = (userId: string) =>
-  ref(database, `users/${userId}/calendar`);
-
-export const loadCalendarData = async (
-  userId: string,
-): Promise<CalendarData | null> => {
-  const calendarRef = getUserCalendarRef(userId);
-  const snapshot = await get(calendarRef);
-
-  if (snapshot.exists()) {
-    return snapshot.val() as CalendarData;
-  }
-
-  return null;
-};
-
-export const saveCalendarDay = async (
-  userId: string,
-  date: string,
-  activities: CalendarActivity[],
-): Promise<void> => {
-  const dayRef = ref(database, `users/${userId}/calendar/${date}`);
-
-  if (activities.length === 0) {
-    await remove(dayRef);
-  } else {
-    await set(dayRef, activities);
-  }
-};
-
-export const subscribeToCalendarData = (
-  userId: string,
-  callback: (data: CalendarData | null) => void,
-): (() => void) => {
-  const calendarRef = getUserCalendarRef(userId);
-  const unsubscribe = onValue(calendarRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val() as CalendarData);
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
-};
-
 // Calendar Notes
 export const getUserCalendarNotesRef = (userId: string) =>
   ref(database, `users/${userId}/calendarNotes`);
@@ -582,7 +539,87 @@ export const subscribeToCalendarNotes = (
   return unsubscribe;
 };
 
-// Trainer Calendar (trainer-marked activity days)
+export const getUserCalendarEntriesRef = (userId: string) =>
+  ref(database, `users/${userId}/calendarEntries`);
+
+export const createCalendarEntry = async (
+  userId: string,
+  date: string,
+  entryData: Omit<CalendarEntry, 'id'>,
+): Promise<CalendarEntry> => {
+  const dateRef = ref(database, `users/${userId}/calendarEntries/${date}`);
+  const newRef = push(dateRef);
+  const id = newRef.key!;
+  const entry: CalendarEntry = { ...entryData, id };
+  await set(newRef, entry);
+
+  return entry;
+};
+
+export const deleteCalendarEntry = async (
+  userId: string,
+  date: string,
+  entryId: string,
+): Promise<void> => {
+  await remove(
+    ref(database, `users/${userId}/calendarEntries/${date}/${entryId}`),
+  );
+};
+
+export const updateCalendarEntryNote = async (
+  userId: string,
+  date: string,
+  entryId: string,
+  note: string,
+): Promise<void> => {
+  const noteRef = ref(
+    database,
+    `users/${userId}/calendarEntries/${date}/${entryId}/note`,
+  );
+  if (!note.trim()) {
+    await remove(noteRef);
+  } else {
+    await set(noteRef, note.trim());
+  }
+};
+
+export const updateCalendarEntryTime = async (
+  userId: string,
+  date: string,
+  entryId: string,
+  time: string | null,
+  timeEnd?: string | null,
+): Promise<void> => {
+  const entryRef = ref(
+    database,
+    `users/${userId}/calendarEntries/${date}/${entryId}`,
+  );
+  const updates: Record<string, unknown> = { time };
+  if (timeEnd !== undefined) {
+    updates.timeEnd = timeEnd;
+  }
+  await update(entryRef, updates);
+};
+
+export const subscribeToCalendarEntries = (
+  userId: string,
+  callback: (data: CalendarEntries | null) => void,
+): (() => void) => {
+  const entriesRef = getUserCalendarEntriesRef(userId);
+
+  return onValue(entriesRef, (snapshot) => {
+    callback(snapshot.exists() ? (snapshot.val() as CalendarEntries) : null);
+  });
+};
+
+export const loadCalendarEntries = async (
+  userId: string,
+): Promise<CalendarEntries | null> => {
+  const snapshot = await get(getUserCalendarEntriesRef(userId));
+
+  return snapshot.exists() ? (snapshot.val() as CalendarEntries) : null;
+};
+
 export const subscribeToTrainerCalendar = (
   userId: string,
   callback: (data: TrainerCalendarData | null) => void,
@@ -692,22 +729,66 @@ export interface UserDirectoryEntry {
 export const updateUserDirectory = async (
   userId: string,
   email: string,
-  displayName: string,
+  googleDisplayName: string,
 ): Promise<void> => {
   const entryRef = ref(database, `userDirectory/${userId}`);
-  await update(entryRef, {
+
+  // Only set displayName on first login; afterwards it's managed via settings
+  const existingName = await get(
+    ref(database, `userDirectory/${userId}/displayName`),
+  );
+  const updates: Record<string, string> = {
     email,
-    displayName,
     lastLogin: new Date().toISOString(),
-  });
+  };
+  if (!existingName.exists() || !existingName.val()) {
+    updates.displayName = googleDisplayName;
+  }
+  await update(entryRef, updates);
 };
 
-/** Update only the display name in userDirectory (for settings sync). */
+/** Update only the display name in userDirectory (for settings sync).
+ *  Also propagates the new name to trainer categories on connected trainees. */
 export const updateUserDisplayName = async (
   userId: string,
   displayName: string,
 ): Promise<void> => {
   await update(ref(database, `userDirectory/${userId}`), { displayName });
+
+  // Propagate to trainer categories on all active trainees
+  const connectionsRef = ref(database, 'trainerConnections');
+  const snap = await get(
+    query(connectionsRef, orderByChild('trainerId'), equalTo(userId)),
+  );
+  if (!snap.exists()) {
+    return;
+  }
+  const connections = snap.val() as Record<string, ITrainerConnection>;
+  const updatePromises: Promise<void>[] = [];
+  for (const conn of Object.values(connections)) {
+    if (conn.status !== 'active' || !conn.traineeId) {
+      continue;
+    }
+    updatePromises.push(
+      (async () => {
+        const cats = await loadActivityCategories(conn.traineeId);
+        if (!cats) {
+          return;
+        }
+        const idx = cats.findIndex((c) => c.trainerId === userId);
+        if (idx === -1 || cats[idx].name === `Training with ${displayName}`) {
+          return;
+        }
+        const updated = [...cats];
+        updated[idx] = {
+          ...updated[idx],
+          name: `Training with ${displayName}`,
+        };
+        await saveActivityCategories(conn.traineeId, updated);
+      })(),
+    );
+  }
+  await Promise.all(updatePromises);
 };
 
 // Admin functions
@@ -1018,10 +1099,10 @@ export const acceptTrainerInvite = async (
           if (c.trainerId !== trainerId) {
             return c;
           }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { archived: _, ...rest } = c;
+          const copy = { ...c };
+          delete copy.archived;
 
-          return rest;
+          return copy;
         });
         await saveActivityCategories(traineeId, updated);
       }
@@ -1297,6 +1378,7 @@ export const createTrainingSession = async (
   traineeId: string,
   date: string,
   time?: string | null,
+  timeEnd?: string | null,
 ): Promise<string> => {
   const sessionsRef = ref(database, `trainingSessions/${connectionId}`);
   const newRef = push(sessionsRef);
@@ -1307,6 +1389,7 @@ export const createTrainingSession = async (
     traineeId,
     date,
     time: time ?? null,
+    timeEnd: timeEnd ?? null,
     status: 'planned',
     trainerConfirmed: true,
     paymentStatus: 'unpaid',
@@ -1368,12 +1451,25 @@ export const updateSessionTime = async (
   connectionId: string,
   sessionId: string,
   time: string | null,
+  timeEnd?: string | null,
 ): Promise<void> => {
   const sessionRef = ref(
     database,
     `trainingSessions/${connectionId}/${sessionId}`,
   );
-  await update(sessionRef, { time });
+  await update(sessionRef, { time, timeEnd: timeEnd ?? null });
+};
+
+export const updateSessionNote = async (
+  connectionId: string,
+  sessionId: string,
+  note: string,
+): Promise<void> => {
+  const sessionRef = ref(
+    database,
+    `trainingSessions/${connectionId}/${sessionId}`,
+  );
+  await update(sessionRef, { note: note || null });
 };
 
 /** Trainer marks session as paid (immediate, no confirmation needed). */
@@ -1428,16 +1524,6 @@ export const groupSessionsAsPackage = async (
   await update(ref(database), updates);
 
   return packageId;
-};
-
-/** Remove a session from its package. */
-export const removeFromPackage = async (
-  connectionId: string,
-  sessionId: string,
-): Promise<void> => {
-  await update(ref(database, `trainingSessions/${connectionId}/${sessionId}`), {
-    packageId: null,
-  });
 };
 
 /** Remove multiple sessions from their packages in a single write. */

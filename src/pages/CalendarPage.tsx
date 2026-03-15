@@ -1,4 +1,4 @@
-import { Calendar } from '@components/Calendar';
+import { FullCalendarView } from '@components/FullCalendarView';
 import { useTranslation } from 'react-i18next';
 
 export const CalendarPage = () => {
@@ -16,7 +16,7 @@ export const CalendarPage = () => {
         <p className={'text-muted-foreground'}>{t('calendar.description')}</p>
       </div>
 
-      <Calendar />
+      <FullCalendarView />
     </div>
   );
 };

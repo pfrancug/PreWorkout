@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import type { VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
 
@@ -47,4 +46,4 @@ const Badge = ({
   );
 };
 
-export { Badge, badgeVariants };
+export { Badge };

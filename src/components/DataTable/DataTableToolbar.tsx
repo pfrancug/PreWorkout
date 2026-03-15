@@ -1,6 +1,4 @@
-import type { IRow } from '../../types/types';
-import type { Table } from '@tanstack/react-table';
-import type { Dispatch, SetStateAction } from 'react';
+import type { DataTableToolbarProps } from './types';
 
 import { Button } from '@components/ui/button';
 import {
@@ -12,12 +10,10 @@ import {
 import { Download, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-interface Props {
-  table: Table<IRow>;
-  setDataSet: Dispatch<SetStateAction<IRow[] | null>>;
-}
-
-export const DataTableToolbar = ({ table, setDataSet }: Props) => {
+export const DataTableToolbar = ({
+  table,
+  setDataSet,
+}: DataTableToolbarProps) => {
   const { t } = useTranslation();
   const handleAddRow = () => {
     setDataSet((prev) => {

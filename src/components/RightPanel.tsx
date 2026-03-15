@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+import type { RightPanelContextProps } from './types';
 import type { CSSProperties, ReactNode } from 'react';
 
 import { useSettings } from '@contexts/useSettings';
@@ -7,15 +7,9 @@ import { createContext, useCallback, useContext, useState } from 'react';
 
 const PANEL_WIDTH = '28rem';
 
-interface RightPanelContextProps {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  toggle: () => void;
-}
-
 const RightPanelContext = createContext<RightPanelContextProps | null>(null);
 
-export const useRightPanel = () => {
+const useRightPanel = () => {
   const context = useContext(RightPanelContext);
   if (!context) {
     throw new Error('useRightPanel must be used within a RightPanelProvider');

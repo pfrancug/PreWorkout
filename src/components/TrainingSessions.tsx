@@ -1,4 +1,5 @@
 import type { ITrainingSession } from '../types/types';
+import type { TrainingSessionsProps } from './types';
 
 import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
@@ -54,11 +55,6 @@ import {
   subscribeToTrainingSessions,
   toggleTrainerCalendarDay,
 } from '../firebase/database';
-
-interface TrainingSessionsProps {
-  connectionId: string;
-  role: 'trainer' | 'trainee';
-}
 
 export const TrainingSessions = ({
   connectionId,

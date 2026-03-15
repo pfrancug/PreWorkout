@@ -18,7 +18,7 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     'messages',
     'data',
     'limits',
-    'calendar',
+    'calendarEntries',
     'calendarNotes',
     'activityCategories',
     'energyDrinks',
@@ -147,22 +147,29 @@ export const validateImportData = (data: unknown): data is AllUserData => {
     }
   }
 
-  // Validate calendar
-  if (d.calendar != null) {
-    if (typeof d.calendar !== 'object') {
+  // Validate calendarEntries
+  if (d.calendarEntries != null) {
+    if (typeof d.calendarEntries !== 'object') {
       return false;
     }
-    for (const [date, activities] of Object.entries(
-      d.calendar as Record<string, unknown>,
+    for (const [date, entries] of Object.entries(
+      d.calendarEntries as Record<string, unknown>,
     )) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return false;
       }
-      if (!Array.isArray(activities)) {
+      if (typeof entries !== 'object' || entries === null) {
         return false;
       }
-      for (const a of activities) {
-        if (typeof a !== 'string') {
+      for (const entry of Object.values(entries as Record<string, unknown>)) {
+        if (typeof entry !== 'object' || entry === null) {
+          return false;
+        }
+        const e = entry as Record<string, unknown>;
+        if (typeof e.id !== 'string') {
+          return false;
+        }
+        if (e.type !== 'activity' && e.type !== 'custom') {
           return false;
         }
       }

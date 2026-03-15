@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import type { ComponentProps } from 'react';
 
 import { cn } from '@lib/utils';
@@ -62,4 +61,4 @@ const Button = ({
   );
 };
 
-export { Button, buttonVariants };
+export { Button };

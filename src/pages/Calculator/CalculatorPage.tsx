@@ -1,4 +1,4 @@
-import type { ICalculatorForm } from './types/form';
+import type { ICalculatorForm } from './types';
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
