@@ -23,12 +23,57 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/database'],
-          charts: ['recharts'],
-          ui: ['radix-ui', 'lucide-react', 'class-variance-authority'],
-          i18n: ['i18next', 'react-i18next'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return;
+          }
+          // Core React runtime
+          if (
+            id.includes('/react-dom/') ||
+            id.includes('/react/') ||
+            id.includes('/react-router-dom/') ||
+            id.includes('/react-router/')
+          ) {
+            return 'react';
+          }
+          // Firebase SDK
+          if (id.includes('/firebase/')) {
+            return 'firebase';
+          }
+          // Charts (recharts + d3 deps)
+          if (id.includes('/recharts/') || id.includes('/d3-')) {
+            return 'charts';
+          }
+          // FullCalendar
+          if (id.includes('/@fullcalendar/')) {
+            return 'fullcalendar';
+          }
+          // UI primitives
+          if (
+            id.includes('/radix-ui/') ||
+            id.includes('/@radix-ui/') ||
+            id.includes('/lucide-react/') ||
+            id.includes('/class-variance-authority/') ||
+            id.includes('/react-day-picker/')
+          ) {
+            return 'ui';
+          }
+          // i18n
+          if (id.includes('/i18next/') || id.includes('/react-i18next/')) {
+            return 'i18n';
+          }
+          // Forms
+          if (id.includes('/react-hook-form/') || id.includes('/@hookform/')) {
+            return 'forms';
+          }
+          // AI SDK (server-side, but referenced in client chat)
+          if (id.includes('/@ai-sdk/') || id.includes('/ai/')) {
+            return 'ai';
+          }
+          // TanStack Table
+          if (id.includes('/@tanstack/')) {
+            return 'table';
+          }
         },
       },
     },
