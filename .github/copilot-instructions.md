@@ -11,7 +11,13 @@ npm run build        # tsc -b + vite build
 npm run typecheck    # tsc -b (no emit)
 npm run lint         # eslint --fix
 npm run format       # prettier --write
+npm test             # Vitest — unit/component/rules tests
+npm run test:watch   # Vitest in watch mode
+npm run test:e2e     # Playwright E2E (needs emulators running)
+npm run test:e2e:ui  # Playwright E2E with interactive UI
 ```
+
+E2E tests require Firebase Emulators running (`firebase emulators:start --project demo-preworkout`) and Java JDK 11+.
 
 **Do NOT deploy to Vercel** (`npx vercel --prod`) unless explicitly told to. Firebase deploy is OK when needed.
 
@@ -35,6 +41,11 @@ src/
   styles/         # globals.css (Tailwind), fullcalendar theme
 api/              # Vercel serverless functions (proxied via /api in dev)
   lib/            # Shared API helpers (auth, rate-limit)
+tests/            # Database security rules tests (Vitest + Firebase Emulator)
+e2e/              # Playwright E2E tests
+  fixtures/       # Test data seeding helpers
+  auth.ts         # Auth fixture (emulator user creation + login)
+  global-setup.ts # Starts emulators, clears stale data
 ```
 
 **Provider hierarchy** (top → bottom in `App.tsx`): BrowserRouter → AuthProvider → SettingsProvider → DataProvider. Layout providers (`RightPanelProvider` → `SidebarProvider`) live in `AuthenticatedLayout.tsx`.
@@ -81,3 +92,13 @@ api/              # Vercel serverless functions (proxied via /api in dev)
   - `<Dot>` from lucide-react — bullet separators (instead of `•`)
   - `<ArrowLeft>` from lucide-react — back navigation (instead of `←`)
 - **No backward compatibility** — when removing features, do a clean removal (no legacy keys, no deprecated fallbacks) unless explicitly told to preserve backward compatibility
+
+## Testing
+
+- **Unit tests**: Colocated with source files (`*.test.ts`/`*.test.tsx`). Vitest + React Testing Library + jsdom
+- **Database rules tests**: `tests/database-rules.test.ts` — runs against Firebase Emulator via REST API. Auto-skips when emulators are not running
+- **E2E tests**: `e2e/*.spec.ts` — Playwright + Firebase Emulators. Uses `e2e/auth.ts` fixture for programmatic login via `loginAsUser()`. Seed data via `e2e/fixtures/seed.ts`
+- **Test files import explicitly**: `import { describe, expect, it } from 'vitest'` (vitest globals are enabled but explicit imports preferred)
+- **Mock pattern**: Use `vi.mock()` at the top of the file; mock Firebase modules as `@firebase-config/*`
+- **No test-only exports**: Don't export functions solely for testing. Test through the public API
+- **Emulator config**: `.env.test` configures `VITE_USE_EMULATORS=true` with `demo-preworkout` project. Vite runs with `--mode test` for E2E

@@ -4,6 +4,7 @@
 
 - **Node.js** (v24+)
 - **npm** (comes with Node.js)
+- **Java JDK 11+** (required for Firebase Emulator Suite)
 
 ## Initial Setup
 
@@ -50,18 +51,20 @@ VITE_FIREBASE_MEASUREMENT_ID=
 
 ## NPM Scripts
 
-| Script                  | Command                             | Description                   |
-| ----------------------- | ----------------------------------- | ----------------------------- |
-| `npm run dev`           | `vite`                              | Frontend dev server (`:5173`) |
-| `npm run dev:api`       | `vercel dev --listen 3001`          | API dev server (`:3001`)      |
-| `npm run build`         | `tsc -b && vite build`              | Production build              |
-| `npm run typecheck`     | `tsc --noEmit -p tsconfig.app.json` | Type checking (no emit)       |
-| `npm run lint`          | `eslint . --fix`                    | Lint and auto-fix             |
-| `npm run format`        | `prettier --write .`                | Format all files              |
-| `npm run test`          | `vitest run`                        | Run tests once                |
-| `npm run test:watch`    | `vitest`                            | Run tests in watch mode       |
-| `npm run test:coverage` | `vitest run --coverage`             | Run tests with coverage       |
-| `npm run preview`       | `vite preview`                      | Preview production build      |
+| Script                  | Command                             | Description                     |
+| ----------------------- | ----------------------------------- | ------------------------------- |
+| `npm run dev`           | `vite`                              | Frontend dev server (`:5173`)   |
+| `npm run dev:api`       | `vercel dev --listen 3001`          | API dev server (`:3001`)        |
+| `npm run build`         | `tsc -b && vite build`              | Production build                |
+| `npm run typecheck`     | `tsc --noEmit -p tsconfig.app.json` | Type checking (no emit)         |
+| `npm run lint`          | `eslint . --fix`                    | Lint and auto-fix               |
+| `npm run format`        | `prettier --write .`                | Format all files                |
+| `npm run test`          | `vitest run`                        | Run unit tests once             |
+| `npm run test:watch`    | `vitest`                            | Run tests in watch mode         |
+| `npm run test:coverage` | `vitest run --coverage`             | Run tests with coverage         |
+| `npm run test:e2e`      | `npx playwright test`               | Run E2E tests (needs emulators) |
+| `npm run test:e2e:ui`   | `npx playwright test --ui`          | E2E tests with interactive UI   |
+| `npm run preview`       | `vite preview`                      | Preview production build        |
 
 ## Admin Scripts
 
@@ -75,7 +78,7 @@ Requires `GOOGLE_APPLICATION_CREDENTIALS` env var pointing to a Firebase service
 ## Firebase Emulators
 
 ```bash
-firebase emulators:start
+firebase emulators:start --project demo-preworkout
 ```
 
 Starts local emulators for testing (no live Firebase needed):
@@ -85,3 +88,7 @@ Starts local emulators for testing (no live Firebase needed):
 | Auth              | `:9099` |
 | Realtime Database | `:9000` |
 | Emulator UI       | `:4000` |
+
+E2E tests (`npm run test:e2e`) require emulators to be running. Database rules tests (`npm test`) auto-skip when emulators are not available.
+
+The `.env.test` file configures the app to connect to emulators (`VITE_USE_EMULATORS=true`, project `demo-preworkout`). Playwright's web server starts Vite with `--mode test` to load this config automatically.
