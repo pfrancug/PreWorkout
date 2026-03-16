@@ -1,6 +1,6 @@
 # Testing Roadmap
 
-**Total: 321 unit/component tests (43 files) + 36 E2E tests (6 files) = 357 tests**
+**Total: 428 unit/component tests (44 files) + 36 E2E tests (6 files) = 464 tests**
 
 ## Phase 1 — Setup
 
@@ -302,12 +302,125 @@
 
 ---
 
-## Phase 9 — Database Rules Tests
+## Phase 9 — Database Rules Tests (`tests/database-rules.test.ts` — 107 tests)
 
-- [ ] `database.rules.json` — test with Firebase Emulator
-  - Unauthenticated read/write → denied
-  - User can read/write own `users/{uid}/**` path
-  - User cannot read/write another user's `users/{otherUid}/**`
-  - Trainer can read trainee data (if connection exists)
-  - Admin paths accessible only with admin claim
-  - `userDirectory` readable by authenticated users
+Runs against Firebase Emulator (auto-skips if emulators not running). Tests all security rules in `database.rules.json`.
+
+### Root access (3 tests)
+
+- [x] Denies unauthenticated read
+- [x] Denies unauthenticated write
+- [x] Denies authenticated read at root
+
+### users/{uid} node (2 tests)
+
+- [x] Denies reading entire user node
+- [x] Denies writing to arbitrary key under user
+
+### userDirectory (12 tests)
+
+- [x] Admin can read entire userDirectory
+- [x] Non-admin cannot read entire userDirectory
+- [x] User can read/write own entry
+- [x] User cannot read/write another user's entry
+- [x] Admin can write any user's entry
+- [x] Trainer can read connected trainee's displayName
+- [x] Trainee can read trainer's displayName
+- [x] messageSends is not writable even by owner
+- [x] Validates displayName (≤100 chars) and email (≤200 chars)
+
+### users/{uid}/settings (10 tests)
+
+- [x] Owner can read/write own settings
+- [x] Other user cannot read/write settings
+- [x] Trainer can read (but not write) connected trainee's settings
+- [x] Admin can read any user's settings
+- [x] Rejects missing required fields, invalid sex value
+- [x] Accepts empty sex (unset)
+
+### users/{uid}/preferences (6 tests)
+
+- [x] Owner can read/write valid preferences
+- [x] Other user cannot read preferences
+- [x] Rejects invalid language, missing required fields
+- [x] Accepts optional hideConnectionSection
+
+### users/{uid}/messages (5 tests)
+
+- [x] Owner can write and read messages
+- [x] Other user cannot read messages
+- [x] Rejects invalid role, text >50000 chars, unexpected fields
+
+### users/{uid}/data (7 tests)
+
+- [x] Owner can read/write valid data entries
+- [x] Other user cannot read data
+- [x] Trainer can read (but not write) connected trainee's data
+- [x] Rejects entry missing required id/date, accepts null optional fields
+
+### users/{uid}/limits (8 tests)
+
+- [x] Owner can read own limits
+- [x] Admin can read/write limits and change max
+- [x] Owner cannot change existing max value (can write same value)
+- [x] Other user cannot access limits
+- [x] Rejects max below -1, missing max field
+
+### users/{uid}/calendarNotes (6 tests)
+
+- [x] Owner can read/write calendar notes
+- [x] Trainer can read connected trainee's notes
+- [x] Rejects invalid date key, note >2000 chars
+
+### users/{uid}/calendarEntries (9 tests)
+
+- [x] Owner can read/write valid entries
+- [x] Trainer can read connected trainee's entries
+- [x] Rejects mismatched id, invalid type, invalid date key
+- [x] Activity type requires activityId, custom type requires name
+
+### users/{uid}/trainerCalendar (7 tests)
+
+- [x] Trainer can write to connected trainee's trainerCalendar
+- [x] Owner cannot write (but can delete date entries)
+- [x] Owner can read own trainerCalendar
+- [x] Other user cannot access trainerCalendar
+- [x] Rejects non-boolean value, invalid date key
+
+### users/{uid}/activityCategories (7 tests)
+
+- [x] Owner can read/write own categories
+- [x] Trainer can read/write connected trainee's categories
+- [x] Other user cannot access categories
+- [x] Rejects unexpected keys, missing required fields
+
+### trainerInvites (6 tests)
+
+- [x] Trainer can create/delete invites
+- [x] Any authenticated user can read a specific invite
+- [x] Non-trainer cannot create an invite
+- [x] Unauthenticated user cannot read invite
+- [x] Rejects invite missing required fields
+
+### trainerConnections (7 tests)
+
+- [x] Trainer can create a pending connection
+- [x] Regular user cannot create a connection
+- [x] Trainer/trainee can read own connection
+- [x] Unrelated user cannot read a connection
+- [x] Rejects connection with invalid status
+- [x] Trainer can delete own connection
+
+### trainingSessions (8 tests)
+
+- [x] Trainer can write sessions for their connection
+- [x] Trainee/trainer can read sessions for their connection
+- [x] Unrelated user cannot read/write sessions
+- [x] Rejects invalid status, mismatched connectionId, missing required fields
+
+### users/{uid}/trainerId (4 tests)
+
+- [x] Owner can read own trainerId
+- [x] Other user cannot read trainerId
+- [x] Admin can delete trainerId
+- [x] Admin cannot directly set trainerId due to validation constraints
