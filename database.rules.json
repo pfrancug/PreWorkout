@@ -150,15 +150,6 @@
           }
         },
 
-        "trainerCalendar": {
-          ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
-          ".write": "auth != null && auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid",
-          "$date": {
-            ".write": "auth != null && auth.uid == $userId && !newData.exists()",
-            ".validate": "!newData.exists() || ($date.matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.isBoolean())"
-          }
-        },
-
         "activityCategories": {
           ".read": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
           ".write": "auth != null && (auth.uid == $userId || (auth.token.trainer === true && root.child('users/' + $userId + '/trainerId').val() === auth.uid))",
@@ -167,7 +158,7 @@
           },
           "items": {
             "$categoryIndex": {
-              ".validate": "newData.hasChildren(['id', 'icon', 'name', 'color']) && newData.child('id').isString() && newData.child('id').val().length <= 50 && newData.child('icon').isString() && newData.child('icon').val().length <= 50 && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('color').isString() && newData.child('color').val().length <= 20 && (!newData.child('trainerId').exists() || (newData.child('trainerId').isString() && newData.child('trainerId').val().length <= 128)) && (!newData.child('systemGenerated').exists() || newData.child('systemGenerated').isBoolean()) && (!newData.child('archived').exists() || newData.child('archived').isBoolean())"
+              ".validate": "newData.hasChildren(['id', 'icon', 'name', 'color']) && newData.child('id').isString() && newData.child('id').val().length <= 50 && newData.child('icon').isString() && newData.child('icon').val().length <= 50 && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('color').isString() && newData.child('color').val().length <= 20 && (!newData.child('archived').exists() || newData.child('archived').isBoolean())"
             }
           },
           "$other": {

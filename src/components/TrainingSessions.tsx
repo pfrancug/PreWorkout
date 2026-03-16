@@ -37,7 +37,6 @@ import {
   markSessionUnpaid,
   reactivateSession,
   subscribeToTrainingSessions,
-  toggleTrainerCalendarDay,
 } from '@firebase-config/database';
 import { cn } from '@lib/utils';
 import {
@@ -195,12 +194,6 @@ export const TrainingSessions = ({
     }
 
     toast.success(t('sessions.cancelSuccess'));
-    // Best-effort: remove calendar marker so it disappears from trainee's calendar
-    try {
-      await toggleTrainerCalendarDay(session.traineeId, session.date, false);
-    } catch {
-      // Cancellation already succeeded; don't confuse the user
-    }
   };
 
   const handleDelete = async (session: ITrainingSession) => {
@@ -215,7 +208,6 @@ export const TrainingSessions = ({
   const handleReactivate = async (session: ITrainingSession) => {
     try {
       await reactivateSession(connectionId, session.id);
-      await toggleTrainerCalendarDay(session.traineeId, session.date, true);
       toast.success(t('sessions.reactivateSuccess'));
     } catch {
       toast.error(t('common.saveError'));

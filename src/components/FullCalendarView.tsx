@@ -1,4 +1,4 @@
-import type { DrawerView, TimePreset } from './calendar/types';
+import type { ModalView, TimePreset } from './calendar/types';
 import type { FullCalendarViewProps } from './types';
 import type { IFullCalendarEventMeta } from '@app-types/types';
 import type { DateSelectArg, EventClickArg } from '@fullcalendar/core';
@@ -16,7 +16,8 @@ import { useTranslation } from 'react-i18next';
 
 import { ActivityNoteModal } from './ActivityNoteModal';
 import {
-  getDrawerEntries,
+  getModalEntries,
+  getModalSessions,
   mapCalendarEvents,
   renderEventContent,
 } from './calendar/calendarEventHelpers';
@@ -36,20 +37,21 @@ export const FullCalendarView = ({
   const {
     calendarEntries,
     calendarNotes,
-    trainerCalendar,
     categories,
     trainingSessions,
     connectionId,
-    trainerCategoryForDisplay,
     pickableCategories,
     displayCategories,
     recentActivityIds,
     clearTimers,
-    handleTrainerToggle,
+    handleAddTrainingSession,
     handleAddEntry,
     handleDeleteEntry,
+    handleDeleteSession,
     handleUpdateEntryNote,
     handleUpdateEntryTime,
+    handleUpdateSessionNote,
+    handleUpdateSessionTime,
     handleSaveNewCategory,
     handleNoteChange,
   } = useCalendarData({
@@ -59,12 +61,12 @@ export const FullCalendarView = ({
     allowTrainerToggle,
   });
 
-  const [drawerView, setDrawerView] = useState<DrawerView | null>(null);
+  const [modalView, setModalView] = useState<ModalView | null>(null);
 
   // Clear pending note saves when selected date changes or component unmounts
   useEffect(() => {
     return clearTimers;
-  }, [drawerView?.date, clearTimers]);
+  }, [modalView?.date, clearTimers]);
 
   // ── Event mapping ──────────────────────────────────────────────────────────
 
@@ -73,21 +75,11 @@ export const FullCalendarView = ({
       mapCalendarEvents({
         calendarEntries,
         calendarNotes,
-        trainerCalendar,
         categories,
         trainingSessions,
-        trainerCategoryForDisplay,
         t,
       }),
-    [
-      calendarEntries,
-      calendarNotes,
-      trainerCalendar,
-      categories,
-      trainingSessions,
-      trainerCategoryForDisplay,
-      t,
-    ],
+    [calendarEntries, calendarNotes, categories, trainingSessions, t],
   );
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -95,14 +87,14 @@ export const FullCalendarView = ({
   const handleDateClick = useCallback((arg: DateClickArg) => {
     const date = formatDateKey(arg.date);
     if (arg.allDay) {
-      setDrawerView({ view: 'day', date });
+      setModalView({ view: 'day', date });
     } else {
       const hh = String(arg.date.getHours()).padStart(2, '0');
       const mm = String(arg.date.getMinutes()).padStart(2, '0');
       const endDate = new Date(arg.date.getTime() + 60 * 60 * 1000);
       const ehh = String(endDate.getHours()).padStart(2, '0');
       const emm = String(endDate.getMinutes()).padStart(2, '0');
-      setDrawerView({
+      setModalView({
         view: 'day',
         date,
         timePreset: {
@@ -127,37 +119,37 @@ export const FullCalendarView = ({
         const date = formatDateKey(arg.event.start);
         const entryId = meta.entry?.id;
         if (readOnly) {
-          setDrawerView({ view: 'day', date });
+          setModalView({ view: 'day', date });
         } else if (entryId && !entryId.startsWith('trainer-')) {
-          setDrawerView({ view: 'event', date, entryId });
+          setModalView({ view: 'event', date, entryId });
         } else {
-          setDrawerView({ view: 'day', date });
+          setModalView({ view: 'day', date });
         }
       } else if (meta.type === 'note') {
         if (readOnly) {
           const date = arg.event.start ? formatDateKey(arg.event.start) : null;
           if (date) {
-            setDrawerView({ view: 'day', date });
+            setModalView({ view: 'day', date });
           }
         } else {
           const dateKey =
             (meta.dateKey as string | undefined) ??
             (arg.event.start ? formatDateKey(arg.event.start) : null);
           if (dateKey) {
-            setDrawerView({ view: 'note', date: dateKey });
+            setModalView({ view: 'note', date: dateKey });
           }
         }
       } else if (meta.type === 'trainingSession' && arg.event.start) {
         const date = formatDateKey(arg.event.start);
         const sessionId = meta.session?.id;
         if (readOnly && allowTrainerToggle && sessionId) {
-          setDrawerView({
+          setModalView({
             view: 'event',
             date,
             entryId: `session-${sessionId}`,
           });
         } else {
-          setDrawerView({ view: 'day', date });
+          setModalView({ view: 'day', date });
         }
       }
     },
@@ -173,9 +165,9 @@ export const FullCalendarView = ({
         allDay: arg.allDay,
       };
       if (readOnly && allowTrainerToggle) {
-        setDrawerView({ view: 'add-training', date, timePreset });
+        setModalView({ view: 'add-training', date, timePreset });
       } else if (!readOnly) {
-        setDrawerView({ view: 'add', date, timePreset });
+        setModalView({ view: 'add', date, timePreset });
       }
     },
     [readOnly, allowTrainerToggle],
@@ -187,31 +179,31 @@ export const FullCalendarView = ({
     [t],
   );
 
-  // ── Derived drawer state ───────────────────────────────────────────────────
+  // ── Derived modal state ───────────────────────────────────────────────────
 
-  const drawerDate = drawerView?.date ?? null;
+  const modalDate = modalView?.date ?? null;
 
-  const drawerEntries = useMemo(
+  const modalEntries = useMemo(
     () =>
-      getDrawerEntries({
-        date: drawerDate,
+      getModalEntries({
+        date: modalDate,
         calendarEntries,
-        trainerCalendar,
-        trainerCategoryForDisplay,
-        trainingSessions,
       }),
-    [
-      drawerDate,
-      calendarEntries,
-      trainerCalendar,
-      trainerCategoryForDisplay,
-      trainingSessions,
-    ],
+    [modalDate, calendarEntries],
   );
 
-  const drawerNote = useMemo(
-    () => (drawerDate ? (calendarNotes?.[drawerDate] ?? '') : ''),
-    [drawerDate, calendarNotes],
+  const modalSessions = useMemo(
+    () =>
+      getModalSessions({
+        date: modalDate,
+        trainingSessions,
+      }),
+    [modalDate, trainingSessions],
+  );
+
+  const modalNote = useMemo(
+    () => (modalDate ? (calendarNotes?.[modalDate] ?? '') : ''),
+    [modalDate, calendarNotes],
   );
 
   const initialView =
@@ -254,26 +246,29 @@ export const FullCalendarView = ({
         />
       </div>
 
-      {drawerView && (
+      {modalView && (
         <ActivityNoteModal
+          canAddTraining={allowTrainerToggle && !!connectionId}
           categories={displayCategories}
-          drawerView={drawerView}
-          entries={drawerEntries}
-          note={drawerNote}
-          onAddEntry={(entryData) => handleAddEntry(entryData, drawerView.date)}
-          onClose={() => setDrawerView(null)}
+          entries={modalEntries}
+          modalView={modalView}
+          note={modalNote}
+          onAddEntry={(entryData) => handleAddEntry(entryData, modalView.date)}
+          onAddTrainingSession={handleAddTrainingSession}
+          onClose={() => setModalView(null)}
           onDeleteEntry={handleDeleteEntry}
-          onNavigate={setDrawerView}
-          onNoteChange={(value) => handleNoteChange(value, drawerView.date)}
+          onDeleteSession={handleDeleteSession}
+          onNavigate={setModalView}
+          onNoteChange={(value) => handleNoteChange(value, modalView.date)}
           onSaveNewCategory={handleSaveNewCategory}
           onUpdateEntryNote={handleUpdateEntryNote}
           onUpdateEntryTime={handleUpdateEntryTime}
+          onUpdateSessionNote={handleUpdateSessionNote}
+          onUpdateSessionTime={handleUpdateSessionTime}
           pickableCategories={pickableCategories}
           readOnly={readOnly}
           recentActivityIds={recentActivityIds}
-          onTrainerToggle={
-            allowTrainerToggle && connectionId ? handleTrainerToggle : undefined
-          }
+          sessions={modalSessions}
         />
       )}
     </>

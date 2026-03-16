@@ -63,7 +63,6 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
     remove(getUserCalendarEntriesRef(userId)),
     remove(getUserCalendarNotesRef(userId)),
     remove(getActivityCategoriesRef(userId)),
-    remove(ref(database, `users/${userId}/trainerCalendar`)),
     remove(ref(database, `users/${userId}/trainerId`)),
     remove(ref(database, `users/${userId}/trainerConnectionId`)),
     // Remove PII fields from userDirectory, keep analytics (messageSends)
@@ -165,14 +164,6 @@ export const importAllUserData = async (
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
   }
-  if (data.trainerCalendar) {
-    promises.push(
-      set(
-        ref(database, `users/${userId}/trainerCalendar`),
-        data.trainerCalendar,
-      ),
-    );
-  }
 
   await Promise.all(promises);
 };
@@ -190,7 +181,6 @@ export const loadAllUserData = async (
     calendarEntriesSnap,
     calendarNotes,
     activityCategories,
-    trainerCalendarSnap,
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
@@ -200,7 +190,6 @@ export const loadAllUserData = async (
     get(getUserCalendarEntriesRef(userId)),
     loadCalendarNotes(userId),
     loadActivityCategories(userId),
-    get(ref(database, `users/${userId}/trainerCalendar`)),
   ]);
 
   return {
@@ -214,8 +203,5 @@ export const loadAllUserData = async (
       : null,
     calendarNotes,
     activityCategories,
-    trainerCalendar: trainerCalendarSnap.exists()
-      ? trainerCalendarSnap.val()
-      : null,
   };
 };

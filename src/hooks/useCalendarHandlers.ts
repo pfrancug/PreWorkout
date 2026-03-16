@@ -4,7 +4,6 @@ import type {
   ICalendarEntries,
   ICalendarEntry,
   ICalendarNotes,
-  ITrainerCalendarData,
 } from '@firebase-config/database';
 import type { User } from 'firebase/auth';
 
@@ -15,7 +14,6 @@ import {
   deleteCalendarEntry,
   saveActivityCategories,
   saveCalendarNote,
-  toggleTrainerCalendarDay,
   updateCalendarEntryNote,
   updateCalendarEntryTime,
   updateSessionNote,
@@ -31,72 +29,47 @@ interface UseCalendarHandlersParams {
   connectionId: string | undefined;
   calendarEntries: ICalendarEntries | null;
   calendarNotes: ICalendarNotes | null;
-  trainerCalendar: ITrainerCalendarData | null;
   categories: IActivityCategory[];
   trainingSessions: ITrainingSession[];
-  trainerCategoryForDisplay: IActivityCategory | null;
 }
 
 export const useCalendarHandlers = ({
   user,
   targetUserId,
   connectionId,
-  calendarEntries,
-  trainerCalendar,
   categories,
   trainingSessions,
-  trainerCategoryForDisplay,
 }: UseCalendarHandlersParams) => {
   const { t } = useTranslation();
-  const trainerToggleInFlight = useRef(new Set<string>());
   const noteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const entryNoteTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
+  const sessionNoteTimersRef = useRef<
+    Map<string, ReturnType<typeof setTimeout>>
+  >(new Map());
 
-  const handleTrainerToggle = useCallback(
+  const handleAddTrainingSession = useCallback(
     async (
       dateKey: string,
       time: string | null,
       timeEnd: string | null,
       note: string,
     ) => {
-      if (
-        !targetUserId ||
-        !trainerCategoryForDisplay?.trainerId ||
-        !connectionId ||
-        !user
-      ) {
+      if (!targetUserId || !connectionId || !user) {
         return;
       }
-
-      const isTrainerMarked = trainerCalendar?.[dateKey] === true;
-      const dayEntries = calendarEntries?.[dateKey]
-        ? Object.values(calendarEntries[dateKey])
-        : [];
-      const inRegular = dayEntries.some(
-        (e) =>
-          e.type === 'activity' &&
-          e.activityId === trainerCategoryForDisplay.id,
-      );
-      const hasSession = trainingSessions.some(
-        (s) => s.date === dateKey && s.status !== 'cancelled',
-      );
-      if (isTrainerMarked || inRegular || hasSession) {
-        return;
-      }
-
-      if (trainerToggleInFlight.current.has(dateKey)) {
-        return;
-      }
-      trainerToggleInFlight.current.add(dateKey);
 
       try {
-        await toggleTrainerCalendarDay(targetUserId, dateKey, true);
+        // Determine trainerId from existing sessions or user context
+        const existingSession = trainingSessions[0];
+        const trainerId = existingSession?.trainerId ?? user.uid;
+        const traineeId = existingSession?.traineeId ?? targetUserId;
+
         const sessionId = await createTrainingSession(
           connectionId,
-          trainerCategoryForDisplay.trainerId!,
-          targetUserId,
+          trainerId,
+          traineeId,
           dateKey,
           time,
           timeEnd,
@@ -105,26 +78,10 @@ export const useCalendarHandlers = ({
           await updateSessionNote(connectionId, sessionId, note);
         }
       } catch {
-        try {
-          await toggleTrainerCalendarDay(targetUserId, dateKey, false);
-        } catch {
-          // Ignore rollback failure
-        }
         toast.error(t('common.saveError'));
-      } finally {
-        trainerToggleInFlight.current.delete(dateKey);
       }
     },
-    [
-      targetUserId,
-      calendarEntries,
-      trainerCalendar,
-      trainerCategoryForDisplay,
-      trainingSessions,
-      connectionId,
-      user,
-      t,
-    ],
+    [targetUserId, connectionId, user, trainingSessions, t],
   );
 
   const handleAddEntry = useCallback(
@@ -147,79 +104,31 @@ export const useCalendarHandlers = ({
         return;
       }
       try {
-        if (entryId.startsWith('trainer-')) {
-          if (targetUserId) {
-            await toggleTrainerCalendarDay(targetUserId, date, false);
-          }
-          if (connectionId) {
-            const session = trainingSessions.find(
-              (s) => s.date === date && s.status !== 'cancelled',
-            );
-            if (session) {
-              await cancelSession(connectionId, session.id, 'trainer');
-            }
-          }
-        } else if (entryId.startsWith('session-')) {
-          const sessionId = entryId.replace('session-', '');
-          if (connectionId) {
-            await cancelSession(connectionId, sessionId, 'trainer');
-          }
-          if (targetUserId) {
-            const remaining = trainingSessions.filter(
-              (s) =>
-                s.date === date &&
-                s.status !== 'cancelled' &&
-                s.id !== sessionId,
-            );
-            if (remaining.length === 0) {
-              await toggleTrainerCalendarDay(targetUserId, date, false);
-            }
-          }
-        } else {
-          await deleteCalendarEntry(user.uid, date, entryId);
-        }
+        await deleteCalendarEntry(user.uid, date, entryId);
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, targetUserId, connectionId, trainingSessions, t],
+    [user, t],
+  );
+
+  const handleDeleteSession = useCallback(
+    async (sessionId: string) => {
+      if (!connectionId) {
+        return;
+      }
+      try {
+        await cancelSession(connectionId, sessionId, 'trainer');
+      } catch {
+        toast.error(t('common.saveError'));
+      }
+    },
+    [connectionId, t],
   );
 
   const handleUpdateEntryNote = useCallback(
     (entryId: string, date: string, value: string) => {
       if (!user) {
-        return;
-      }
-
-      if (entryId.startsWith('trainer-') || entryId.startsWith('session-')) {
-        if (!connectionId) {
-          return;
-        }
-        const sessionId = entryId.startsWith('session-')
-          ? entryId.replace('session-', '')
-          : trainingSessions.find(
-              (s) => s.date === date && s.status !== 'cancelled',
-            )?.id;
-        if (!sessionId) {
-          return;
-        }
-        const existing = entryNoteTimersRef.current.get(entryId);
-        if (existing) {
-          clearTimeout(existing);
-        }
-        entryNoteTimersRef.current.set(
-          entryId,
-          setTimeout(async () => {
-            try {
-              await updateSessionNote(connectionId, sessionId, value);
-            } catch {
-              toast.error(t('common.saveError'));
-            } finally {
-              entryNoteTimersRef.current.delete(entryId);
-            }
-          }, 500),
-        );
-
         return;
       }
 
@@ -240,7 +149,33 @@ export const useCalendarHandlers = ({
         }, 500),
       );
     },
-    [user, connectionId, trainingSessions, t],
+    [user, t],
+  );
+
+  const handleUpdateSessionNote = useCallback(
+    (sessionId: string, _date: string, value: string) => {
+      if (!connectionId) {
+        return;
+      }
+
+      const existing = sessionNoteTimersRef.current.get(sessionId);
+      if (existing) {
+        clearTimeout(existing);
+      }
+      sessionNoteTimersRef.current.set(
+        sessionId,
+        setTimeout(async () => {
+          try {
+            await updateSessionNote(connectionId, sessionId, value);
+          } catch {
+            toast.error(t('common.saveError'));
+          } finally {
+            sessionNoteTimersRef.current.delete(sessionId);
+          }
+        }, 500),
+      );
+    },
+    [connectionId, t],
   );
 
   const handleUpdateEntryTime = useCallback(
@@ -254,34 +189,33 @@ export const useCalendarHandlers = ({
         return;
       }
 
-      if (entryId.startsWith('trainer-') || entryId.startsWith('session-')) {
-        if (!connectionId) {
-          return;
-        }
-        const sessionId = entryId.startsWith('session-')
-          ? entryId.replace('session-', '')
-          : trainingSessions.find(
-              (s) => s.date === date && s.status !== 'cancelled',
-            )?.id;
-        if (!sessionId) {
-          return;
-        }
-        try {
-          await updateSessionTime(connectionId, sessionId, time, timeEnd);
-        } catch {
-          toast.error(t('common.saveError'));
-        }
-
-        return;
-      }
-
       try {
         await updateCalendarEntryTime(user.uid, date, entryId, time, timeEnd);
       } catch {
         toast.error(t('common.saveError'));
       }
     },
-    [user, connectionId, trainingSessions, t],
+    [user, t],
+  );
+
+  const handleUpdateSessionTime = useCallback(
+    async (
+      sessionId: string,
+      _date: string,
+      time: string | null,
+      timeEnd?: string | null,
+    ) => {
+      if (!connectionId) {
+        return;
+      }
+
+      try {
+        await updateSessionTime(connectionId, sessionId, time, timeEnd);
+      } catch {
+        toast.error(t('common.saveError'));
+      }
+    },
+    [connectionId, t],
   );
 
   const handleSaveNewCategory = useCallback(
@@ -323,15 +257,20 @@ export const useCalendarHandlers = ({
     }
     entryNoteTimersRef.current.forEach(clearTimeout);
     entryNoteTimersRef.current.clear();
+    sessionNoteTimersRef.current.forEach(clearTimeout);
+    sessionNoteTimersRef.current.clear();
   }, []);
 
   return {
     clearTimers,
-    handleTrainerToggle,
+    handleAddTrainingSession,
     handleAddEntry,
     handleDeleteEntry,
+    handleDeleteSession,
     handleUpdateEntryNote,
     handleUpdateEntryTime,
+    handleUpdateSessionNote,
+    handleUpdateSessionTime,
     handleSaveNewCategory,
     handleNoteChange,
   };
