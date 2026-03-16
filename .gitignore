@@ -15,6 +15,13 @@ dist-ssr/
 firebase-debug.log
 firestore-debug.log
 *-firebase-adminsdk-*.json
+ui-debug.log
+database-debug.log
+
+# Playwright
+test-results/
+playwright-report/
+e2e/.emulator-pid
 
 # macOS
 .DS_Store

@@ -24,6 +24,7 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
     },
     environment: 'jsdom',
+    exclude: ['e2e/**', 'node_modules/**', '.vercel/**'],
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
   },

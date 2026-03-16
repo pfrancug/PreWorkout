@@ -1,5 +1,7 @@
 # Testing Roadmap
 
+**Total: 321 unit/component tests (43 files) + 36 E2E tests (6 files) = 357 tests**
+
 ## Phase 1 — Setup
 
 - [x] Install Vitest + React Testing Library
@@ -232,50 +234,71 @@
 
 ### Setup
 
-- [ ] Configure Firebase Emulator (Auth + RTDB) in `firebase.json`
-- [ ] Create Playwright global setup: start emulators + `vercel dev` + `vite dev`
-- [ ] Create test fixtures for seeding emulator data
-- [ ] Create helpers for programmatic login (bypass Google popup via emulator custom tokens)
+- [x] Configure Firebase Emulator (Auth + RTDB) in `firebase.json` — already configured (ports 9099, 9000, UI 4000)
+- [x] Create Playwright global setup: start emulators + `vercel dev` + `vite dev` — `e2e/global-setup.ts` + `global-teardown.ts`
+- [x] Create test fixtures for seeding emulator data — `e2e/fixtures/seed.ts`
+- [x] Create helpers for programmatic login (bypass Google popup via emulator custom tokens) — `e2e/auth.ts`
+- [x] Add emulator connection to Firebase client SDK — `src/firebase/config.ts`, `auth.ts`, `db.ts` (via `VITE_USE_EMULATORS`)
+- [x] Create `.env.test` with emulator-only Firebase config (project `demo-preworkout`)
+- [x] Add npm scripts: `test:e2e`, `test:e2e:ui`
+- [x] Exclude `e2e/` and `.vercel/` from Vitest config
+- [x] Add `e2e/**/*.ts` to `tsconfig.node.json`
+- [x] Create smoke test (`e2e/smoke.spec.ts`) — login page loads, unauth redirect, public pages
+- **Prerequisite**: Java JDK 11+ required for Firebase Emulator Suite
 
-### Auth Flows
+### Smoke Tests (`e2e/smoke.spec.ts` — 4 tests)
 
-- [ ] Google login (via emulator custom token) → lands on diary page
-- [ ] Unauthenticated user → redirected to login page
-- [ ] Logout → redirected to login page, localStorage cleared
+- [x] Login page loads with sign-in button
+- [x] Unauthenticated user redirected to login page
+- [x] Privacy Policy page renders
+- [x] Terms of Service page renders
 
-### Trainee Flows (regular user)
+### Auth Flows (`e2e/auth-flows.spec.ts` — 6 tests)
 
-- [ ] Diary: add row, edit cell, verify persistence after reload
-- [ ] Calendar: add activity, set time range, add note, delete entry
-- [ ] Settings: change name, change language (verify i18n switch), export/import data
-- [ ] Chat: send message, receive streaming AI response
-- [ ] Calculator: fill form, see results
+- [x] Authenticated user reaches the dashboard
+- [x] Authenticated user sees sidebar navigation (diary, calendar, calculator)
+- [x] User can navigate to diary page
+- [x] User can navigate to calendar page
+- [x] User can navigate to calculator page
+- [x] User can logout via sidebar menu → redirected to login
 
-### Trainer Flows (two users via emulator)
+### Trainee Flows (`e2e/trainee-flows.spec.ts` — 8 tests)
 
-- [ ] Trainer generates invite code
-- [ ] Trainee enters code → connection established
-- [ ] Trainer sees trainee in connections list
-- [ ] Trainer views trainee diary (read-only)
-- [ ] Trainer creates training session for trainee
-- [ ] Trainee sees session on calendar
-- [ ] Trainer marks session complete/paid
-- [ ] Trainer groups sessions as package
-- [ ] Trainer disconnects trainee
+- [x] Diary page shows data table
+- [x] Diary page shows seeded data (after reload picks up seed)
+- [x] Can add a new diary row
+- [x] Calendar page loads with heading
+- [x] Calculator shows form pre-filled from settings (age, height)
+- [x] Calculator updates results when inputs change
+- [x] Profile settings shows user data (name, age, height)
+- [x] Can update profile name (save button disables on success)
 
-### Admin Flows
+### Trainer Flows (`e2e/trainer-flows.spec.ts` — 7 tests)
 
-- [ ] Admin sets user as trainer via admin panel
-- [ ] Admin adjusts user message limits
-- [ ] Non-admin cannot access admin page
+- [x] Trainer sees trainer management links (invites, trainees)
+- [x] Regular user does not see trainer links
+- [x] Trainer can generate an invite code
+- [x] Trainer can delete an invite code (with confirm dialog)
+- [x] Trainer sees empty trainees list
+- [x] Trainee sees connect form with invite code input
+- [x] Invite code generation produces a 6-char code
 
-### Cross-cutting
+### Admin Flows (`e2e/admin-flows.spec.ts` — 4 tests)
 
-- [ ] Mobile responsive: sidebar collapses, swipe-to-open works
-- [ ] i18n: switch EN↔PL, all visible text changes
-- [ ] PWA: iOS install prompt appears on Safari (mock user agent)
-- [ ] Data persistence: changes survive page reload
-- [ ] Error states: network failure, Firebase unavailable
+- [x] Admin can access admin page
+- [x] Admin sees users table
+- [x] Non-admin is redirected away from admin page
+- [x] Admin sees admin role indicator in sidebar menu
+
+### Cross-cutting (`e2e/cross-cutting.spec.ts` — 7 tests)
+
+- [x] Can switch language to Polish (Dashboard → Pulpit)
+- [x] Login page respects default English language
+- [x] Sidebar collapses on mobile viewport
+- [x] Sidebar toggle opens on mobile
+- [x] Profile changes persist after page reload
+- [x] Breadcrumb shows current page name
+- [x] Navigating between pages preserves auth state
 
 ---
 

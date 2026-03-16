@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   forbidOnly: !!process.env.CI,
   fullyParallel: true,
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-teardown.ts',
   projects: [
     {
       name: 'chromium',
@@ -22,7 +24,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npm run dev',
+      command: 'npx vite --mode test',
       port: 5173,
       reuseExistingServer: !process.env.CI,
     },
