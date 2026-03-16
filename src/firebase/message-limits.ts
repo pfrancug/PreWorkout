@@ -86,3 +86,21 @@ export const getRemainingMessages = async (userId: string): Promise<number> => {
 
   return Math.max(0, DAILY_LIMIT - count);
 };
+
+export const loadChatLimitStatus = async (
+  userId: string,
+): Promise<{ disabled: boolean; remaining: number }> => {
+  const mode = await getUserLimitMode(userId);
+
+  if (mode === 'disabled') {
+    return { disabled: true, remaining: 0 };
+  }
+
+  if (mode === 'unlimited') {
+    return { disabled: false, remaining: Infinity };
+  }
+
+  const count = await getTodayMessageCount(userId);
+
+  return { disabled: false, remaining: Math.max(0, DAILY_LIMIT - count) };
+};

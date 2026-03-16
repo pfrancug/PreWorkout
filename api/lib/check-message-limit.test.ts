@@ -42,11 +42,39 @@ describe('checkMessageLimit', () => {
   it('returns allowed: false when write is rejected by security rules', async () => {
     mockFetch.mockResolvedValueOnce(ok(25));
     mockFetch.mockResolvedValueOnce(fail());
+    // retry: re-read, re-write
+    mockFetch.mockResolvedValueOnce(ok(25));
+    mockFetch.mockResolvedValueOnce(fail());
 
     const result = await checkMessageLimit('u1', 'tok');
 
     expect(result).toEqual({ allowed: false });
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+  });
+
+  it('retries and succeeds after race condition', async () => {
+    // First attempt: read 10, write 11 fails (someone else wrote 11 first)
+    mockFetch.mockResolvedValueOnce(ok(10));
+    mockFetch.mockResolvedValueOnce(fail());
+    // Retry: re-read 11 (updated), write 12 succeeds
+    mockFetch.mockResolvedValueOnce(ok(11));
+    mockFetch.mockResolvedValueOnce(ok(12));
+
+    const result = await checkMessageLimit('u1', 'tok');
+
+    expect(result).toEqual({ allowed: true });
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+  });
+
+  it('returns allowed: false when retry re-read fails', async () => {
+    mockFetch.mockResolvedValueOnce(ok(10));
+    mockFetch.mockResolvedValueOnce(fail());
+    mockFetch.mockResolvedValueOnce(fail());
+
+    const result = await checkMessageLimit('u1', 'tok');
+
+    expect(result).toEqual({ allowed: false });
+    expect(mockFetch).toHaveBeenCalledTimes(3);
   });
 
   it('sends PUT with incremented count', async () => {

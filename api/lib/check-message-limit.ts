@@ -1,7 +1,18 @@
+const readCount = async (url: string): Promise<number | null> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    return null;
+  }
+
+  const raw: unknown = await res.json();
+
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0;
+};
+
 /**
  * Increment the daily message counter via Firebase REST API (Edge-compatible).
  * DB security rules enforce mode checks, +1 increment, and the 25 cap.
- * Returns { allowed: true } if the write was accepted.
+ * Retries once on write failure (handles race with concurrent requests).
  */
 export const checkMessageLimit = async (
   uid: string,
@@ -18,18 +29,32 @@ export const checkMessageLimit = async (
   const day = String(now.getDate()).padStart(2, '0');
   const countUrl = `${baseUrl}/userDirectory/${uid}/messageSends/${yearMonth}/${day}.json?auth=${idToken}`;
 
-  const countRes = await fetch(countUrl);
-  if (!countRes.ok) {
+  let count = await readCount(countUrl);
+  if (count === null) {
     return { allowed: false };
   }
-
-  const count: number | null = await countRes.json();
 
   const writeRes = await fetch(countUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify((count ?? 0) + 1),
+    body: JSON.stringify(count + 1),
   });
 
-  return { allowed: writeRes.ok };
+  if (writeRes.ok) {
+    return { allowed: true };
+  }
+
+  // Retry once — count may have changed due to a concurrent request
+  count = await readCount(countUrl);
+  if (count === null) {
+    return { allowed: false };
+  }
+
+  const retryRes = await fetch(countUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(count + 1),
+  });
+
+  return { allowed: retryRes.ok };
 };

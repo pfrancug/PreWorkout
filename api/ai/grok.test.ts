@@ -115,7 +115,7 @@ describe('POST /api/ai/grok', () => {
     );
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: 'Malformed JSON' });
+    expect(mockCheckMessageLimit).not.toHaveBeenCalled();
   });
 
   it('returns 400 for missing userMessage', async () => {
@@ -126,6 +126,7 @@ describe('POST /api/ai/grok', () => {
     );
 
     expect(res.status).toBe(400);
+    expect(mockCheckMessageLimit).not.toHaveBeenCalled();
   });
 
   it('returns 413 for payload exceeding 100KB', async () => {
@@ -140,6 +141,7 @@ describe('POST /api/ai/grok', () => {
     );
 
     expect(res.status).toBe(413);
+    expect(mockCheckMessageLimit).not.toHaveBeenCalled();
   });
 
   it('streams SSE response and ends with [DONE]', async () => {

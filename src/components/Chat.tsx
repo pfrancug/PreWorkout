@@ -18,7 +18,7 @@ import { useSettings } from '@contexts/useSettings';
 import {
   clearUserMessages,
   getRemainingMessages,
-  loadMessageLimitConfig,
+  loadChatLimitStatus,
   saveUserMessages,
   subscribeToUserMessages,
 } from '@firebase-config/database';
@@ -147,9 +147,8 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
     }
 
     const load = async () => {
-      const config = await loadMessageLimitConfig(user.uid);
-      setIsChatDisabled(config?.mode === 'disabled');
-      const remaining = await getRemainingMessages(user.uid);
+      const { disabled, remaining } = await loadChatLimitStatus(user.uid);
+      setIsChatDisabled(disabled);
       setRemainingMessages(remaining);
     };
 

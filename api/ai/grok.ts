@@ -34,12 +34,6 @@ const handler = async (req: Request): Promise<Response> => {
     return jsonResponse({ error: 'Unauthorized' }, 401);
   }
 
-  const idToken = authHeader!.slice(7);
-  const { allowed } = await checkMessageLimit(uid, idToken);
-  if (!allowed) {
-    return jsonResponse({ error: 'Daily message limit reached' }, 429);
-  }
-
   let body: RequestBody;
   try {
     body = (await req.json()) as RequestBody;
@@ -59,6 +53,12 @@ const handler = async (req: Request): Promise<Response> => {
   const payloadSize = JSON.stringify(body).length;
   if (payloadSize > 100_000) {
     return jsonResponse({ error: 'Payload too large' }, 413);
+  }
+
+  const idToken = authHeader!.slice(7);
+  const { allowed } = await checkMessageLimit(uid, idToken);
+  if (!allowed) {
+    return jsonResponse({ error: 'Daily message limit reached' }, 429);
   }
 
   const messages: IChatMessage[] = [

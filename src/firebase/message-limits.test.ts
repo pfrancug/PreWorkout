@@ -15,6 +15,7 @@ vi.mock('./db', () => ({ database: {} }));
 import {
   getRemainingMessages,
   isMessageLimitReached,
+  loadChatLimitStatus,
   loadMessageLimitConfig,
 } from './message-limits';
 
@@ -142,6 +143,39 @@ describe('message-limits', () => {
       const result = await loadMessageLimitConfig('uid-1');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('loadChatLimitStatus', () => {
+    it('returns disabled and 0 remaining for disabled mode', async () => {
+      setupMocks(true, { mode: 'disabled' }, true, 0);
+      const result = await loadChatLimitStatus('uid-1');
+
+      expect(result).toEqual({ disabled: true, remaining: 0 });
+    });
+
+    it('returns not disabled and Infinity for unlimited mode', async () => {
+      setupMocks(true, { mode: 'unlimited' }, true, 100);
+      const result = await loadChatLimitStatus('uid-1');
+
+      expect(result).toEqual({ disabled: false, remaining: Infinity });
+    });
+
+    it('returns remaining count for limited mode', async () => {
+      setupMocks(true, { mode: 'limited' }, true, 10);
+      const result = await loadChatLimitStatus('uid-1');
+
+      expect(result).toEqual({ disabled: false, remaining: 15 });
+    });
+
+    it('reads mode only once (single DB read for mode)', async () => {
+      setupMocks(true, { mode: 'limited' }, true, 5);
+      await loadChatLimitStatus('uid-1');
+
+      const limitsCalls = mockGet.mock.calls.filter(
+        (call: { _path?: string }[]) => call[0]._path?.includes('/limits'),
+      );
+      expect(limitsCalls).toHaveLength(1);
     });
   });
 });
