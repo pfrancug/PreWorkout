@@ -141,7 +141,10 @@ export const validateImportData = (data: unknown): data is IAllUserData => {
       return false;
     }
     const l = d.limits as Record<string, unknown>;
-    if (typeof l.max !== 'number') {
+    if (
+      typeof l.mode !== 'string' ||
+      !['disabled', 'limited', 'unlimited'].includes(l.mode)
+    ) {
       return false;
     }
   }

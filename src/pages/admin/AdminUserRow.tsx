@@ -1,34 +1,33 @@
 import type { IUserWithLimits } from './types';
+import type { MessageLimitMode } from '@firebase-config/database';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar';
-import { Button } from '@components/ui/button';
-import { Input } from '@components/ui/input';
-import { Label } from '@components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@components/ui/select';
 import { Switch } from '@components/ui/switch';
 import { TableCell, TableRow } from '@components/ui/table';
 import { EM_DASH } from '@constants/display';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface AdminUserRowProps {
   user: IUserWithLimits;
-  currentMax: string;
-  isEditing: boolean;
   isSaving: boolean;
   isTogglingTrainer: boolean;
-  onLimitChange: (uid: string, value: string) => void;
-  onLimitSave: (uid: string) => void;
+  onLimitModeChange: (uid: string, mode: MessageLimitMode) => void;
   onTrainerToggle: (uid: string, currentIsTrainer: boolean) => void;
 }
 
 export const AdminUserRow = ({
   user,
-  currentMax,
-  isEditing,
   isSaving,
   isTogglingTrainer,
-  onLimitChange,
-  onLimitSave,
+  onLimitModeChange,
   onTrainerToggle,
 }: AdminUserRowProps) => {
   const { t } = useTranslation();
@@ -88,34 +87,31 @@ export const AdminUserRow = ({
       </TableCell>
 
       <TableCell>
-        <Label className={'sr-only'} htmlFor={`limit-${user.uid}`}>
-          {t('admin.analytics.maxLimit')}
-        </Label>
-
-        <Input
-          className={'w-20 h-8'}
-          id={`limit-${user.uid}`}
-          min={-1}
-          onChange={(e) => onLimitChange(user.uid, e.target.value)}
-          type={'number'}
-          value={currentMax}
-        />
-      </TableCell>
-
-      <TableCell>
-        <Button
-          className={'h-8'}
-          disabled={!isEditing || isSaving}
-          onClick={() => onLimitSave(user.uid)}
-          size={'sm'}
-          variant={'outline'}
+        <Select
+          disabled={isSaving}
+          value={user.limitMode}
+          onValueChange={(value: MessageLimitMode) =>
+            onLimitModeChange(user.uid, value)
+          }
         >
-          {isSaving ? (
-            <Loader2 className={'h-3.5 w-3.5 animate-spin'} />
-          ) : (
-            <Save className={'h-3.5 w-3.5'} />
-          )}
-        </Button>
+          <SelectTrigger className={'w-28 h-8'}>
+            <SelectValue />
+          </SelectTrigger>
+
+          <SelectContent>
+            <SelectItem value={'disabled'}>
+              {t('admin.limitModes.disabled')}
+            </SelectItem>
+
+            <SelectItem value={'limited'}>
+              {t('admin.limitModes.limited')}
+            </SelectItem>
+
+            <SelectItem value={'unlimited'}>
+              {t('admin.limitModes.unlimited')}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </TableCell>
 
       <TableCell>

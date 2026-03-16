@@ -19,6 +19,7 @@ import {
   clearUserMessages,
   getRemainingMessages,
   incrementMessageCount,
+  loadMessageLimitConfig,
   saveUserMessages,
   subscribeToUserMessages,
 } from '@firebase-config/database';
@@ -115,6 +116,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [remainingMessages, setRemainingMessages] = useState<number>(10);
+  const [isChatDisabled, setIsChatDisabled] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -145,7 +147,14 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
       return;
     }
 
-    getRemainingMessages(user.uid).then(setRemainingMessages);
+    const load = async () => {
+      const config = await loadMessageLimitConfig(user.uid);
+      setIsChatDisabled(config?.mode === 'disabled');
+      const remaining = await getRemainingMessages(user.uid);
+      setRemainingMessages(remaining);
+    };
+
+    load();
   }, [user]);
 
   // Initialize with welcome message on first render
@@ -530,11 +539,13 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
                   : 'text-sidebar-foreground/50',
             )}
           >
-            {isLimitReached
-              ? t('chat.limitReached')
-              : t('chat.remainingMessages', {
-                  count: remainingMessages,
-                })}
+            {isChatDisabled
+              ? t('chat.chatDisabled')
+              : isLimitReached
+                ? t('chat.limitReached')
+                : t('chat.remainingMessages', {
+                    count: remainingMessages,
+                  })}
           </p>
         )}
 

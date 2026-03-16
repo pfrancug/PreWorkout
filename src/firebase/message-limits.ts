@@ -1,10 +1,11 @@
-import type { IMessageLimitConfig } from './types';
+import type { IMessageLimitConfig, MessageLimitMode } from './types';
 
 import { get, ref, runTransaction } from 'firebase/database';
 
 import { database } from './db';
 
-const DAILY_MESSAGE_LIMIT = 5;
+const DAILY_LIMIT = 25;
+const DEFAULT_MODE: MessageLimitMode = 'limited';
 
 const getTodayDateString = (): string => {
   const now = new Date();
@@ -18,12 +19,12 @@ const getTodayDateString = (): string => {
 export const getUserLimitsRef = (userId: string) =>
   ref(database, `users/${userId}/limits`);
 
-const getUserMaxLimit = async (userId: string): Promise<number> => {
+const getUserLimitMode = async (userId: string): Promise<MessageLimitMode> => {
   const snapshot = await get(getUserLimitsRef(userId));
 
   return snapshot.exists()
-    ? (snapshot.val().max ?? DAILY_MESSAGE_LIMIT)
-    : DAILY_MESSAGE_LIMIT;
+    ? (snapshot.val().mode ?? DEFAULT_MODE)
+    : DEFAULT_MODE;
 };
 
 export const loadMessageLimitConfig = async (
@@ -35,7 +36,7 @@ export const loadMessageLimitConfig = async (
   if (snapshot.exists()) {
     const val = snapshot.val();
 
-    return { max: val.max ?? DAILY_MESSAGE_LIMIT };
+    return { mode: val.mode ?? DEFAULT_MODE };
   }
 
   return null;
@@ -55,29 +56,35 @@ const getTodayMessageCount = async (userId: string): Promise<number> => {
 export const isMessageLimitReached = async (
   userId: string,
 ): Promise<boolean> => {
-  const [count, max] = await Promise.all([
-    getTodayMessageCount(userId),
-    getUserMaxLimit(userId),
-  ]);
+  const mode = await getUserLimitMode(userId);
 
-  if (max === -1) {
+  if (mode === 'disabled') {
+    return true;
+  }
+
+  if (mode === 'unlimited') {
     return false;
   }
 
-  return count >= max;
+  const count = await getTodayMessageCount(userId);
+
+  return count >= DAILY_LIMIT;
 };
 
 export const getRemainingMessages = async (userId: string): Promise<number> => {
-  const [count, max] = await Promise.all([
-    getTodayMessageCount(userId),
-    getUserMaxLimit(userId),
-  ]);
+  const mode = await getUserLimitMode(userId);
 
-  if (max === -1) {
+  if (mode === 'disabled') {
+    return 0;
+  }
+
+  if (mode === 'unlimited') {
     return Infinity;
   }
 
-  return Math.max(0, max - count);
+  const count = await getTodayMessageCount(userId);
+
+  return Math.max(0, DAILY_LIMIT - count);
 };
 
 export const incrementMessageCount = async (userId: string): Promise<void> => {

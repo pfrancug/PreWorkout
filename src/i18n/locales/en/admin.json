@@ -16,8 +16,13 @@
       "trainerRevoked": "Trainer role revoked. User must re-login.",
       "trainerToggleError": "Failed to update trainer role."
     },
-    "invalidLimit": "Limit must be a number between 0 and 50.",
+    "invalidLimit": "Invalid limit mode.",
     "limitSaved": "Limit saved successfully.",
+    "limitModes": {
+      "disabled": "Disabled",
+      "limited": "Limited",
+      "unlimited": "Unlimited"
+    },
     "analytics": {
       "title": "Usage Analytics (Last 30 Days)",
       "allTimeTotal": "All Time Total",
@@ -27,7 +32,7 @@
       "avgPerUser": "Avg Per User",
       "avgDailyUser": "Avg Daily/User",
       "today": "Today",
-      "maxLimit": "Max Limit"
+      "limitMode": "Limit"
     }
   }
 }

@@ -10,6 +10,7 @@
     "attachDatasetTooltip": "Kliknij, aby dołączyć dane z dziennika",
     "dataAttached": "Dane dołączone",
     "errorGenerating": "Błąd generowania odpowiedzi",
+    "chatDisabled": "Czat jest wyłączony dla Twojego konta.",
     "limitReached": "Dzienny limit wiadomości osiągnięty. Spróbuj ponownie jutro.",
     "remainingMessages": "Pozostało {{count}} wiadomości na dziś",
     "welcomeMessage": "Hej! 🔥\n\nGotowy na dzisiejszy trening?\nWaga? Kalorie? Posiłki? Śledźmy i wygrywajmy! 💪",
