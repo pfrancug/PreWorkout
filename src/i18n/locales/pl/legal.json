@@ -23,7 +23,7 @@
         },
         "thirdParties": {
           "title": "Usługi stron trzecich",
-          "content": "Korzystamy z następujących usług stron trzecich:\n\n• **Firebase Authentication**: Do bezpiecznego logowania (Google).\n• **Firebase Realtime Database**: Do przechowywania Twoich danych.\n• **Google Gemini / xAI Grok**: Usługi AI do funkcji czatu. Twoje wiadomości mogą być przetwarzane przez tych dostawców zgodnie z ich politykami prywatności."
+          "content": "Korzystamy z następujących usług stron trzecich:\n\n• **Firebase Authentication**: Do bezpiecznego logowania (Google).\n• **Firebase Realtime Database**: Do przechowywania Twoich danych.\n• **xAI Grok**: Usługa AI do funkcji czatu. Twoje wiadomości mogą być przetwarzane przez tego dostawcę zgodnie z jego polityką prywatności."
         },
         "yourRights": {
           "title": "Twoje prawa",

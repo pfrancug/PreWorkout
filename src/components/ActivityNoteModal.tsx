@@ -1,5 +1,7 @@
 import type { ActivityNoteModalProps } from './types';
 
+import { useTranslation } from 'react-i18next';
+
 import { AddTrainingView } from './calendar/AddTrainingView';
 import { AddView } from './calendar/AddView';
 import { DayView } from './calendar/DayView';
@@ -32,6 +34,7 @@ export const ActivityNoteModal = ({
   onUpdateSessionNote,
   onUpdateSessionTime,
 }: ActivityNoteModalProps) => {
+  const { t } = useTranslation();
   const date = modalView.date;
 
   const currentEntry =
@@ -39,8 +42,12 @@ export const ActivityNoteModal = ({
       ? entries.find((e) => e.id === modalView.entryId)
       : undefined;
 
+  const isSessionEvent =
+    modalView.view === 'event' && modalView.entryId?.startsWith('session-');
+
   const showDayView =
-    modalView.view === 'day' || (modalView.view === 'event' && !currentEntry);
+    modalView.view === 'day' ||
+    (modalView.view === 'event' && !currentEntry && !isSessionEvent);
 
   return (
     <Dialog
@@ -144,8 +151,7 @@ export const ActivityNoteModal = ({
           })()}
 
         {modalView.view === 'event' &&
-          !currentEntry &&
-          modalView.entryId?.startsWith('session-') &&
+          isSessionEvent &&
           (() => {
             const sessionId = modalView.entryId.replace('session-', '');
             const session = sessions.find((s) => s.id === sessionId);
@@ -161,7 +167,10 @@ export const ActivityNoteModal = ({
                 onBack={() => onNavigate({ view: 'day', date })}
                 entry={{
                   id: `session-${session.id}`,
-                  type: 'activity',
+                  type: 'custom',
+                  name: t('calendar.trainerActivity'),
+                  icon: 'dumbbell',
+                  color: session.status === 'completed' ? 'green' : 'blue',
                   time: session.time,
                   timeEnd: session.timeEnd ?? null,
                   note: session.note,

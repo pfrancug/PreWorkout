@@ -116,12 +116,6 @@ const traineesItems = [
 
 const connectionItems = [
   {
-    titleKey: 'nav.trainerConnect',
-    icon: Link2,
-    path: '/trainer/connection',
-    connectionOnly: false,
-  },
-  {
     titleKey: 'nav.trainerSessions',
     icon: CalendarClock,
     path: '/trainer/sessions',
@@ -132,6 +126,12 @@ const connectionItems = [
     icon: Share2,
     path: '/trainer/sharing',
     connectionOnly: true,
+  },
+  {
+    titleKey: 'nav.trainerConnect',
+    icon: Link2,
+    path: '/trainer/connection',
+    connectionOnly: false,
   },
 ];
 
