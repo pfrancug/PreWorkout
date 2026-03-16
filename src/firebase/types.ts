@@ -4,8 +4,10 @@ import type {
   IUserSettings,
 } from '@contexts/SettingsContext';
 
+export type MessageLimitMode = 'disabled' | 'limited' | 'unlimited';
+
 export interface IMessageLimitConfig {
-  max: number;
+  mode: MessageLimitMode;
 }
 
 export interface IActivityCategory {

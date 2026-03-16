@@ -154,7 +154,7 @@ export const importAllUserData = async (
     promises.push(saveUserData(userId, data.data));
   }
   if (data.limits) {
-    promises.push(set(getUserLimitsRef(userId), { max: data.limits.max }));
+    promises.push(set(getUserLimitsRef(userId), { mode: data.limits.mode }));
   }
   if (data.calendarEntries) {
     promises.push(set(getUserCalendarEntriesRef(userId), data.calendarEntries));

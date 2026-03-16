@@ -1,49 +1,8 @@
 import type { IAIConfig, StreamCallbacks } from './types';
 
-import { createXai } from '@ai-sdk/xai';
-import { streamText } from 'ai';
+export const isGrokAvailable = (): boolean => true;
 
-// In dev mode, use the API key directly (safe on localhost).
-// In production, the key is only on the server behind /api/ai/grok.
-const devApiKey = import.meta.env.DEV
-  ? (import.meta.env.VITE_XAI_API_KEY ?? null)
-  : null;
-
-export const isGrokAvailable = (): boolean => {
-  return import.meta.env.DEV ? !!devApiKey : true;
-};
-
-// Dev mode: call xAI API directly via AI SDK
-const streamDev = async (
-  config: IAIConfig,
-  callbacks: StreamCallbacks,
-): Promise<void> => {
-  const xai = createXai({ apiKey: devApiKey! });
-
-  const messages = [
-    { role: 'system' as const, content: config.systemInstruction },
-    ...config.messages,
-    { role: 'user' as const, content: config.userMessage },
-  ];
-
-  const result = streamText({
-    model: xai('grok-4-1-fast-reasoning'),
-    messages,
-    temperature: 0.7,
-    maxRetries: 0,
-  });
-
-  let fullText = '';
-  for await (const chunk of result.textStream) {
-    fullText += chunk;
-    callbacks.onChunk(fullText);
-  }
-
-  callbacks.onComplete(fullText);
-};
-
-// Production: proxy through Vercel serverless function
-const streamProd = async (
+export const streamFromGrok = async (
   config: IAIConfig,
   callbacks: StreamCallbacks,
 ): Promise<void> => {
@@ -128,5 +87,3 @@ const streamProd = async (
 
   callbacks.onComplete(fullText);
 };
-
-export const streamFromGrok = import.meta.env.DEV ? streamDev : streamProd;

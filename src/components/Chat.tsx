@@ -1,4 +1,4 @@
-import type { AIProvider, ChatProps, Message } from './types';
+import type { ChatProps, Message } from './types';
 import type { IAIConfig } from '@lib/ai/types';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 
@@ -18,15 +18,11 @@ import { useSettings } from '@contexts/useSettings';
 import {
   clearUserMessages,
   getRemainingMessages,
+  loadChatLimitStatus,
   saveUserMessages,
   subscribeToUserMessages,
 } from '@firebase-config/database';
-import {
-  isGeminiAvailable,
-  isGrokAvailable,
-  streamFromGemini,
-  streamFromGrok,
-} from '@lib/ai';
+import { streamFromGrok } from '@lib/ai';
 import { cn } from '@lib/utils';
 import { BicepsFlexed, Database, Send, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -118,8 +114,8 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   const [isAttached, setIsAttached] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
-  const [remainingMessages, setRemainingMessages] = useState<number>(10);
+  const [remainingMessages, setRemainingMessages] = useState<number>(0);
+  const [isChatDisabled, setIsChatDisabled] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -150,7 +146,13 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
       return;
     }
 
-    getRemainingMessages(user.uid).then(setRemainingMessages);
+    const load = async () => {
+      const { disabled, remaining } = await loadChatLimitStatus(user.uid);
+      setIsChatDisabled(disabled);
+      setRemainingMessages(remaining);
+    };
+
+    load();
   }, [user]);
 
   // Initialize with welcome message on first render
@@ -206,7 +208,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   }, [messages]);
 
   const handleSubmit = async () => {
-    if (!user || isLimitReached) {
+    if (!user || isChatDisabled || isLimitReached) {
       return;
     }
 
@@ -321,44 +323,20 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
       },
     };
 
-    const tryProvider = async (provider: AIProvider): Promise<boolean> => {
+    const tryStream = async (): Promise<boolean> => {
       try {
-        if (provider === 'grok' && isGrokAvailable()) {
-          await streamFromGrok(aiConfig, callbacks);
+        await streamFromGrok(aiConfig, callbacks);
 
-          return true;
-        } else if (provider === 'gemini' && isGeminiAvailable()) {
-          await streamFromGemini(aiConfig, callbacks);
-
-          return true;
-        }
-
-        return false;
+        return true;
       } catch (error) {
-        console.error(`${provider} failed:`, error);
+        console.error('Grok failed:', error);
 
         return false;
       }
     };
 
-    const fallbackProvider: AIProvider =
-      aiProvider === 'gemini' ? 'grok' : 'gemini';
-
     try {
-      let success = await tryProvider(aiProvider);
-
-      if (!success) {
-        console.log(`Falling back to ${fallbackProvider}...`);
-        setAiProvider(fallbackProvider);
-
-        // Reset the model message for the retry
-        finalMessages = [...messages, newUserMessage, emptyModelMessage];
-        setMessages(finalMessages);
-
-        // Skip rate limit on fallback — primary already counted
-        aiConfig.skipRateLimit = true;
-        success = await tryProvider(fallbackProvider);
-      }
+      const success = await tryStream();
 
       if (!success) {
         const errorMessage: Message = {
@@ -399,28 +377,6 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
             <h1 className={'text-3xl font-bold tracking-tight'}>
               {t('chat.title')}
             </h1>
-
-            <div className={'flex items-center gap-2'}>
-              <Button
-                className={'h-7 px-2 text-xs'}
-                disabled={!isGeminiAvailable() || showSettingsAlert}
-                onClick={() => setAiProvider('gemini')}
-                size={'sm'}
-                variant={aiProvider === 'gemini' ? 'default' : 'ghost'}
-              >
-                {'Gemini'}
-              </Button>
-
-              <Button
-                className={'h-7 px-2 text-xs'}
-                disabled={!isGrokAvailable() || showSettingsAlert}
-                onClick={() => setAiProvider('grok')}
-                size={'sm'}
-                variant={aiProvider === 'grok' ? 'default' : 'ghost'}
-              >
-                {'Grok'}
-              </Button>
-            </div>
           </div>
 
           <p className={'text-muted-foreground'}>{t('chat.description')}</p>
@@ -437,28 +393,6 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
             <BicepsFlexed
               className={'h-4 w-4 -scale-x-100 text-sidebar-foreground/70'}
             />
-          </div>
-
-          <div className={'flex items-center gap-2'}>
-            <Button
-              className={'h-7 px-2 text-xs'}
-              disabled={!isGeminiAvailable() || showSettingsAlert}
-              onClick={() => setAiProvider('gemini')}
-              size={'sm'}
-              variant={aiProvider === 'gemini' ? 'default' : 'ghost'}
-            >
-              {'Gemini'}
-            </Button>
-
-            <Button
-              className={'h-7 px-2 text-xs'}
-              disabled={!isGrokAvailable() || showSettingsAlert}
-              onClick={() => setAiProvider('grok')}
-              size={'sm'}
-              variant={aiProvider === 'grok' ? 'default' : 'ghost'}
-            >
-              {'Grok'}
-            </Button>
           </div>
         </header>
       )}
@@ -602,11 +536,13 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
                   : 'text-sidebar-foreground/50',
             )}
           >
-            {isLimitReached
-              ? t('chat.limitReached')
-              : t('chat.remainingMessages', {
-                  count: remainingMessages,
-                })}
+            {isChatDisabled
+              ? t('chat.chatDisabled')
+              : isLimitReached
+                ? t('chat.limitReached')
+                : t('chat.remainingMessages', {
+                    count: remainingMessages,
+                  })}
           </p>
         )}
 
@@ -619,7 +555,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
           )}
         >
           <Textarea
-            disabled={showSettingsAlert || isLimitReached}
+            disabled={showSettingsAlert || isChatDisabled || isLimitReached}
             rows={1}
             value={input}
             className={cn(

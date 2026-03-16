@@ -14,18 +14,19 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   testDir: './e2e',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
   },
   webServer: [
     {
-      command: 'npm run dev:api',
-      port: 3001,
+      command: 'npx vercel dev --listen 3002',
+      port: 3002,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npx vite --mode test',
-      port: 5173,
+      command: 'npx vite --mode test --port 5174',
+      env: { API_PORT: '3002' },
+      port: 5174,
       reuseExistingServer: !process.env.CI,
     },
   ],

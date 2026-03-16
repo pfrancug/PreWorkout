@@ -193,7 +193,7 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
         completed: true,
       },
     ]);
-    await adminSet(`users/${userA.uid}/limits`, { max: 10 });
+    await adminSet(`users/${userA.uid}/limits`, { mode: 'limited' });
     await adminSet(`users/${userA.uid}/calendarNotes`, {
       '2024-01-15': 'Test note',
     });
@@ -347,10 +347,103 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(await res.json()).toBe('Trainer');
     });
 
-    it('messageSends is not writable even by owner', async () => {
+    it('messageSends allows owner to increment count by 1', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { mode: 'limited' });
+
+      // First increment: 0 → 1
+      const res1 = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/16`,
+        1,
+        userA.token,
+      );
+      expect(res1.ok).toBe(true);
+
+      // Second increment: 1 → 2
+      const res2 = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/16`,
+        2,
+        userA.token,
+      );
+      expect(res2.ok).toBe(true);
+    });
+
+    it('messageSends rejects non-sequential increment', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { mode: 'limited' });
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/17`, 1);
+
+      // Try to skip from 1 → 5
       const res = await dbSet(
-        `userDirectory/${userA.uid}/messageSends`,
+        `userDirectory/${userA.uid}/messageSends/2026-03/17`,
         5,
+        userA.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
+    it('messageSends rejects write exceeding limit (25)', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { mode: 'limited' });
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/18`, 25);
+
+      // At limit (25), try to write 26
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/18`,
+        26,
+        userA.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
+    it('messageSends rejects write when mode is disabled', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { mode: 'disabled' });
+
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/20`,
+        1,
+        userA.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
+    it('messageSends allows unlimited writes when mode is unlimited', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { mode: 'unlimited' });
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/21`, 100);
+
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/21`,
+        101,
+        userA.token,
+      );
+      expect(res.ok).toBe(true);
+    });
+
+    it('messageSends rejects write from other user', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { mode: 'limited' });
+
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/19`,
+        1,
+        userB.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
+    it('messageSends defaults to limited when no limits config exists', async () => {
+      // No limits set — should allow writes up to 25 (default limited behavior)
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/22`,
+        1,
+        userA.token,
+      );
+      expect(res.ok).toBe(true);
+    });
+
+    it('messageSends enforces cap of 25 when no limits config exists', async () => {
+      // No limits set — should reject writes exceeding 25
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/23`, 25);
+
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/23`,
+        26,
         userA.token,
       );
       expect(res.ok).toBe(false);
@@ -694,32 +787,40 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(res.ok).toBe(true);
     });
 
-    it('admin can write limits and change max', async () => {
+    it('admin can set mode to unlimited', async () => {
       const res = await dbSet(
         `users/${userA.uid}/limits`,
-        { max: 20 },
+        { mode: 'unlimited' },
         admin.token,
       );
       expect(res.ok).toBe(true);
     });
 
-    it('owner cannot change existing max value', async () => {
-      // max is currently 20 (set by admin above); owner tries 50
+    it('admin can set mode to disabled', async () => {
       const res = await dbSet(
         `users/${userA.uid}/limits`,
-        { max: 50 },
+        { mode: 'disabled' },
+        admin.token,
+      );
+      expect(res.ok).toBe(true);
+    });
+
+    it('admin can set mode to limited', async () => {
+      const res = await dbSet(
+        `users/${userA.uid}/limits`,
+        { mode: 'limited' },
+        admin.token,
+      );
+      expect(res.ok).toBe(true);
+    });
+
+    it('owner cannot write limits (admin-only)', async () => {
+      const res = await dbSet(
+        `users/${userA.uid}/limits`,
+        { mode: 'unlimited' },
         userA.token,
       );
       expect(res.ok).toBe(false);
-    });
-
-    it('owner can write limits with same max value', async () => {
-      const res = await dbSet(
-        `users/${userA.uid}/limits`,
-        { max: 20 },
-        userA.token,
-      );
-      expect(res.ok).toBe(true);
     });
 
     it('other user cannot access limits', async () => {
@@ -727,19 +828,19 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(res.ok).toBe(false);
     });
 
-    it('rejects limits with max below -1', async () => {
+    it('rejects invalid mode value', async () => {
       const res = await dbSet(
         `users/${userA.uid}/limits`,
-        { max: -2 },
+        { mode: 'custom' },
         admin.token,
       );
       expect(res.ok).toBe(false);
     });
 
-    it('rejects limits without max field', async () => {
+    it('rejects limits without mode field', async () => {
       const res = await dbSet(
         `users/${userA.uid}/limits`,
-        { remaining: 5 },
+        { max: 10 },
         admin.token,
       );
       expect(res.ok).toBe(false);

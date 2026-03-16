@@ -1,9 +1,11 @@
+import type { MessageLimitMode } from './types';
+
 import { get, ref, set } from 'firebase/database';
 
 import { database } from './db';
 import { getUserLimitsRef } from './message-limits';
 
-const DAILY_MESSAGE_LIMIT = 5;
+const DEFAULT_MODE: MessageLimitMode = 'limited';
 
 const getTodayDateString = (): string => {
   const now = new Date();
@@ -14,21 +16,21 @@ const getTodayDateString = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const getUserMaxLimitForAdmin = async (
+export const getUserLimitModeForAdmin = async (
   userId: string,
-): Promise<number> => {
+): Promise<MessageLimitMode> => {
   const snapshot = await get(getUserLimitsRef(userId));
 
   return snapshot.exists()
-    ? (snapshot.val().max ?? DAILY_MESSAGE_LIMIT)
-    : DAILY_MESSAGE_LIMIT;
+    ? (snapshot.val().mode ?? DEFAULT_MODE)
+    : DEFAULT_MODE;
 };
 
-export const setUserMaxLimitForAdmin = async (
+export const setUserLimitModeForAdmin = async (
   userId: string,
-  max: number,
+  mode: MessageLimitMode,
 ): Promise<void> => {
-  await set(getUserLimitsRef(userId), { max });
+  await set(getUserLimitsRef(userId), { mode });
 };
 
 export const getUserUsageStats = async (

@@ -15,9 +15,9 @@ vi.mock('firebase/database', () => ({
 vi.mock('./db', () => ({ database: {} }));
 
 import {
-  getUserMaxLimitForAdmin,
+  getUserLimitModeForAdmin,
   getUserUsageStats,
-  setUserMaxLimitForAdmin,
+  setUserLimitModeForAdmin,
 } from './admin';
 
 const makeSnap = (exists: boolean, val?: unknown) => ({
@@ -36,30 +36,30 @@ describe('admin', () => {
     vi.useRealTimers();
   });
 
-  describe('getUserMaxLimitForAdmin', () => {
-    it('returns configured max', async () => {
-      mockGet.mockResolvedValue(makeSnap(true, { max: 20 }));
-      const result = await getUserMaxLimitForAdmin('uid-1');
+  describe('getUserLimitModeForAdmin', () => {
+    it('returns configured mode', async () => {
+      mockGet.mockResolvedValue(makeSnap(true, { mode: 'unlimited' }));
+      const result = await getUserLimitModeForAdmin('uid-1');
 
-      expect(result).toBe(20);
+      expect(result).toBe('unlimited');
     });
 
-    it('returns default (5) when no config exists', async () => {
+    it('returns default (limited) when no config exists', async () => {
       mockGet.mockResolvedValue(makeSnap(false));
-      const result = await getUserMaxLimitForAdmin('uid-1');
+      const result = await getUserLimitModeForAdmin('uid-1');
 
-      expect(result).toBe(5);
+      expect(result).toBe('limited');
     });
   });
 
-  describe('setUserMaxLimitForAdmin', () => {
-    it('writes limit to the correct path', async () => {
-      await setUserMaxLimitForAdmin('uid-1', 50);
+  describe('setUserLimitModeForAdmin', () => {
+    it('writes limit mode to the correct path', async () => {
+      await setUserLimitModeForAdmin('uid-1', 'unlimited');
 
       expect(mockRef).toHaveBeenCalledWith({}, 'users/uid-1/limits');
       expect(mockSet).toHaveBeenCalledWith(
         { _path: 'users/uid-1/limits' },
-        { max: 50 },
+        { mode: 'unlimited' },
       );
     });
   });

@@ -23,8 +23,12 @@
           ".validate": "newData.isBoolean()"
         },
         "messageSends": {
-          ".write": false,
-          ".validate": false
+          "$yearMonth": {
+            "$day": {
+              ".write": "auth != null && auth.uid == $userId",
+              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1) && (root.child('users/' + $userId + '/limits/mode').val() !== 'disabled') && (root.child('users/' + $userId + '/limits/mode').val() === 'unlimited' || newData.val() <= 25)"
+            }
+          }
         }
       }
     },
@@ -123,11 +127,8 @@
 
         "limits": {
           ".read": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".write": "auth != null && (auth.uid == $userId || auth.token.admin === true)",
-          ".validate": "newData.hasChildren(['max']) && newData.child('max').isNumber() && newData.child('max').val() >= -1",
-          "max": {
-            ".validate": "!data.exists() || newData.val() === data.val() || auth.token.admin === true"
-          }
+          ".write": "auth != null && auth.token.admin === true",
+          ".validate": "newData.hasChildren(['mode']) && newData.child('mode').isString() && (newData.child('mode').val() === 'disabled' || newData.child('mode').val() === 'limited' || newData.child('mode').val() === 'unlimited')"
         },
 
         "calendarNotes": {

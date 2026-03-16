@@ -16,8 +16,13 @@
       "trainerRevoked": "Rola trenera odebrana. Użytkownik musi się ponownie zalogować.",
       "trainerToggleError": "Nie udało się zaktualizować roli trenera."
     },
-    "invalidLimit": "Limit musi być liczbą od 0 do 50.",
+    "invalidLimit": "Nieprawidłowy tryb limitu.",
     "limitSaved": "Limit zapisany pomyślnie.",
+    "limitModes": {
+      "disabled": "Wyłączony",
+      "limited": "Ograniczony",
+      "unlimited": "Bez limitu"
+    },
     "analytics": {
       "title": "Analityka użycia (ostatnie 30 dni)",
       "allTimeTotal": "Łącznie",
@@ -27,7 +32,7 @@
       "avgPerUser": "Śr. na użytk.",
       "avgDailyUser": "Śr. dziennie/użytk.",
       "today": "Dziś",
-      "maxLimit": "Limit maks."
+      "limitMode": "Limit"
     }
   }
 }

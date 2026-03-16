@@ -52,7 +52,7 @@ const validTrainerCalendar = {
   '2024-01-15': true,
 };
 
-const validLimits = { max: 10 };
+const validLimits = { mode: 'limited' };
 
 const buildValid = (
   overrides: Record<string, unknown> = {},
@@ -358,8 +358,20 @@ describe('validateImportData', () => {
       expect(validateImportData(buildValid({ limits: 5 }))).toBe(false);
     });
 
-    it('rejects non-number max', () => {
-      expect(validateImportData(buildValid({ limits: { max: '10' } }))).toBe(
+    it('rejects invalid mode value', () => {
+      expect(
+        validateImportData(buildValid({ limits: { mode: 'custom' } })),
+      ).toBe(false);
+    });
+
+    it('rejects non-string mode', () => {
+      expect(validateImportData(buildValid({ limits: { mode: 10 } }))).toBe(
+        false,
+      );
+    });
+
+    it('rejects old max format', () => {
+      expect(validateImportData(buildValid({ limits: { max: 10 } }))).toBe(
         false,
       );
     });

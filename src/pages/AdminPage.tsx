@@ -1,5 +1,6 @@
 import type { IUserWithLimits } from './admin/types';
 import type { IUserDirectoryEntry } from '@firebase-config/database';
+import type { MessageLimitMode } from '@firebase-config/database';
 
 import {
   Card,
@@ -20,10 +21,10 @@ import { auth as firebaseAuth } from '@firebase-config/auth';
 import {
   getTrainerFlagFromDirectory,
   getUserAvatarUrl,
-  getUserMaxLimitForAdmin,
+  getUserLimitModeForAdmin,
   getUserUsageStats,
   setTrainerFlagInDirectory,
-  setUserMaxLimitForAdmin,
+  setUserLimitModeForAdmin,
   subscribeToUserDirectory,
 } from '@firebase-config/database';
 import { Activity, Loader2, ShieldCheck, Users } from 'lucide-react';
@@ -40,9 +41,6 @@ export const AdminPage = () => {
   const { isAdmin } = useAuth();
   const [users, setUsers] = useState<IUserWithLimits[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingLimits, setEditingLimits] = useState<Record<string, string>>(
-    {},
-  );
   const [savingUser, setSavingUser] = useState<string | null>(null);
   const [togglingTrainer, setTogglingTrainer] = useState<string | null>(null);
 
@@ -65,21 +63,21 @@ export const AdminPage = () => {
             const isDeleted = !entry.email && !entry.lastLogin;
             try {
               const [
-                maxLimitResult,
+                limitModeResult,
                 statsResult,
                 isTrainerResult,
                 avatarUrlResult,
               ] = await Promise.allSettled([
-                getUserMaxLimitForAdmin(uid),
+                getUserLimitModeForAdmin(uid),
                 getUserUsageStats(uid),
                 getTrainerFlagFromDirectory(uid),
                 getUserAvatarUrl(uid),
               ]);
 
-              const maxLimit =
-                maxLimitResult.status === 'fulfilled'
-                  ? maxLimitResult.value
-                  : -1;
+              const limitMode: MessageLimitMode =
+                limitModeResult.status === 'fulfilled'
+                  ? limitModeResult.value
+                  : 'limited';
               const stats =
                 statsResult.status === 'fulfilled' ? statsResult.value : null;
               const isTrainer =
@@ -98,7 +96,7 @@ export const AdminPage = () => {
                 avatarUrl,
                 lastLogin: entry.lastLogin || null,
                 deleted: isDeleted,
-                maxLimit,
+                limitMode,
                 isTrainer,
                 stats: stats
                   ? {
@@ -117,7 +115,7 @@ export const AdminPage = () => {
                 avatarUrl: null,
                 lastLogin: entry.lastLogin || null,
                 deleted: isDeleted,
-                maxLimit: -1,
+                limitMode: 'limited' as const,
                 isTrainer: false,
                 stats: null,
               };
@@ -149,36 +147,14 @@ export const AdminPage = () => {
     return () => unsubscribe();
   }, [isAdmin]);
 
-  const handleLimitChange = useCallback((uid: string, value: string) => {
-    setEditingLimits((prev) => ({ ...prev, [uid]: value }));
-  }, []);
-
-  const handleLimitSave = useCallback(
-    async (uid: string) => {
-      const maxStr = editingLimits[uid];
-      if (maxStr === undefined) {
-        return;
-      }
-
-      const max = parseInt(maxStr, 10);
-      if (isNaN(max) || max < -1) {
-        toast.error(t('admin.invalidLimit'));
-
-        return;
-      }
-
+  const handleLimitModeChange = useCallback(
+    async (uid: string, mode: MessageLimitMode) => {
       setSavingUser(uid);
       try {
-        await setUserMaxLimitForAdmin(uid, max);
+        await setUserLimitModeForAdmin(uid, mode);
         setUsers((prev) =>
-          prev.map((u) => (u.uid === uid ? { ...u, maxLimit: max } : u)),
+          prev.map((u) => (u.uid === uid ? { ...u, limitMode: mode } : u)),
         );
-        setEditingLimits((prev) => {
-          const next = { ...prev };
-          delete next[uid];
-
-          return next;
-        });
         toast.success(t('admin.limitSaved'));
       } catch {
         toast.error(t('common.saveError'));
@@ -186,7 +162,7 @@ export const AdminPage = () => {
         setSavingUser(null);
       }
     },
-    [editingLimits, t],
+    [t],
   );
 
   const handleTrainerToggle = useCallback(
@@ -316,9 +292,7 @@ export const AdminPage = () => {
                       </div>
                     </TableHead>
 
-                    <TableHead>{t('admin.analytics.maxLimit')}</TableHead>
-
-                    <TableHead className={'w-[100px]'} />
+                    <TableHead>{t('admin.analytics.limitMode')}</TableHead>
 
                     <TableHead>{t('admin.users.trainer')}</TableHead>
                   </TableRow>
@@ -327,17 +301,12 @@ export const AdminPage = () => {
                 <TableBody>
                   {users.map((user) => (
                     <AdminUserRow
-                      isEditing={editingLimits[user.uid] !== undefined}
                       isSaving={savingUser === user.uid}
                       isTogglingTrainer={togglingTrainer === user.uid}
                       key={user.uid}
-                      onLimitChange={handleLimitChange}
-                      onLimitSave={handleLimitSave}
+                      onLimitModeChange={handleLimitModeChange}
                       onTrainerToggle={handleTrainerToggle}
                       user={user}
-                      currentMax={
-                        editingLimits[user.uid] ?? String(user.maxLimit)
-                      }
                     />
                   ))}
                 </TableBody>

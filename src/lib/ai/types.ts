@@ -14,5 +14,4 @@ export interface IAIConfig {
   messages: IChatMessage[];
   userMessage: string;
   authToken?: string;
-  skipRateLimit?: boolean;
 }
