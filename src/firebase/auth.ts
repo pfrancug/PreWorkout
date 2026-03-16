@@ -4,6 +4,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   reauthenticateWithPopup,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
@@ -17,13 +18,11 @@ if (useEmulators && import.meta.env.DEV) {
     disableWarnings: true,
   });
 
-  // Expose sign-in helper for E2E tests (dynamic import keeps it out of prod bundle)
-  import('firebase/auth').then(({ signInWithEmailAndPassword }) => {
-    (window as unknown as Record<string, unknown>).__testSignIn = (
-      email: string,
-      password: string,
-    ) => signInWithEmailAndPassword(auth, email, password);
-  });
+  // Expose sign-in helper for E2E tests
+  (window as unknown as Record<string, unknown>).__testSignIn = (
+    email: string,
+    password: string,
+  ) => signInWithEmailAndPassword(auth, email, password);
 }
 
 interface ErrorHandlerProps {
