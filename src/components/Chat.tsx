@@ -115,8 +115,8 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   const [isAttached, setIsAttached] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [remainingMessages, setRemainingMessages] = useState<number>(10);
-  const [isChatDisabled, setIsChatDisabled] = useState(false);
+  const [remainingMessages, setRemainingMessages] = useState<number>(0);
+  const [isChatDisabled, setIsChatDisabled] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -210,7 +210,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   }, [messages]);
 
   const handleSubmit = async () => {
-    if (!user || isLimitReached) {
+    if (!user || isChatDisabled || isLimitReached) {
       return;
     }
 
@@ -558,7 +558,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
           )}
         >
           <Textarea
-            disabled={showSettingsAlert || isLimitReached}
+            disabled={showSettingsAlert || isChatDisabled || isLimitReached}
             rows={1}
             value={input}
             className={cn(

@@ -94,7 +94,10 @@ export const AdminUserRow = ({
             onLimitModeChange(user.uid, value)
           }
         >
-          <SelectTrigger className={'w-28 h-8'}>
+          <SelectTrigger
+            aria-label={t('admin.analytics.limitMode')}
+            className={'w-28 h-8'}
+          >
             <SelectValue />
           </SelectTrigger>
 

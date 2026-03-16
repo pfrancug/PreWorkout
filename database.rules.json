@@ -26,7 +26,7 @@
           "$yearMonth": {
             "$day": {
               ".write": "auth != null && auth.uid == $userId",
-              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1) && (root.child('users/' + $userId + '/limits/mode').val() !== 'disabled') && (root.child('users/' + $userId + '/limits/mode').val() === 'unlimited' || newData.val() <= 25 || !root.child('users/' + $userId + '/limits/mode').exists())"
+              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1) && (root.child('users/' + $userId + '/limits/mode').val() !== 'disabled') && (root.child('users/' + $userId + '/limits/mode').val() === 'unlimited' || newData.val() <= 25)"
             }
           }
         }

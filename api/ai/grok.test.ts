@@ -2,10 +2,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockVerifyFirebaseToken = vi.fn();
+const mockCheckMessageLimit = vi.fn();
 const mockStreamText = vi.fn();
 
 vi.mock('../lib/verify-token.js', () => ({
   verifyFirebaseToken: (...args: unknown[]) => mockVerifyFirebaseToken(...args),
+}));
+
+vi.mock('../lib/check-message-limit.js', () => ({
+  checkMessageLimit: (...args: unknown[]) => mockCheckMessageLimit(...args),
 }));
 
 vi.mock('ai', () => ({
@@ -69,6 +74,7 @@ describe('POST /api/ai/grok', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockVerifyFirebaseToken.mockResolvedValue('user-1');
+    mockCheckMessageLimit.mockResolvedValue({ allowed: true });
     mockStreamText.mockReturnValue(makeStream(['Hello', ' world']));
     process.env.XAI_API_KEY = 'test-key';
   });
@@ -84,6 +90,32 @@ describe('POST /api/ai/grok', () => {
     const res = await handler(makeReq());
 
     expect(res.status).toBe(401);
+  });
+
+  it('returns 429 when daily message limit is reached', async () => {
+    mockCheckMessageLimit.mockResolvedValue({ allowed: false });
+    const res = await handler(makeReq());
+
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({
+      error: 'Daily message limit reached',
+    });
+  });
+
+  it('returns 400 for malformed JSON body', async () => {
+    const res = await handler(
+      new Request('http://localhost/api/ai/grok', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer valid-token',
+        },
+        body: 'not json',
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Malformed JSON' });
   });
 
   it('returns 400 for missing userMessage', async () => {

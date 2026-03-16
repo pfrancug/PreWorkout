@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { createXai } from '@ai-sdk/xai';
 
+import { checkMessageLimit } from '../lib/check-message-limit.js';
 import { verifyFirebaseToken } from '../lib/verify-token.js';
 
 export const config = { runtime: 'edge' };
@@ -27,13 +28,23 @@ const handler = async (req: Request): Promise<Response> => {
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
-  const [uid, body] = await Promise.all([
-    verifyFirebaseToken(req.headers.get('authorization')),
-    req.json() as Promise<RequestBody>,
-  ]);
-
+  const authHeader = req.headers.get('authorization');
+  const uid = await verifyFirebaseToken(authHeader);
   if (!uid) {
     return jsonResponse({ error: 'Unauthorized' }, 401);
+  }
+
+  const idToken = authHeader!.slice(7);
+  const { allowed } = await checkMessageLimit(uid, idToken);
+  if (!allowed) {
+    return jsonResponse({ error: 'Daily message limit reached' }, 429);
+  }
+
+  let body: RequestBody;
+  try {
+    body = (await req.json()) as RequestBody;
+  } catch {
+    return jsonResponse({ error: 'Malformed JSON' }, 400);
   }
 
   const apiKey = process.env.XAI_API_KEY;

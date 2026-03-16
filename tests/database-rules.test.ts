@@ -427,6 +427,28 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(res.ok).toBe(false);
     });
 
+    it('messageSends defaults to limited when no limits config exists', async () => {
+      // No limits set — should allow writes up to 25 (default limited behavior)
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/22`,
+        1,
+        userA.token,
+      );
+      expect(res.ok).toBe(true);
+    });
+
+    it('messageSends enforces cap of 25 when no limits config exists', async () => {
+      // No limits set — should reject writes exceeding 25
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/23`, 25);
+
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/23`,
+        26,
+        userA.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
     it('rejects displayName exceeding 100 characters', async () => {
       const res = await dbSet(
         `userDirectory/${userA.uid}`,
