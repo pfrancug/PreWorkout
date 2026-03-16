@@ -29,27 +29,9 @@ describe('checkMessageLimit', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('returns allowed: false when mode is disabled', async () => {
-    mockFetch.mockResolvedValueOnce(ok('disabled'));
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: false });
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-  });
-
-  it('returns allowed: true when mode is unlimited', async () => {
-    mockFetch.mockResolvedValueOnce(ok('unlimited'));
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: true });
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-  });
-
-  it('returns allowed: true when mode is limited and count is below limit', async () => {
-    mockFetch.mockResolvedValueOnce(ok('limited'));
+  it('returns allowed: true when write is accepted', async () => {
     mockFetch.mockResolvedValueOnce(ok(10));
+    mockFetch.mockResolvedValueOnce(ok(11));
 
     const result = await checkMessageLimit('u1', 'tok');
 
@@ -57,9 +39,9 @@ describe('checkMessageLimit', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
-  it('returns allowed: false when mode is limited and count equals limit', async () => {
-    mockFetch.mockResolvedValueOnce(ok('limited'));
+  it('returns allowed: false when write is rejected by security rules', async () => {
     mockFetch.mockResolvedValueOnce(ok(25));
+    mockFetch.mockResolvedValueOnce(fail());
 
     const result = await checkMessageLimit('u1', 'tok');
 
@@ -67,74 +49,62 @@ describe('checkMessageLimit', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
-  it('returns allowed: false when mode is limited and count exceeds limit', async () => {
-    mockFetch.mockResolvedValueOnce(ok('limited'));
-    mockFetch.mockResolvedValueOnce(ok(30));
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: false });
-  });
-
-  it('defaults to limited when mode is null (no config)', async () => {
-    mockFetch.mockResolvedValueOnce(ok(null));
-    mockFetch.mockResolvedValueOnce(ok(5));
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: true });
-  });
-
-  it('treats null count as zero', async () => {
-    mockFetch.mockResolvedValueOnce(ok('limited'));
-    mockFetch.mockResolvedValueOnce(ok(null));
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: true });
-  });
-
-  it('returns allowed: false when mode fetch fails', async () => {
-    mockFetch.mockResolvedValueOnce(fail());
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: false });
-  });
-
-  it('returns allowed: false when count fetch fails', async () => {
-    mockFetch.mockResolvedValueOnce(ok('limited'));
-    mockFetch.mockResolvedValueOnce(fail());
-
-    const result = await checkMessageLimit('u1', 'tok');
-
-    expect(result).toEqual({ allowed: false });
-  });
-
-  it('constructs correct Firebase REST URLs', async () => {
-    mockFetch.mockResolvedValueOnce(ok('limited'));
-    mockFetch.mockResolvedValueOnce(ok(0));
+  it('sends PUT with incremented count', async () => {
+    mockFetch.mockResolvedValueOnce(ok(7));
+    mockFetch.mockResolvedValueOnce(ok(8));
 
     await checkMessageLimit('user-123', 'my-token');
 
-    const modeUrl = mockFetch.mock.calls[0][0] as string;
-    expect(modeUrl).toMatch(
-      /^https:\/\/db\.firebaseio\.com\/users\/user-123\/limits\/mode\.json\?auth=my-token$/,
-    );
+    const writeCall = mockFetch.mock.calls[1];
+    expect(writeCall[1].method).toBe('PUT');
+    expect(writeCall[1].headers).toEqual({
+      'Content-Type': 'application/json',
+    });
+    expect(JSON.parse(writeCall[1].body as string)).toBe(8);
+  });
 
-    const countUrl = mockFetch.mock.calls[1][0] as string;
-    expect(countUrl).toMatch(
+  it('treats null count as zero and writes 1', async () => {
+    mockFetch.mockResolvedValueOnce(ok(null));
+    mockFetch.mockResolvedValueOnce(ok(1));
+
+    const result = await checkMessageLimit('u1', 'tok');
+
+    expect(result).toEqual({ allowed: true });
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body as string)).toBe(1);
+  });
+
+  it('returns allowed: false when count fetch fails', async () => {
+    mockFetch.mockResolvedValueOnce(fail());
+
+    const result = await checkMessageLimit('u1', 'tok');
+
+    expect(result).toEqual({ allowed: false });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('constructs correct Firebase REST URLs', async () => {
+    mockFetch.mockResolvedValueOnce(ok(0));
+    mockFetch.mockResolvedValueOnce(ok(1));
+
+    await checkMessageLimit('user-123', 'my-token');
+
+    const readUrl = mockFetch.mock.calls[0][0] as string;
+    expect(readUrl).toMatch(
       /^https:\/\/db\.firebaseio\.com\/userDirectory\/user-123\/messageSends\/\d{4}-\d{2}\/\d{2}\.json\?auth=my-token$/,
     );
+
+    const writeUrl = mockFetch.mock.calls[1][0] as string;
+    expect(writeUrl).toBe(readUrl);
   });
 
   it('strips trailing slash from database URL', async () => {
     process.env.VITE_FIREBASE_DATABASE_URL = 'https://db.firebaseio.com/';
-    mockFetch.mockResolvedValueOnce(ok('unlimited'));
+    mockFetch.mockResolvedValueOnce(ok(0));
+    mockFetch.mockResolvedValueOnce(ok(1));
 
     await checkMessageLimit('u1', 'tok');
 
     const url = mockFetch.mock.calls[0][0] as string;
-    expect(url).toContain('https://db.firebaseio.com/users/');
+    expect(url).toContain('https://db.firebaseio.com/userDirectory/');
   });
 });

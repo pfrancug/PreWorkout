@@ -1,6 +1,6 @@
 import type { IMessageLimitConfig, MessageLimitMode } from './types';
 
-import { get, ref, runTransaction } from 'firebase/database';
+import { get, ref } from 'firebase/database';
 
 import { database } from './db';
 
@@ -85,18 +85,4 @@ export const getRemainingMessages = async (userId: string): Promise<number> => {
   const count = await getTodayMessageCount(userId);
 
   return Math.max(0, DAILY_LIMIT - count);
-};
-
-export const incrementMessageCount = async (userId: string): Promise<void> => {
-  const today = getTodayDateString();
-  const yearMonth = today.substring(0, 7);
-  const day = today.substring(8);
-  const countRef = ref(
-    database,
-    `userDirectory/${userId}/messageSends/${yearMonth}/${day}`,
-  );
-
-  await runTransaction(countRef, (current: number | null) => {
-    return (current ?? 0) + 1;
-  });
 };

@@ -18,7 +18,6 @@ import { useSettings } from '@contexts/useSettings';
 import {
   clearUserMessages,
   getRemainingMessages,
-  incrementMessageCount,
   loadMessageLimitConfig,
   saveUserMessages,
   subscribeToUserMessages,
@@ -116,7 +115,7 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [remainingMessages, setRemainingMessages] = useState<number>(0);
-  const [isChatDisabled, setIsChatDisabled] = useState(true);
+  const [isChatDisabled, setIsChatDisabled] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -327,7 +326,6 @@ export const Chat = ({ dataset, variant = 'drawer' }: ChatProps) => {
 
     const tryStream = async (): Promise<boolean> => {
       try {
-        await incrementMessageCount(user.uid);
         await streamFromGrok(aiConfig, callbacks);
 
         return true;

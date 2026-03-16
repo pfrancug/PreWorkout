@@ -8,7 +8,6 @@ const { mockGet, mockRef } = vi.hoisted(() => ({
 vi.mock('firebase/database', () => ({
   get: mockGet,
   ref: mockRef,
-  runTransaction: vi.fn(),
 }));
 
 vi.mock('./db', () => ({ database: {} }));
