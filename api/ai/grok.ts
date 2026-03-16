@@ -1,9 +1,9 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { streamText } from 'ai';
 import { createXai } from '@ai-sdk/xai';
 
-import { verifyAuthToken } from '../lib/auth.js';
-import { checkRateLimit } from '../lib/rate-limit.js';
+import { verifyFirebaseToken } from '../lib/verify-token.js';
+
+export const config = { runtime: 'edge' };
 
 interface IChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -14,49 +14,40 @@ interface RequestBody {
   systemInstruction: string;
   messages: IChatMessage[];
   userMessage: string;
-  skipRateLimit?: boolean;
 }
 
-const handler = async (
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> => {
+const jsonResponse = (data: Record<string, string>, status: number) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+const handler = async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
-  const uid = await verifyAuthToken(req.headers.authorization);
+  const [uid, body] = await Promise.all([
+    verifyFirebaseToken(req.headers.get('authorization')),
+    req.json() as Promise<RequestBody>,
+  ]);
+
   if (!uid) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
-  const body = req.body as RequestBody;
-
-  if (!body.skipRateLimit) {
-    const rateLimit = await checkRateLimit(uid);
-    if (!rateLimit.allowed) {
-      res.status(429).json({ error: 'Daily message limit reached' });
-      return;
-    }
+    return jsonResponse({ error: 'Unauthorized' }, 401);
   }
 
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: 'Grok API key not configured' });
-    return;
+    return jsonResponse({ error: 'Grok API key not configured' }, 500);
   }
 
   if (!body.userMessage || !body.systemInstruction) {
-    res.status(400).json({ error: 'Invalid request body' });
-    return;
+    return jsonResponse({ error: 'Invalid request body' }, 400);
   }
 
   const payloadSize = JSON.stringify(body).length;
   if (payloadSize > 100_000) {
-    res.status(413).json({ error: 'Payload too large' });
-    return;
+    return jsonResponse({ error: 'Payload too large' }, 413);
   }
 
   const messages: IChatMessage[] = [
@@ -75,26 +66,40 @@ const handler = async (
       maxRetries: 0,
     });
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`),
+            );
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        } catch (error) {
+          const msg =
+            error instanceof Error ? error.message : 'Unknown error occurred';
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`),
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
 
-    for await (const chunk of result.textStream) {
-      res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
-    }
-
-    res.write('data: [DONE]\n\n');
-    res.end();
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unknown error occurred';
 
-    if (res.headersSent) {
-      res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
-      res.end();
-    } else {
-      res.status(500).json({ error: message });
-    }
+    return jsonResponse({ error: message }, 500);
   }
 };
 

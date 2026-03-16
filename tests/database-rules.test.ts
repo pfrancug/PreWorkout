@@ -347,11 +347,60 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(await res.json()).toBe('Trainer');
     });
 
-    it('messageSends is not writable even by owner', async () => {
+    it('messageSends allows owner to increment count by 1', async () => {
+      // Set up a limit for the user
+      await adminSet(`users/${userA.uid}/limits`, { max: 5 });
+
+      // First increment: 0 → 1
+      const res1 = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/16`,
+        1,
+        userA.token,
+      );
+      expect(res1.ok).toBe(true);
+
+      // Second increment: 1 → 2
+      const res2 = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/16`,
+        2,
+        userA.token,
+      );
+      expect(res2.ok).toBe(true);
+    });
+
+    it('messageSends rejects non-sequential increment', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { max: 10 });
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/17`, 1);
+
+      // Try to skip from 1 → 5
       const res = await dbSet(
-        `userDirectory/${userA.uid}/messageSends`,
+        `userDirectory/${userA.uid}/messageSends/2026-03/17`,
         5,
         userA.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
+    it('messageSends rejects write exceeding limit', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { max: 2 });
+      await adminSet(`userDirectory/${userA.uid}/messageSends/2026-03/18`, 2);
+
+      // At limit (2), try to write 3
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/18`,
+        3,
+        userA.token,
+      );
+      expect(res.ok).toBe(false);
+    });
+
+    it('messageSends rejects write from other user', async () => {
+      await adminSet(`users/${userA.uid}/limits`, { max: 5 });
+
+      const res = await dbSet(
+        `userDirectory/${userA.uid}/messageSends/2026-03/19`,
+        1,
+        userB.token,
       );
       expect(res.ok).toBe(false);
     });

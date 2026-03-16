@@ -1,18 +1,11 @@
 // @vitest-environment node
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockVerifyAuthToken = vi.fn();
-const mockCheckRateLimit = vi.fn();
+const mockVerifyFirebaseToken = vi.fn();
 const mockStreamText = vi.fn();
 
-vi.mock('../lib/auth.js', () => ({
-  verifyAuthToken: (...args: unknown[]) => mockVerifyAuthToken(...args),
-}));
-
-vi.mock('../lib/rate-limit.js', () => ({
-  checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+vi.mock('../lib/verify-token.js', () => ({
+  verifyFirebaseToken: (...args: unknown[]) => mockVerifyFirebaseToken(...args),
 }));
 
 vi.mock('ai', () => ({
@@ -31,46 +24,37 @@ const validBody = {
   userMessage: 'How are you?',
 };
 
-const makeReq = (overrides: Partial<VercelRequest> = {}) =>
-  ({
-    method: 'POST',
-    headers: { authorization: 'Bearer valid-token' },
-    body: { ...validBody },
-    ...overrides,
-  }) as unknown as VercelRequest;
+const makeReq = (
+  overrides: {
+    method?: string;
+    authorization?: string;
+    body?: Record<string, unknown>;
+  } = {},
+) =>
+  new Request('http://localhost/api/ai/grok', {
+    method: overrides.method ?? 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: overrides.authorization ?? 'Bearer valid-token',
+    },
+    body:
+      overrides.method === 'GET'
+        ? undefined
+        : JSON.stringify(overrides.body ?? validBody),
+  });
 
-const makeRes = () => {
-  const chunks: string[] = [];
-  const headers: Record<string, string> = {};
-  const res: Record<string, unknown> = {
-    _status: 0,
-    _json: null,
-    _chunks: chunks,
-    _headers: headers,
-    headersSent: false,
-    status: vi.fn().mockImplementation(function (this: typeof res, code) {
-      this._status = code;
+const readSSE = async (res: Response): Promise<string[]> => {
+  const text = await res.text();
+  const events: string[] = [];
 
-      return this;
-    }),
-    json: vi.fn().mockImplementation(function (this: typeof res, data) {
-      this._json = data;
-    }),
-    setHeader: vi.fn().mockImplementation((_key: string, val: string) => {
-      headers[_key] = val;
-    }),
-    write: vi.fn().mockImplementation((chunk: string) => {
-      chunks.push(chunk);
-    }),
-    end: vi.fn(),
-  };
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('data: ')) {
+      events.push(trimmed);
+    }
+  }
 
-  return res as unknown as VercelResponse & {
-    _status: number;
-    _json: unknown;
-    _chunks: string[];
-    _headers: Record<string, string>;
-  };
+  return events;
 };
 
 const makeStream = (chunks: string[]) => ({
@@ -84,85 +68,68 @@ const makeStream = (chunks: string[]) => ({
 describe('POST /api/ai/grok', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockVerifyAuthToken.mockResolvedValue('user-1');
-    mockCheckRateLimit.mockResolvedValue({ allowed: true, remaining: 4 });
+    mockVerifyFirebaseToken.mockResolvedValue('user-1');
     mockStreamText.mockReturnValue(makeStream(['Hello', ' world']));
     process.env.XAI_API_KEY = 'test-key';
   });
 
   it('returns 405 for non-POST methods', async () => {
-    const res = makeRes();
-    await handler(makeReq({ method: 'GET' }), res);
+    const res = await handler(makeReq({ method: 'GET' }));
 
-    expect(res._status).toBe(405);
+    expect(res.status).toBe(405);
   });
 
   it('returns 401 for missing/invalid token', async () => {
-    mockVerifyAuthToken.mockResolvedValue(null);
-    const res = makeRes();
-    await handler(makeReq(), res);
+    mockVerifyFirebaseToken.mockResolvedValue(null);
+    const res = await handler(makeReq());
 
-    expect(res._status).toBe(401);
-  });
-
-  it('returns 429 when rate limit exceeded', async () => {
-    mockCheckRateLimit.mockResolvedValue({ allowed: false, remaining: 0 });
-    const res = makeRes();
-    await handler(makeReq(), res);
-
-    expect(res._status).toBe(429);
+    expect(res.status).toBe(401);
   });
 
   it('returns 400 for missing userMessage', async () => {
-    const res = makeRes();
-    await handler(
+    const res = await handler(
       makeReq({
         body: { systemInstruction: 'test', messages: [], userMessage: '' },
       }),
-      res,
     );
 
-    expect(res._status).toBe(400);
+    expect(res.status).toBe(400);
   });
 
   it('returns 413 for payload exceeding 100KB', async () => {
-    const res = makeRes();
-    const largeMessage = 'x'.repeat(100_001);
-    await handler(
+    const res = await handler(
       makeReq({
         body: {
-          systemInstruction: largeMessage,
+          systemInstruction: 'x'.repeat(100_001),
           messages: [],
           userMessage: 'hi',
         },
       }),
-      res,
     );
 
-    expect(res._status).toBe(413);
+    expect(res.status).toBe(413);
   });
 
   it('streams SSE response and ends with [DONE]', async () => {
-    const res = makeRes();
-    await handler(makeReq(), res);
+    const res = await handler(makeReq());
 
-    expect(res._headers['Content-Type']).toBe('text/event-stream');
-    expect(res._chunks).toContain(
-      `data: ${JSON.stringify({ text: 'Hello' })}\n\n`,
-    );
-    expect(res._chunks[res._chunks.length - 1]).toBe('data: [DONE]\n\n');
+    expect(res.headers.get('Content-Type')).toBe('text/event-stream');
+
+    const events = await readSSE(res);
+
+    expect(events).toContain(`data: ${JSON.stringify({ text: 'Hello' })}`);
+    expect(events[events.length - 1]).toBe('data: [DONE]');
   });
 
   it('returns 500 when XAI_API_KEY is not set', async () => {
     delete process.env.XAI_API_KEY;
-    const res = makeRes();
-    await handler(makeReq(), res);
+    const res = await handler(makeReq());
 
-    expect(res._status).toBe(500);
-    expect(res._json).toEqual({ error: 'Grok API key not configured' });
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: 'Grok API key not configured' });
   });
 
-  it('writes error as SSE event after headers sent', async () => {
+  it('writes error as SSE event during streaming', async () => {
     mockStreamText.mockReturnValue({
       textStream: (async function* () {
         yield 'partial';
@@ -170,25 +137,15 @@ describe('POST /api/ai/grok', () => {
       })(),
     });
 
-    const res = makeRes();
-    const origWrite = res.write as ReturnType<typeof vi.fn>;
-    origWrite.mockImplementation(function (this: typeof res) {
-      (this as unknown as Record<string, unknown>).headersSent = true;
-    });
+    const res = await handler(makeReq());
+    const events = await readSSE(res);
 
-    await handler(makeReq(), res);
-
-    const errorChunk = origWrite.mock.calls.find(
-      (call: unknown[]) =>
-        typeof call[0] === 'string' && call[0].includes('"error"'),
-    );
-    expect(errorChunk).toBeDefined();
-    expect(res.end).toHaveBeenCalled();
+    const errorEvent = events.find((e) => e.includes('"error"'));
+    expect(errorEvent).toBeDefined();
   });
 
   it('passes messages with system instruction to streamText', async () => {
-    const res = makeRes();
-    await handler(makeReq(), res);
+    await handler(makeReq());
 
     expect(mockStreamText).toHaveBeenCalledWith(
       expect.objectContaining({

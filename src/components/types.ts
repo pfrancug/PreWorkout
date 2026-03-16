@@ -35,8 +35,6 @@ export interface ActivityNoteModalProps {
   onSaveNewCategory: (category: IActivityCategory) => Promise<void>;
 }
 
-export type AIProvider = 'gemini' | 'grok';
-
 export interface ChatProps {
   dataset: IRow[] | null;
   variant?: 'drawer' | 'page';

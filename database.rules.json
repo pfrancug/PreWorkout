@@ -23,8 +23,12 @@
           ".validate": "newData.isBoolean()"
         },
         "messageSends": {
-          ".write": false,
-          ".validate": false
+          "$yearMonth": {
+            "$day": {
+              ".write": "auth != null && auth.uid == $userId",
+              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1) && (root.child('users/' + $userId + '/limits/max').val() === -1 || newData.val() <= (root.child('users/' + $userId + '/limits/max').exists() ? root.child('users/' + $userId + '/limits/max').val() : 5))"
+            }
+          }
         }
       }
     },
