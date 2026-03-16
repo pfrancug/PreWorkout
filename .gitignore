@@ -23,6 +23,9 @@ test-results/
 playwright-report/
 e2e/.emulator-pid
 
+# Test coverage
+coverage/
+
 # macOS
 .DS_Store
 
