@@ -14,11 +14,13 @@ import {
   SelectValue,
 } from '@components/ui/select';
 import { Switch } from '@components/ui/switch';
+import { useAuth } from '@contexts/useAuth';
 import { useSettings } from '@contexts/useSettings';
 import { useTranslation } from 'react-i18next';
 
 export const PreferencesSettingsPage = () => {
   const { t, i18n } = useTranslation();
+  const { isTrainer } = useAuth();
   const { preferences, updatePreference, changeLanguage } = useSettings();
 
   return (
@@ -154,34 +156,36 @@ export const PreferencesSettingsPage = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.preferences.menu.title')}</CardTitle>
+      {!isTrainer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('settings.preferences.menu.title')}</CardTitle>
 
-          <CardDescription>
-            {t('settings.preferences.menu.description')}
-          </CardDescription>
-        </CardHeader>
+            <CardDescription>
+              {t('settings.preferences.menu.description')}
+            </CardDescription>
+          </CardHeader>
 
-        <CardContent className={'space-y-6'}>
-          <div className={'flex items-center justify-between'}>
-            <div className={'space-y-0.5'}>
-              <Label>{t('settings.preferences.menu.hideConnection')}</Label>
+          <CardContent className={'space-y-6'}>
+            <div className={'flex items-center justify-between'}>
+              <div className={'space-y-0.5'}>
+                <Label>{t('settings.preferences.menu.hideConnection')}</Label>
 
-              <p className={'text-sm text-muted-foreground'}>
-                {t('settings.preferences.menu.hideConnectionDescription')}
-              </p>
+                <p className={'text-sm text-muted-foreground'}>
+                  {t('settings.preferences.menu.hideConnectionDescription')}
+                </p>
+              </div>
+
+              <Switch
+                checked={preferences.hideConnectionSection}
+                onCheckedChange={(checked) =>
+                  updatePreference('hideConnectionSection', checked)
+                }
+              />
             </div>
-
-            <Switch
-              checked={preferences.hideConnectionSection}
-              onCheckedChange={(checked) =>
-                updatePreference('hideConnectionSection', checked)
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
