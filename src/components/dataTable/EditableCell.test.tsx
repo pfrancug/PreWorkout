@@ -163,5 +163,19 @@ describe('EditableCell', () => {
 
       expect(updateData).toHaveBeenCalledWith(0, 'kcal', null);
     });
+
+    it('saves undefined value as null on blur', () => {
+      const updateData = vi.fn();
+      render(
+        <EditableCell
+          {...makeProps({ isEditing: true, value: undefined, updateData })}
+        />,
+      );
+
+      const input = screen.getByRole('spinbutton');
+      input.blur();
+
+      expect(updateData).toHaveBeenCalledWith(0, 'kcal', null);
+    });
   });
 });

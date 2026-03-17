@@ -21,6 +21,8 @@ E2E tests require Firebase Emulators running (`firebase emulators:start --projec
 
 **Do NOT deploy to Vercel** (`npx vercel --prod`) unless explicitly told to. Firebase deploy is OK when needed.
 
+**Always use `npm run` scripts** instead of invoking tools directly (e.g. `npm run lint` not `npx eslint .`, `npm run typecheck` not `npx tsc`). If no suitable script exists, add one to `package.json` first, then use it.
+
 ## Architecture
 
 ```
@@ -95,6 +97,7 @@ e2e/              # Playwright E2E tests
 
 ## Testing
 
+- **Validation order**: Always run `npm run typecheck` and `npm run lint` before running tests. Fix any errors before proceeding to test execution
 - **Unit tests**: Colocated with source files (`*.test.ts`/`*.test.tsx`). Vitest + React Testing Library + jsdom
 - **Database rules tests**: `tests/database-rules.test.ts` — runs against Firebase Emulator via REST API. Auto-skips when emulators are not running
 - **E2E tests**: `e2e/*.spec.ts` — Playwright + Firebase Emulators. Uses `e2e/auth.ts` fixture for programmatic login via `loginAsUser()`. Seed data via `e2e/fixtures/seed.ts`
