@@ -15,16 +15,8 @@ export interface IActivityCategory {
   icon: string;
   name: string;
   color: string;
-  /** Trainer user ID — present on auto-created trainer activity categories */
-  trainerId?: string;
-  /** True for categories auto-created by the system (e.g. on trainer connect) */
-  systemGenerated?: boolean;
   /** Archived categories still render in calendar history but don't appear in the activity picker */
   archived?: boolean;
-}
-
-export interface ITrainerCalendarData {
-  [date: string]: boolean;
 }
 
 export interface ICalendarNotes {
@@ -64,7 +56,6 @@ export interface IAllUserData {
   calendarEntries: ICalendarEntries | null;
   calendarNotes: ICalendarNotes | null;
   activityCategories: IActivityCategory[] | null;
-  trainerCalendar: Record<string, boolean> | null;
 }
 
 // User Data (diary entries)

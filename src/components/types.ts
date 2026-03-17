@@ -1,5 +1,5 @@
-import type { DrawerView } from './calendar/types';
-import type { IRow } from '@app-types/types';
+import type { ModalView } from './calendar/types';
+import type { IRow, ITrainingSession } from '@app-types/types';
 import type { ActivityIconId } from '@constants/activities';
 import type {
   IActivityCategory,
@@ -7,20 +7,16 @@ import type {
 } from '@firebase-config/database';
 
 export interface ActivityNoteModalProps {
-  drawerView: DrawerView;
+  modalView: ModalView;
   categories: IActivityCategory[];
   pickableCategories?: IActivityCategory[];
   entries: ICalendarEntry[];
+  sessions: ITrainingSession[];
   recentActivityIds: string[];
   note: string;
   readOnly?: boolean;
-  onTrainerToggle?: (
-    dateKey: string,
-    time: string | null,
-    timeEnd: string | null,
-    note: string,
-  ) => Promise<void>;
-  onNavigate: (next: DrawerView) => void;
+  canAddTraining?: boolean;
+  onNavigate: (next: ModalView) => void;
   onClose: () => void;
   onNoteChange: (value: string) => void;
   onAddEntry: (entry: Omit<ICalendarEntry, 'id'>) => Promise<void>;
@@ -33,6 +29,20 @@ export interface ActivityNoteModalProps {
     timeEnd?: string | null,
   ) => void;
   onSaveNewCategory: (category: IActivityCategory) => Promise<void>;
+  onAddTrainingSession: (
+    dateKey: string,
+    time: string | null,
+    timeEnd: string | null,
+    note: string,
+  ) => Promise<void>;
+  onDeleteSession: (sessionId: string) => Promise<void>;
+  onUpdateSessionNote: (sessionId: string, date: string, note: string) => void;
+  onUpdateSessionTime: (
+    sessionId: string,
+    date: string,
+    time: string | null,
+    timeEnd?: string | null,
+  ) => void;
 }
 
 export interface ChatProps {
@@ -51,7 +61,7 @@ export interface FullCalendarViewProps {
   userId?: string;
   /** When true, disable all editing (activity toggles, notes, adding entries) */
   readOnly?: boolean;
-  /** Allow toggling trainer-linked activity even in readOnly mode */
+  /** Allow adding/editing training sessions even in readOnly mode */
   allowTrainerToggle?: boolean;
   /** The active trainer connection ID — needed for creating training sessions */
   connectionId?: string;

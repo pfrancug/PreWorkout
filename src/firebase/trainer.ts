@@ -1,4 +1,3 @@
-import type { IActivityCategory } from './types';
 import type { ITrainerConnection } from '@app-types/types';
 
 import {
@@ -15,12 +14,7 @@ import {
 } from 'firebase/database';
 import { onValue } from 'firebase/database';
 
-import {
-  loadActivityCategories,
-  saveActivityCategories,
-} from './activity-categories';
 import { database } from './db';
-import { getUserDisplayName } from './user-directory';
 
 /** Generate a short random invite code (6 chars, alphanumeric uppercase) */
 const generateInviteCode = (): string => {
@@ -144,45 +138,6 @@ export const acceptTrainerInvite = async (
   // Remove the invite code (one-time use)
   await remove(ref(database, `trainerInvites/${inviteCode.toUpperCase()}`));
 
-  // Auto-create trainer activity category for the trainee
-  try {
-    const trainerName = (await getUserDisplayName(trainerId)) || 'Trainer';
-    const existingCategories = await loadActivityCategories(traineeId);
-    const categories = existingCategories ?? [];
-
-    // Check if a trainer category already exists (may be archived from previous connection)
-    const existingTrainerCat = categories.find(
-      (c) => c.trainerId === trainerId,
-    );
-    if (existingTrainerCat) {
-      // Unarchive existing category on reconnect
-      if (existingTrainerCat.archived) {
-        const updated = categories.map((c) => {
-          if (c.trainerId !== trainerId) {
-            return c;
-          }
-          const copy = { ...c };
-          delete copy.archived;
-
-          return copy;
-        });
-        await saveActivityCategories(traineeId, updated);
-      }
-    } else {
-      const trainerCategory: IActivityCategory = {
-        id: `trainer-${trainerId}`,
-        icon: 'heart-pulse',
-        name: `Training with ${trainerName}`,
-        color: 'sky',
-        trainerId,
-        systemGenerated: true,
-      };
-      await saveActivityCategories(traineeId, [...categories, trainerCategory]);
-    }
-  } catch {
-    // Non-critical — connection still succeeds even if category creation fails
-  }
-
   return { success: true };
 };
 
@@ -233,14 +188,6 @@ export const disconnectTrainer = async (
   connectionId: string,
   traineeId: string,
 ): Promise<void> => {
-  // Read the connection to find the trainerId before soft-deleting
-  const connSnap = await get(
-    ref(database, `trainerConnections/${connectionId}`),
-  );
-  const trainerId = connSnap.exists()
-    ? (connSnap.val() as ITrainerConnection).trainerId
-    : null;
-
   // Soft-delete: preserve node so trainingSessions rules still resolve
   await update(ref(database, `trainerConnections/${connectionId}`), {
     status: 'deleted',
@@ -251,21 +198,6 @@ export const disconnectTrainer = async (
     [`users/${traineeId}/trainerId`]: null,
     [`users/${traineeId}/trainerConnectionId`]: null,
   });
-
-  // Archive trainer activity category (keeps historical calendar data intact)
-  if (trainerId) {
-    try {
-      const categories = await loadActivityCategories(traineeId);
-      if (categories) {
-        const updated = categories.map((c) =>
-          c.trainerId === trainerId ? { ...c, archived: true } : c,
-        );
-        await saveActivityCategories(traineeId, updated);
-      }
-    } catch {
-      // Non-critical — disconnect still succeeds
-    }
-  }
 };
 
 /**

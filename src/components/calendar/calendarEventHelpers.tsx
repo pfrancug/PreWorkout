@@ -1,6 +1,9 @@
-import type { GetDrawerEntriesParams } from './types';
+import type { GetModalEntriesParams, GetModalSessionsParams } from './types';
 import type { MapCalendarEventsParams } from './types';
-import type { IFullCalendarEventMeta } from '@app-types/types';
+import type {
+  IFullCalendarEventMeta,
+  ITrainingSession,
+} from '@app-types/types';
 import type { ICalendarEntry } from '@firebase-config/database';
 import type { EventContentArg, EventInput } from '@fullcalendar/core';
 import type { TFunction } from 'i18next';
@@ -13,61 +16,15 @@ import { Dumbbell, Pencil, StickyNote } from 'lucide-react';
 export const mapCalendarEvents = ({
   calendarEntries,
   calendarNotes,
-  trainerCalendar,
   categories,
   trainingSessions,
-  trainerCategoryForDisplay,
   t,
 }: MapCalendarEventsParams): EventInput[] => {
   const result: EventInput[] = [];
 
-  const allDates = new Set([
-    ...Object.keys(calendarEntries ?? {}),
-    ...Object.keys(trainerCalendar ?? {}),
-  ]);
-
-  for (const dateKey of allDates) {
-    const dayEntries = calendarEntries?.[dateKey]
-      ? Object.values(calendarEntries[dateKey])
-      : [];
-
-    // Virtual trainer-day event (only if not already logged as an entry
-    // AND no timed session exists — timed sessions get their own event below)
-    if (trainerCategoryForDisplay && trainerCalendar?.[dateKey]) {
-      const alreadyLogged = dayEntries.some(
-        (e) =>
-          e.type === 'activity' &&
-          e.activityId === trainerCategoryForDisplay.id,
-      );
-      const hasTimedSession = trainingSessions.some(
-        (s) => s.date === dateKey && s.status !== 'cancelled' && s.time,
-      );
-      if (!alreadyLogged && !hasTimedSession) {
-        const color =
-          ACTIVITY_COLOR_MAP[trainerCategoryForDisplay.color] ?? '#888';
-        result.push({
-          id: `trainer-${dateKey}`,
-          title: trainerCategoryForDisplay.name,
-          start: dateKey,
-          allDay: true,
-          backgroundColor: `${color}26`,
-          borderColor: color,
-          textColor: color,
-          extendedProps: {
-            type: 'entry',
-            entry: {
-              id: `trainer-${dateKey}`,
-              type: 'activity',
-              activityId: trainerCategoryForDisplay.id,
-              time: null,
-            } satisfies ICalendarEntry,
-            category: trainerCategoryForDisplay,
-          } as IFullCalendarEventMeta,
-        });
-      }
-    }
-
-    for (const entry of dayEntries) {
+  // Activity entries
+  for (const [dateKey, dayMap] of Object.entries(calendarEntries ?? {})) {
+    for (const entry of Object.values(dayMap)) {
       const category =
         entry.type === 'activity'
           ? categories.find((c) => c.id === entry.activityId)
@@ -102,10 +59,9 @@ export const mapCalendarEvents = ({
     }
   }
 
-  // Training session events — only timed sessions get their own event
-  // (sessions without a time are already represented by the trainer activity above)
+  // Training session events (all non-cancelled sessions)
   for (const session of trainingSessions) {
-    if (session.status === 'cancelled' || !session.time) {
+    if (session.status === 'cancelled') {
       continue;
     }
 
@@ -117,11 +73,12 @@ export const mapCalendarEvents = ({
     result.push({
       id: `session-${session.id}`,
       title: t('calendar.trainerActivity'),
-      start: `${session.date}T${session.time}:00`,
-      end: session.timeEnd
-        ? `${session.date}T${session.timeEnd}:00`
-        : undefined,
-      allDay: false,
+      start: session.time ? `${session.date}T${session.time}:00` : session.date,
+      end:
+        session.time && session.timeEnd
+          ? `${session.date}T${session.timeEnd}:00`
+          : undefined,
+      allDay: !session.time,
       backgroundColor: bgColor,
       borderColor,
       textColor,
@@ -232,64 +189,28 @@ export const renderEventContent = (arg: EventContentArg, t: TFunction) => {
   );
 };
 
-// ── Drawer entries helper ────────────────────────────────────────────────────
+// ── Modal entries helpers ────────────────────────────────────────────────────
 
-export const getDrawerEntries = ({
+export const getModalEntries = ({
   date,
   calendarEntries,
-  trainerCalendar,
-  trainerCategoryForDisplay,
-  trainingSessions,
-}: GetDrawerEntriesParams): ICalendarEntry[] => {
+}: GetModalEntriesParams): ICalendarEntry[] => {
   if (!date) {
     return [];
   }
 
-  const entries = calendarEntries?.[date]
-    ? Object.values(calendarEntries[date])
-    : [];
+  return calendarEntries?.[date] ? Object.values(calendarEntries[date]) : [];
+};
 
-  // Include virtual trainer-day entry if not already logged as a real entry
-  // AND no timed session exists (timed sessions get their own virtual entry below)
-  if (trainerCategoryForDisplay && trainerCalendar?.[date]) {
-    const alreadyLogged = entries.some(
-      (e) =>
-        e.type === 'activity' && e.activityId === trainerCategoryForDisplay.id,
-    );
-    const hasTimedSession = trainingSessions.some(
-      (s) => s.date === date && s.status !== 'cancelled' && s.time,
-    );
-    if (!alreadyLogged && !hasTimedSession) {
-      const matchingSession = trainingSessions.find(
-        (s) => s.date === date && s.status !== 'cancelled',
-      );
-      entries.push({
-        id: `trainer-${date}`,
-        type: 'activity',
-        activityId: trainerCategoryForDisplay.id,
-        time: null,
-        note: matchingSession?.note,
-      });
-    }
+export const getModalSessions = ({
+  date,
+  trainingSessions,
+}: GetModalSessionsParams): ITrainingSession[] => {
+  if (!date) {
+    return [];
   }
 
-  // Include timed training sessions as virtual entries
-  for (const session of trainingSessions) {
-    if (
-      session.date === date &&
-      session.status !== 'cancelled' &&
-      session.time
-    ) {
-      entries.push({
-        id: `session-${session.id}`,
-        type: 'activity',
-        activityId: trainerCategoryForDisplay?.id ?? 'trainer',
-        time: session.time,
-        timeEnd: session.timeEnd ?? null,
-        note: session.note,
-      });
-    }
-  }
-
-  return entries;
+  return trainingSessions.filter(
+    (s) => s.date === date && s.status !== 'cancelled',
+  );
 };

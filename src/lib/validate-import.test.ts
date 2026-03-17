@@ -48,10 +48,6 @@ const validActivityCategory = {
   color: 'blue',
 };
 
-const validTrainerCalendar = {
-  '2024-01-15': true,
-};
-
 const validLimits = { mode: 'limited' };
 
 const buildValid = (
@@ -65,7 +61,6 @@ const buildValid = (
   calendarEntries: validCalendarEntries,
   calendarNotes: validCalendarNotes,
   activityCategories: [validActivityCategory],
-  trainerCalendar: validTrainerCalendar,
   ...overrides,
 });
 
@@ -90,7 +85,6 @@ describe('validateImportData', () => {
           calendarEntries: null,
           calendarNotes: null,
           activityCategories: null,
-          trainerCalendar: null,
         }),
       ).toBe(true);
     });
@@ -450,30 +444,6 @@ describe('validateImportData', () => {
       expect(
         validateImportData(
           buildValid({ calendarNotes: { '2024-01-15': 123 } }),
-        ),
-      ).toBe(false);
-    });
-  });
-
-  describe('invalid trainerCalendar', () => {
-    it('rejects non-object trainerCalendar', () => {
-      expect(validateImportData(buildValid({ trainerCalendar: true }))).toBe(
-        false,
-      );
-    });
-
-    it('rejects bad date key', () => {
-      expect(
-        validateImportData(
-          buildValid({ trainerCalendar: { 'not-date': true } }),
-        ),
-      ).toBe(false);
-    });
-
-    it('rejects non-boolean value', () => {
-      expect(
-        validateImportData(
-          buildValid({ trainerCalendar: { '2024-01-15': 'yes' } }),
         ),
       ).toBe(false);
     });

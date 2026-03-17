@@ -1,5 +1,7 @@
 import type { ActivityNoteModalProps } from './types';
 
+import { useTranslation } from 'react-i18next';
+
 import { AddTrainingView } from './calendar/AddTrainingView';
 import { AddView } from './calendar/AddView';
 import { DayView } from './calendar/DayView';
@@ -7,17 +9,18 @@ import { EventView } from './calendar/EventView';
 import { NoteView } from './calendar/NoteView';
 import { Dialog, DialogContent } from './ui/dialog';
 
-export type { DrawerView, TimePreset } from './calendar/types';
+export type { ModalView, TimePreset } from './calendar/types';
 
 export const ActivityNoteModal = ({
-  drawerView,
+  modalView,
   categories,
   pickableCategories,
   entries,
+  sessions,
   recentActivityIds,
   note,
   readOnly = false,
-  onTrainerToggle,
+  canAddTraining = false,
   onNavigate,
   onClose,
   onNoteChange,
@@ -26,16 +29,25 @@ export const ActivityNoteModal = ({
   onUpdateEntryNote,
   onUpdateEntryTime,
   onSaveNewCategory,
+  onAddTrainingSession,
+  onDeleteSession,
+  onUpdateSessionNote,
+  onUpdateSessionTime,
 }: ActivityNoteModalProps) => {
-  const date = drawerView.date;
+  const { t } = useTranslation();
+  const date = modalView.date;
 
   const currentEntry =
-    drawerView.view === 'event'
-      ? entries.find((e) => e.id === drawerView.entryId)
+    modalView.view === 'event'
+      ? entries.find((e) => e.id === modalView.entryId)
       : undefined;
 
+  const isSessionEvent =
+    modalView.view === 'event' && modalView.entryId?.startsWith('session-');
+
   const showDayView =
-    drawerView.view === 'day' || (drawerView.view === 'event' && !currentEntry);
+    modalView.view === 'day' ||
+    (modalView.view === 'event' && !currentEntry && !isSessionEvent);
 
   return (
     <Dialog
@@ -53,20 +65,21 @@ export const ActivityNoteModal = ({
       >
         {showDayView && (
           <DayView
+            canAddTraining={canAddTraining}
             categories={categories}
             date={date}
             entries={entries}
             note={note}
             onNavigateToNote={() => onNavigate({ view: 'note', date })}
-            onTrainerToggle={onTrainerToggle}
             readOnly={readOnly}
+            sessions={sessions}
             onNavigateToAdd={() =>
               onNavigate({
                 view: 'add',
                 date,
                 timePreset:
-                  drawerView.view === 'day'
-                    ? (drawerView.timePreset ?? null)
+                  modalView.view === 'day'
+                    ? (modalView.timePreset ?? null)
                     : null,
               })
             }
@@ -75,18 +88,25 @@ export const ActivityNoteModal = ({
                 view: 'add-training',
                 date,
                 timePreset:
-                  drawerView.view === 'day'
-                    ? (drawerView.timePreset ?? null)
+                  modalView.view === 'day'
+                    ? (modalView.timePreset ?? null)
                     : null,
               })
             }
             onNavigateToEvent={(entryId) =>
               onNavigate({ view: 'event', date, entryId })
             }
+            onNavigateToSession={(sessionId) =>
+              onNavigate({
+                view: 'event',
+                date,
+                entryId: `session-${sessionId}`,
+              })
+            }
           />
         )}
 
-        {drawerView.view === 'note' && (
+        {modalView.view === 'note' && (
           <NoteView
             note={note}
             onBack={() => onNavigate({ view: 'day', date })}
@@ -94,13 +114,10 @@ export const ActivityNoteModal = ({
           />
         )}
 
-        {drawerView.view === 'event' &&
+        {modalView.view === 'event' &&
           currentEntry &&
           (() => {
-            const isTrainerEntry =
-              currentEntry.id.startsWith('trainer-') ||
-              currentEntry.id.startsWith('session-');
-            const canEdit = isTrainerEntry ? !!onTrainerToggle : !readOnly;
+            const canEdit = !readOnly;
 
             return (
               <EventView
@@ -133,7 +150,46 @@ export const ActivityNoteModal = ({
             );
           })()}
 
-        {!readOnly && drawerView.view === 'add' && (
+        {modalView.view === 'event' &&
+          isSessionEvent &&
+          (() => {
+            const sessionId = modalView.entryId.replace('session-', '');
+            const session = sessions.find((s) => s.id === sessionId);
+            if (!session || !canAddTraining) {
+              return null;
+            }
+
+            return (
+              <EventView
+                categories={categories}
+                date={date}
+                key={`session-${session.id}`}
+                onBack={() => onNavigate({ view: 'day', date })}
+                entry={{
+                  id: `session-${session.id}`,
+                  type: 'custom',
+                  name: t('calendar.trainerActivity'),
+                  icon: 'dumbbell',
+                  color: session.status === 'completed' ? 'green' : 'blue',
+                  time: session.time,
+                  timeEnd: session.timeEnd ?? null,
+                  note: session.note,
+                }}
+                onDelete={() => {
+                  onDeleteSession(session.id);
+                  onNavigate({ view: 'day', date });
+                }}
+                onUpdateNote={(noteValue) =>
+                  onUpdateSessionNote(session.id, date, noteValue)
+                }
+                onUpdateTime={(time, timeEnd) =>
+                  onUpdateSessionTime(session.id, date, time, timeEnd)
+                }
+              />
+            );
+          })()}
+
+        {!readOnly && modalView.view === 'add' && (
           <AddView
             categories={pickableCategories ?? categories}
             date={date}
@@ -141,17 +197,17 @@ export const ActivityNoteModal = ({
             onBack={() => onNavigate({ view: 'day', date })}
             onSaveNewCategory={onSaveNewCategory}
             recentActivityIds={recentActivityIds}
-            timePreset={drawerView.timePreset}
+            timePreset={modalView.timePreset}
           />
         )}
 
-        {onTrainerToggle && drawerView.view === 'add-training' && (
+        {canAddTraining && modalView.view === 'add-training' && (
           <AddTrainingView
             date={date}
             onBack={() => onNavigate({ view: 'day', date })}
-            timePreset={drawerView.timePreset}
+            timePreset={modalView.timePreset}
             onSave={async (dateKey, time, timeEnd, noteValue) => {
-              await onTrainerToggle(dateKey, time, timeEnd, noteValue);
+              await onAddTrainingSession(dateKey, time, timeEnd, noteValue);
               onNavigate({ view: 'day', date });
             }}
           />

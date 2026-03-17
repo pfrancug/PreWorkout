@@ -4,7 +4,6 @@ import type {
   IActivityCategory,
   ICalendarEntries,
   ICalendarNotes,
-  ITrainerCalendarData,
 } from '@firebase-config/database';
 
 import { DEFAULT_CATEGORIES } from '@constants/activities';
@@ -14,7 +13,6 @@ import {
   subscribeToCalendarEntries,
   subscribeToCalendarNotes,
   subscribeToTraineeConnection,
-  subscribeToTrainerCalendar,
   subscribeToTrainingSessions,
 } from '@firebase-config/database';
 import { useEffect, useMemo, useState } from 'react';
@@ -32,8 +30,6 @@ export const useCalendarData = ({
   const [calendarNotes, setCalendarNotes] = useState<ICalendarNotes | null>(
     null,
   );
-  const [trainerCalendar, setTrainerCalendar] =
-    useState<ITrainerCalendarData | null>(null);
   const [categories, setCategories] = useState<IActivityCategory[]>([]);
   const [trainingSessions, setTrainingSessions] = useState<ITrainingSession[]>(
     [],
@@ -71,16 +67,11 @@ export const useCalendarData = ({
       setCategories,
       DEFAULT_CATEGORIES,
     );
-    const unsubTrainerCal = subscribeToTrainerCalendar(
-      targetUserId,
-      setTrainerCalendar,
-    );
 
     return () => {
       unsubEntries();
       unsubNotes();
       unsubCategories();
-      unsubTrainerCal();
     };
   }, [targetUserId]);
 
@@ -97,22 +88,13 @@ export const useCalendarData = ({
     return unsub;
   }, [connectionId]);
 
-  // Trainer category for display (prefer non-archived; fall back to archived for history)
-  const trainerCategoryForDisplay = useMemo(
-    () =>
-      categories.find((c) => c.trainerId && !c.archived) ??
-      categories.find((c) => !!c.trainerId) ??
-      null,
-    [categories],
-  );
-
-  // Categories available for adding new entries (strip archived + trainer-linked)
+  // Categories available for adding new entries (strip archived)
   const pickableCategories = useMemo(
-    () => categories.filter((c) => !c.archived && !c.trainerId),
+    () => categories.filter((c) => !c.archived),
     [categories],
   );
 
-  // All displayable categories (including trainer) for the modal event list
+  // All displayable categories for the modal event list
   const displayCategories = useMemo(
     () => categories.filter((c) => !c.archived),
     [categories],
@@ -146,23 +128,17 @@ export const useCalendarData = ({
     user,
     targetUserId,
     connectionId,
-    calendarEntries,
-    calendarNotes,
-    trainerCalendar,
     categories,
     trainingSessions,
-    trainerCategoryForDisplay,
   });
 
   return {
     calendarEntries,
     calendarNotes,
-    trainerCalendar,
     categories,
     trainingSessions,
     targetUserId,
     connectionId,
-    trainerCategoryForDisplay,
     pickableCategories,
     displayCategories,
     recentActivityIds,

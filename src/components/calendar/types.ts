@@ -4,7 +4,6 @@ import type {
   ICalendarEntries,
   ICalendarEntry,
   ICalendarNotes,
-  ITrainerCalendarData,
 } from '@firebase-config/database';
 import type { TFunction } from 'i18next';
 
@@ -14,7 +13,7 @@ export interface TimePreset {
   allDay: boolean;
 }
 
-export type DrawerView =
+export type ModalView =
   | { view: 'day'; date: string; timePreset?: TimePreset | null }
   | { view: 'event'; date: string; entryId: string }
   | { view: 'add'; date: string; timePreset: TimePreset | null }
@@ -46,10 +45,8 @@ export interface AddViewProps {
 export interface MapCalendarEventsParams {
   calendarEntries: ICalendarEntries | null;
   calendarNotes: ICalendarNotes | null;
-  trainerCalendar: ITrainerCalendarData | null;
   categories: IActivityCategory[];
   trainingSessions: ITrainingSession[];
-  trainerCategoryForDisplay: IActivityCategory | null;
   t: TFunction;
 }
 
@@ -57,15 +54,12 @@ export interface DayViewProps {
   date: string;
   categories: IActivityCategory[];
   entries: ICalendarEntry[];
+  sessions: ITrainingSession[];
   note: string;
   readOnly?: boolean;
-  onTrainerToggle?: (
-    dateKey: string,
-    time: string | null,
-    timeEnd: string | null,
-    note: string,
-  ) => Promise<void>;
+  canAddTraining?: boolean;
   onNavigateToEvent: (entryId: string) => void;
+  onNavigateToSession: (sessionId: string) => void;
   onNavigateToAdd: () => void;
   onNavigateToAddTraining: () => void;
   onNavigateToNote: () => void;
@@ -87,10 +81,12 @@ export interface NoteViewProps {
   onNoteChange: (value: string) => void;
 }
 
-export interface GetDrawerEntriesParams {
+export interface GetModalEntriesParams {
   date: string | null;
   calendarEntries: ICalendarEntries | null;
-  trainerCalendar: ITrainerCalendarData | null;
-  trainerCategoryForDisplay: IActivityCategory | null;
+}
+
+export interface GetModalSessionsParams {
+  date: string | null;
   trainingSessions: ITrainingSession[];
 }

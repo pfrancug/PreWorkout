@@ -1,21 +1,36 @@
 import type { DayViewProps } from './types';
+import type { ITrainingSession } from '@app-types/types';
 
 import { ActivityIcon } from '@components/ActivityIcon';
 import { Button } from '@components/ui/button';
 import { DialogHeader, DialogTitle } from '@components/ui/dialog';
 import { ACTIVITY_COLOR_MAP } from '@constants/activities';
+import { EN_DASH } from '@constants/display';
 import { cn } from '@lib/utils';
-import { Clock, Pencil } from 'lucide-react';
+import { Clock, Dumbbell, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+const paymentDotClass = (session: ITrainingSession) => {
+  if (session.paymentStatus === 'paid') {
+    return 'bg-green-500';
+  }
+  if (session.paymentStatus === 'pending') {
+    return 'bg-yellow-500';
+  }
+
+  return 'bg-red-500';
+};
 
 export const DayView = ({
   date,
   categories,
   entries,
+  sessions,
   note,
   readOnly,
-  onTrainerToggle,
+  canAddTraining,
   onNavigateToEvent,
+  onNavigateToSession,
   onNavigateToAdd,
   onNavigateToAddTraining,
   onNavigateToNote,
@@ -58,11 +73,11 @@ export const DayView = ({
         </div>
       )}
 
-      {/* Events list */}
+      {/* Activities list */}
       <div className={'space-y-2'}>
         <p className={'text-sm font-medium'}>{t('calendar.loggedEvents')}</p>
 
-        {entries.length === 0 ? (
+        {entries.length === 0 && sessions.length === 0 ? (
           <p className={'text-sm text-muted-foreground'}>
             {t('calendar.noEventsLogged')}
           </p>
@@ -80,35 +95,29 @@ export const DayView = ({
               const entryColor = category
                 ? (ACTIVITY_COLOR_MAP[category.color] ?? '#888')
                 : '#94a3b8';
-              const isTrainerEntry =
-                entry.id.startsWith('trainer-') ||
-                entry.id.startsWith('session-');
-              const isClickable = isTrainerEntry
-                ? !!onTrainerToggle
-                : !readOnly;
 
               return (
                 <div
                   key={entry.id}
-                  role={isClickable ? 'button' : undefined}
-                  tabIndex={isClickable ? 0 : undefined}
+                  role={readOnly ? undefined : 'button'}
+                  tabIndex={readOnly ? undefined : 0}
                   className={cn(
                     'flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left',
-                    isClickable &&
+                    !readOnly &&
                       'cursor-pointer transition-colors hover:opacity-80',
                   )}
                   onClick={
-                    isClickable ? () => onNavigateToEvent(entry.id) : undefined
+                    readOnly ? undefined : () => onNavigateToEvent(entry.id)
                   }
                   onKeyDown={
-                    isClickable
-                      ? (e) => {
+                    readOnly
+                      ? undefined
+                      : (e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             onNavigateToEvent(entry.id);
                           }
                         }
-                      : undefined
                   }
                   style={{
                     backgroundColor: `${entryColor}1a`,
@@ -153,6 +162,80 @@ export const DayView = ({
                 </div>
               );
             })}
+
+            {/* Training sessions */}
+            {sessions.map((session) => {
+              const isCompleted = session.status === 'completed';
+              const sessionColor = isCompleted ? '#22c55e' : '#3b82f6';
+
+              return (
+                <div
+                  key={`session-${session.id}`}
+                  role={canAddTraining ? 'button' : undefined}
+                  tabIndex={canAddTraining ? 0 : undefined}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left',
+                    canAddTraining &&
+                      'cursor-pointer transition-colors hover:opacity-80',
+                  )}
+                  onClick={
+                    canAddTraining
+                      ? () => onNavigateToSession(session.id)
+                      : undefined
+                  }
+                  onKeyDown={
+                    canAddTraining
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onNavigateToSession(session.id);
+                          }
+                        }
+                      : undefined
+                  }
+                  style={{
+                    backgroundColor: `${sessionColor}1a`,
+                    borderColor: `${sessionColor}60`,
+                  }}
+                >
+                  <Dumbbell
+                    className={'h-4 w-4 shrink-0'}
+                    style={{ color: sessionColor }}
+                  />
+                  <div className={'flex flex-1 flex-col gap-0.5'}>
+                    <span className={'text-sm'} style={{ color: sessionColor }}>
+                      {t('calendar.trainerActivity')}
+                    </span>
+                    {session.note && (
+                      <span
+                        className={'text-xs text-muted-foreground line-clamp-1'}
+                      >
+                        {session.note}
+                      </span>
+                    )}
+                  </div>
+                  <div className={'flex shrink-0 items-center gap-2'}>
+                    {session.time && (
+                      <span
+                        className={
+                          'flex items-center gap-1 text-xs text-muted-foreground'
+                        }
+                      >
+                        <Clock className={'h-3 w-3'} />
+                        {session.time}
+                        {session.timeEnd && ` ${EN_DASH} ${session.timeEnd}`}
+                      </span>
+                    )}
+                    <span
+                      className={cn(
+                        'h-2 w-2 shrink-0 rounded-full',
+                        paymentDotClass(session),
+                      )}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -168,7 +251,7 @@ export const DayView = ({
           </Button>
         )}
 
-        {onTrainerToggle && (
+        {canAddTraining && (
           <Button
             className={'flex-1'}
             onClick={onNavigateToAddTraining}

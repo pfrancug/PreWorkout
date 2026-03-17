@@ -23,7 +23,7 @@
         },
         "thirdParties": {
           "title": "Third-Party Services",
-          "content": "We use the following third-party services:\n\n• **Firebase Authentication**: For secure sign-in (Google).\n• **Firebase Realtime Database**: To store your data.\n• **Google Gemini / xAI Grok**: AI services for chat functionality. Your messages may be processed by these providers according to their privacy policies."
+          "content": "We use the following third-party services:\n\n• **Firebase Authentication**: For secure sign-in (Google).\n• **Firebase Realtime Database**: To store your data.\n• **xAI Grok**: AI service for chat functionality. Your messages may be processed by this provider according to their privacy policy."
         },
         "yourRights": {
           "title": "Your Rights",

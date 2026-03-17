@@ -23,7 +23,6 @@ import {
   loadCalendarEntries,
   saveActivityCategories,
   subscribeToActivityCategories,
-  subscribeToTraineeConnection,
 } from '@firebase-config/database';
 import {
   Archive,
@@ -49,7 +48,6 @@ export const CategoriesSettingsPage = () => {
   const [newIcon, setNewIcon] = useState<ActivityIconId>('dumbbell');
   const [newColor, setNewColor] = useState(ACTIVITY_COLORS[0].id);
 
-  const [activeTrainerId, setActiveTrainerId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState<ActivityIconId>('dumbbell');
@@ -81,18 +79,6 @@ export const CategoriesSettingsPage = () => {
         }
       }
       setUsedActivityIds(used);
-    });
-
-    return unsub;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    const unsub = subscribeToTraineeConnection(user.uid, (conn) => {
-      setActiveTrainerId(conn?.trainerId ?? null);
     });
 
     return unsub;
@@ -334,15 +320,6 @@ export const CategoriesSettingsPage = () => {
                     {category.name}
                   </span>
 
-                  {category.trainerId && (
-                    <Badge
-                      title={t('settings.categories.trainerCategoryTooltip')}
-                      variant={'secondary'}
-                    >
-                      {t('settings.categories.trainerBadge')}
-                    </Badge>
-                  )}
-
                   <Button
                     onClick={() => startEdit(category)}
                     size={'icon'}
@@ -358,26 +335,17 @@ export const CategoriesSettingsPage = () => {
                   <Button
                     onClick={() => handleArchive(category.id)}
                     size={'icon'}
+                    title={t('settings.categories.archiveTooltip')}
                     variant={'ghost'}
                     className={
                       'h-8 w-8 text-muted-foreground hover:text-yellow-600'
-                    }
-                    disabled={
-                      !!category.trainerId &&
-                      category.trainerId === activeTrainerId
-                    }
-                    title={
-                      category.trainerId &&
-                      category.trainerId === activeTrainerId
-                        ? t('settings.categories.activeTrainerTooltip')
-                        : t('settings.categories.archiveTooltip')
                     }
                   >
                     <Archive className={'h-4 w-4'} />
                   </Button>
 
                   <Button
-                    disabled={isUsed || !!category.systemGenerated}
+                    disabled={isUsed}
                     onClick={() => handleDelete(category.id)}
                     size={'icon'}
                     variant={'ghost'}
@@ -480,15 +448,6 @@ export const CategoriesSettingsPage = () => {
                     {t('settings.categories.archivedBadge')}
                   </Badge>
 
-                  {category.trainerId && (
-                    <Badge
-                      title={t('settings.categories.trainerCategoryTooltip')}
-                      variant={'secondary'}
-                    >
-                      {t('settings.categories.trainerBadge')}
-                    </Badge>
-                  )}
-
                   <Button
                     onClick={() => handleUnarchive(category.id)}
                     size={'icon'}
@@ -502,7 +461,7 @@ export const CategoriesSettingsPage = () => {
                   </Button>
 
                   <Button
-                    disabled={isUsed || !!category.systemGenerated}
+                    disabled={isUsed}
                     onClick={() => handleDelete(category.id)}
                     size={'icon'}
                     variant={'ghost'}

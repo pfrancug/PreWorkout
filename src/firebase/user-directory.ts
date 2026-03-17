@@ -1,21 +1,8 @@
-import type { IActivityCategory, IUserDirectoryEntry } from './types';
-import type { ITrainerConnection } from '@app-types/types';
+import type { IUserDirectoryEntry } from './types';
 
-import {
-  equalTo,
-  get,
-  orderByChild,
-  query,
-  ref,
-  set,
-  update,
-} from 'firebase/database';
+import { get, ref, set, update } from 'firebase/database';
 import { onValue } from 'firebase/database';
 
-import {
-  loadActivityCategories,
-  saveActivityCategories,
-} from './activity-categories';
 import { database } from './db';
 
 export const updateUserDirectory = async (
@@ -39,50 +26,12 @@ export const updateUserDirectory = async (
   await update(entryRef, updates);
 };
 
-/** Update only the display name in userDirectory (for settings sync).
- *  Also propagates the new name to trainer categories on connected trainees. */
+/** Update only the display name in userDirectory (for settings sync). */
 export const updateUserDisplayName = async (
   userId: string,
   displayName: string,
 ): Promise<void> => {
   await update(ref(database, `userDirectory/${userId}`), { displayName });
-
-  // Propagate to trainer categories on all active trainees
-  const connectionsRef = ref(database, 'trainerConnections');
-  const snap = await get(
-    query(connectionsRef, orderByChild('trainerId'), equalTo(userId)),
-  );
-  if (!snap.exists()) {
-    return;
-  }
-  const connections = snap.val() as Record<string, ITrainerConnection>;
-  const updatePromises: Promise<void>[] = [];
-  for (const conn of Object.values(connections)) {
-    if (conn.status !== 'active' || !conn.traineeId) {
-      continue;
-    }
-    updatePromises.push(
-      (async () => {
-        const cats = await loadActivityCategories(conn.traineeId);
-        if (!cats) {
-          return;
-        }
-        const idx = cats.findIndex(
-          (c: IActivityCategory) => c.trainerId === userId,
-        );
-        if (idx === -1 || cats[idx].name === `Training with ${displayName}`) {
-          return;
-        }
-        const updated = [...cats];
-        updated[idx] = {
-          ...updated[idx],
-          name: `Training with ${displayName}`,
-        };
-        await saveActivityCategories(conn.traineeId, updated);
-      })(),
-    );
-  }
-  await Promise.all(updatePromises);
 };
 
 // Admin functions

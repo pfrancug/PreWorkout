@@ -1,9 +1,4 @@
-import type {
-  ICalendarEntries,
-  ICalendarEntry,
-  ICalendarNotes,
-  ITrainerCalendarData,
-} from './types';
+import type { ICalendarEntries, ICalendarEntry, ICalendarNotes } from './types';
 
 import { get, push, ref, remove, set, update } from 'firebase/database';
 import { onValue } from 'firebase/database';
@@ -137,35 +132,4 @@ export const loadCalendarEntries = async (
   const snapshot = await get(getUserCalendarEntriesRef(userId));
 
   return snapshot.exists() ? (snapshot.val() as ICalendarEntries) : null;
-};
-
-// Trainer Calendar
-export const subscribeToTrainerCalendar = (
-  userId: string,
-  callback: (data: ITrainerCalendarData | null) => void,
-): (() => void) => {
-  const trainerCalRef = ref(database, `users/${userId}/trainerCalendar`);
-  const unsubscribe = onValue(trainerCalRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val() as ITrainerCalendarData);
-    } else {
-      callback(null);
-    }
-  });
-
-  return unsubscribe;
-};
-
-export const toggleTrainerCalendarDay = async (
-  userId: string,
-  date: string,
-  active: boolean,
-): Promise<void> => {
-  const dayRef = ref(database, `users/${userId}/trainerCalendar/${date}`);
-
-  if (active) {
-    await set(dayRef, true);
-  } else {
-    await remove(dayRef);
-  }
 };

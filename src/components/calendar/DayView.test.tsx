@@ -34,11 +34,13 @@ const baseProps = {
   date: '2025-03-15',
   categories,
   entries: [] as ICalendarEntry[],
+  sessions: [],
   note: '',
   onNavigateToEvent: vi.fn(),
   onNavigateToAdd: vi.fn(),
   onNavigateToAddTraining: vi.fn(),
   onNavigateToNote: vi.fn(),
+  onNavigateToSession: vi.fn(),
 };
 
 describe('DayView', () => {
@@ -124,8 +126,8 @@ describe('DayView', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows add personal training button when onTrainerToggle is provided', () => {
-    render(<DayView {...baseProps} onTrainerToggle={vi.fn()} />);
+  it('shows add personal training button when canAddTraining is true', () => {
+    render(<DayView {...baseProps} canAddTraining />);
 
     expect(
       screen.getByRole('button', { name: /add personal training/i }),
