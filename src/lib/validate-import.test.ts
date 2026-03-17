@@ -502,4 +502,32 @@ describe('validateImportData', () => {
       ).toBe(false);
     });
   });
+
+  describe('sharingPreferences', () => {
+    it('accepts valid sharingPreferences', () => {
+      expect(
+        validateImportData(
+          buildValid({
+            sharingPreferences: {
+              shareCalendarActivities: true,
+              shareDiary: false,
+            },
+          }),
+        ),
+      ).toBe(true);
+    });
+
+    it('accepts null sharingPreferences', () => {
+      expect(validateImportData(buildValid({ sharingPreferences: null }))).toBe(
+        true,
+      );
+    });
+
+    it('accepts data without sharingPreferences key', () => {
+      const data = buildValid();
+      delete data.sharingPreferences;
+
+      expect(validateImportData(data)).toBe(true);
+    });
+  });
 });

@@ -5,9 +5,13 @@ import type {
   ICalendarEntry,
 } from '@firebase-config/database';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { getModalEntries, getModalSessions } from './calendarEventHelpers';
+import {
+  getModalEntries,
+  getModalSessions,
+  mapCalendarEvents,
+} from './calendarEventHelpers';
 
 const makeEntry = (
   overrides: Partial<ICalendarEntry> = {},
@@ -126,5 +130,80 @@ describe('getModalSessions', () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((s) => s.id)).toEqual(['s1', 's2']);
+  });
+});
+
+describe('mapCalendarEvents — filterActivities simulation', () => {
+  const t = vi.fn((key: string) => key) as unknown as Parameters<
+    typeof mapCalendarEvents
+  >[0]['t'];
+
+  const session: ITrainingSession = {
+    id: 's1',
+    connectionId: 'conn-1',
+    trainerId: 'trainer-1',
+    traineeId: 'trainee-1',
+    date: '2025-01-15',
+    time: '10:00',
+    timeEnd: '11:00',
+    status: 'planned',
+    trainerConfirmed: false,
+    paymentStatus: 'unpaid',
+    paidMarkedBy: null,
+    createdAt: Date.now(),
+    createdBy: 'trainer',
+  };
+
+  const entries: ICalendarEntries = {
+    '2025-01-15': {
+      e1: { id: 'e1', type: 'activity', activityId: 'running', time: null },
+    },
+  };
+
+  const notes = { '2025-01-15': 'Great workout!' };
+
+  it('returns only training sessions when entries and notes are null (filterActivities)', () => {
+    const events = mapCalendarEvents({
+      calendarEntries: null,
+      calendarNotes: null,
+      categories: [],
+      trainingSessions: [session],
+      t,
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0].id).toBe('session-s1');
+  });
+
+  it('returns activities and notes when not filtered', () => {
+    const events = mapCalendarEvents({
+      calendarEntries: entries,
+      calendarNotes: notes,
+      categories: [
+        { id: 'running', icon: 'run', name: 'Running', color: 'green' },
+      ],
+      trainingSessions: [session],
+      t,
+    });
+
+    // Should have: 1 entry + 1 note + 1 session = 3
+    expect(events).toHaveLength(3);
+    const ids = events.map((e) => e.id);
+
+    expect(ids).toContain('entry-2025-01-15-e1');
+    expect(ids).toContain('note-2025-01-15');
+    expect(ids).toContain('session-s1');
+  });
+
+  it('returns empty array when everything is null/empty', () => {
+    const events = mapCalendarEvents({
+      calendarEntries: null,
+      calendarNotes: null,
+      categories: [],
+      trainingSessions: [],
+      t,
+    });
+
+    expect(events).toEqual([]);
   });
 });

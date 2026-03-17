@@ -65,6 +65,8 @@ export interface FullCalendarViewProps {
   allowTrainerToggle?: boolean;
   /** The active trainer connection ID — needed for creating training sessions */
   connectionId?: string;
+  /** When true, hide personal activities/notes and only show training sessions */
+  filterActivities?: boolean;
 }
 
 export interface IconColorPickerProps {

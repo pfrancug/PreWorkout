@@ -1,9 +1,10 @@
+import type { ISharingPreferences } from './types';
 import type {
   IUserPreferences,
   IUserSettings,
 } from '@contexts/SettingsContext';
 
-import { get, ref, set } from 'firebase/database';
+import { get, onValue, ref, set } from 'firebase/database';
 
 import { database } from './db';
 
@@ -53,4 +54,42 @@ export const loadUserPreferences = async (
   }
 
   return null;
+};
+
+// Sharing Preferences
+export const getUserSharingPreferencesRef = (userId: string) =>
+  ref(database, `users/${userId}/sharingPreferences`);
+
+export const saveSharingPreferences = async (
+  userId: string,
+  sharingPreferences: ISharingPreferences,
+): Promise<void> => {
+  const sharingRef = getUserSharingPreferencesRef(userId);
+  await set(sharingRef, sharingPreferences);
+};
+
+export const loadSharingPreferences = async (
+  userId: string,
+): Promise<ISharingPreferences | null> => {
+  const sharingRef = getUserSharingPreferencesRef(userId);
+  const snapshot = await get(sharingRef);
+
+  if (snapshot.exists()) {
+    return snapshot.val() as ISharingPreferences;
+  }
+
+  return null;
+};
+
+export const subscribeToSharingPreferences = (
+  userId: string,
+  callback: (data: ISharingPreferences | null) => void,
+): (() => void) => {
+  const sharingRef = getUserSharingPreferencesRef(userId);
+
+  return onValue(sharingRef, (snapshot) => {
+    callback(
+      snapshot.exists() ? (snapshot.val() as ISharingPreferences) : null,
+    );
+  });
 };

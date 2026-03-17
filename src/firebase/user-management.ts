@@ -33,6 +33,8 @@ import {
 import {
   getUserPreferencesRef,
   getUserSettingsRef,
+  getUserSharingPreferencesRef,
+  loadSharingPreferences,
   loadUserPreferences,
   loadUserSettings,
   saveUserPreferences,
@@ -57,6 +59,7 @@ export const deleteAllUserData = async (userId: string): Promise<void> => {
   await Promise.all([
     remove(getUserSettingsRef(userId)),
     remove(getUserPreferencesRef(userId)),
+    remove(getUserSharingPreferencesRef(userId)),
     remove(getUserMessagesRef(userId)),
     remove(getUserDataRef(userId)),
     remove(getUserLimitsRef(userId)),
@@ -164,6 +167,11 @@ export const importAllUserData = async (
   if (data.activityCategories) {
     promises.push(saveActivityCategories(userId, data.activityCategories));
   }
+  if (data.sharingPreferences) {
+    promises.push(
+      set(getUserSharingPreferencesRef(userId), data.sharingPreferences),
+    );
+  }
 
   await Promise.all(promises);
 };
@@ -175,6 +183,7 @@ export const loadAllUserData = async (
   const [
     settings,
     preferences,
+    sharingPreferences,
     messages,
     data,
     limits,
@@ -184,6 +193,7 @@ export const loadAllUserData = async (
   ] = await Promise.all([
     loadUserSettings(userId),
     loadUserPreferences(userId),
+    loadSharingPreferences(userId),
     loadUserMessages(userId),
     loadUserData(userId),
     loadMessageLimitConfig(userId),
@@ -195,6 +205,7 @@ export const loadAllUserData = async (
   return {
     settings,
     preferences,
+    sharingPreferences,
     messages,
     data,
     limits,

@@ -12,15 +12,21 @@ import { useSettings } from './useSettings';
 // Mock Firebase database operations
 const mockLoadUserSettings = vi.fn();
 const mockLoadUserPreferences = vi.fn();
+const mockLoadSharingPreferences = vi.fn();
 const mockSaveUserSettings = vi.fn().mockResolvedValue(undefined);
 const mockSaveUserPreferences = vi.fn().mockResolvedValue(undefined);
+const mockSaveSharingPreferences = vi.fn().mockResolvedValue(undefined);
 const mockUpdateUserDisplayName = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@firebase-config/database', () => ({
   loadUserSettings: (...args: unknown[]) => mockLoadUserSettings(...args),
   loadUserPreferences: (...args: unknown[]) => mockLoadUserPreferences(...args),
+  loadSharingPreferences: (...args: unknown[]) =>
+    mockLoadSharingPreferences(...args),
   saveUserSettings: (...args: unknown[]) => mockSaveUserSettings(...args),
   saveUserPreferences: (...args: unknown[]) => mockSaveUserPreferences(...args),
+  saveSharingPreferences: (...args: unknown[]) =>
+    mockSaveSharingPreferences(...args),
   updateUserDisplayName: (...args: unknown[]) =>
     mockUpdateUserDisplayName(...args),
 }));
@@ -62,6 +68,7 @@ describe('SettingsProvider', () => {
       defaultCalendarView: 'month',
       hideConnectionSection: false,
     });
+    mockLoadSharingPreferences.mockResolvedValue(null);
   });
 
   it('loads settings from Firebase on mount', async () => {
@@ -162,5 +169,104 @@ describe('SettingsProvider', () => {
     });
 
     expect(result.current.preferences.language).toBe('pl');
+  });
+
+  describe('sharing preferences', () => {
+    it('returns default sharing preferences when Firebase returns null', async () => {
+      mockLoadSharingPreferences.mockResolvedValue(null);
+
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: makeWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.settings.name).toBe('Test User');
+      });
+
+      expect(result.current.sharingPreferences).toEqual({
+        shareCalendarActivities: false,
+        shareDiary: false,
+      });
+    });
+
+    it('loads sharing preferences from Firebase', async () => {
+      mockLoadSharingPreferences.mockResolvedValue({
+        shareCalendarActivities: true,
+        shareDiary: true,
+      });
+
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: makeWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.sharingPreferences.shareCalendarActivities).toBe(
+          true,
+        );
+      });
+
+      expect(result.current.sharingPreferences.shareDiary).toBe(true);
+    });
+
+    it('merges partial sharing preferences with defaults', async () => {
+      mockLoadSharingPreferences.mockResolvedValue({
+        shareDiary: true,
+      });
+
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: makeWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.sharingPreferences.shareDiary).toBe(true);
+      });
+
+      // shareCalendarActivities should still use the default
+      expect(result.current.sharingPreferences.shareCalendarActivities).toBe(
+        false,
+      );
+    });
+
+    it('updates sharing preference and persists to Firebase', async () => {
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: makeWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.settings.name).toBe('Test User');
+      });
+
+      act(() => {
+        result.current.updateSharingPreference('shareCalendarActivities', true);
+      });
+
+      expect(result.current.sharingPreferences.shareCalendarActivities).toBe(
+        true,
+      );
+      expect(mockSaveSharingPreferences).toHaveBeenCalledWith('user-1', {
+        shareCalendarActivities: true,
+        shareDiary: false,
+      });
+    });
+
+    it('falls back to defaults when all fetches fail', async () => {
+      mockLoadUserSettings.mockRejectedValue(new Error('Network error'));
+      mockLoadUserPreferences.mockRejectedValue(new Error('Network error'));
+      mockLoadSharingPreferences.mockRejectedValue(new Error('Network error'));
+
+      const { result } = renderHook(() => useSettings(), {
+        wrapper: makeWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.settings.name).toBe('');
+      });
+
+      expect(result.current.sharingPreferences).toEqual({
+        shareCalendarActivities: false,
+        shareDiary: false,
+      });
+      expect(result.current.preferences.sidebarOpen).toBe(true);
+    });
   });
 });
