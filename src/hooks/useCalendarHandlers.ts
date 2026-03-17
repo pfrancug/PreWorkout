@@ -1,9 +1,7 @@
 import type { ITrainingSession } from '@app-types/types';
 import type {
   IActivityCategory,
-  ICalendarEntries,
   ICalendarEntry,
-  ICalendarNotes,
 } from '@firebase-config/database';
 import type { User } from 'firebase/auth';
 
@@ -27,8 +25,6 @@ interface UseCalendarHandlersParams {
   user: User | null;
   targetUserId: string | undefined;
   connectionId: string | undefined;
-  calendarEntries: ICalendarEntries | null;
-  calendarNotes: ICalendarNotes | null;
   categories: IActivityCategory[];
   trainingSessions: ITrainingSession[];
 }

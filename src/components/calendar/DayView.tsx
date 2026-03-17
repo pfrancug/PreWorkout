@@ -5,6 +5,7 @@ import { ActivityIcon } from '@components/ActivityIcon';
 import { Button } from '@components/ui/button';
 import { DialogHeader, DialogTitle } from '@components/ui/dialog';
 import { ACTIVITY_COLOR_MAP } from '@constants/activities';
+import { EN_DASH } from '@constants/display';
 import { cn } from '@lib/utils';
 import { Clock, Dumbbell, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -222,7 +223,7 @@ export const DayView = ({
                       >
                         <Clock className={'h-3 w-3'} />
                         {session.time}
-                        {session.timeEnd && ` – ${session.timeEnd}`}
+                        {session.timeEnd && ` ${EN_DASH} ${session.timeEnd}`}
                       </span>
                     )}
                     <span

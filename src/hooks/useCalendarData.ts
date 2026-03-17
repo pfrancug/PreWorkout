@@ -128,8 +128,6 @@ export const useCalendarData = ({
     user,
     targetUserId,
     connectionId,
-    calendarEntries,
-    calendarNotes,
     categories,
     trainingSessions,
   });
