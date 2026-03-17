@@ -33,7 +33,7 @@ describe('PreferencesSettingsPage', () => {
     mockIsTrainer = false;
   });
 
-  it('renders page title and description', () => {
+  it('renders page title', () => {
     render(<PreferencesSettingsPage />);
 
     expect(screen.getByText('Preferences')).toBeInTheDocument();
@@ -52,9 +52,7 @@ describe('PreferencesSettingsPage', () => {
     const user = userEvent.setup();
     render(<PreferencesSettingsPage />);
 
-    const switches = screen.getAllByRole('switch');
-    // First switch is sidebar (checked=true)
-    await user.click(switches[0]);
+    await user.click(screen.getByRole('switch', { name: /sidebar/i }));
 
     expect(mockUpdatePreference).toHaveBeenCalledWith('sidebarOpen', false);
   });
@@ -63,9 +61,7 @@ describe('PreferencesSettingsPage', () => {
     const user = userEvent.setup();
     render(<PreferencesSettingsPage />);
 
-    const switches = screen.getAllByRole('switch');
-    // Second switch is chat panel (checked=false)
-    await user.click(switches[1]);
+    await user.click(screen.getByRole('switch', { name: /chat panel/i }));
 
     expect(mockUpdatePreference).toHaveBeenCalledWith('chatPanelOpen', true);
   });
@@ -74,9 +70,7 @@ describe('PreferencesSettingsPage', () => {
     const user = userEvent.setup();
     render(<PreferencesSettingsPage />);
 
-    const switches = screen.getAllByRole('switch');
-    // Third switch is hideConnectionSection (checked=false)
-    await user.click(switches[2]);
+    await user.click(screen.getByRole('switch', { name: /hide connection/i }));
 
     expect(mockUpdatePreference).toHaveBeenCalledWith(
       'hideConnectionSection',
@@ -104,11 +98,13 @@ describe('PreferencesSettingsPage', () => {
       expect(screen.getByText('Calendar')).toBeInTheDocument();
     });
 
-    it('only renders 2 switches for trainers (no hide connection)', () => {
+    it('does not render hide connection switch for trainers', () => {
       mockIsTrainer = true;
       render(<PreferencesSettingsPage />);
 
-      expect(screen.getAllByRole('switch')).toHaveLength(2);
+      expect(
+        screen.queryByRole('switch', { name: /hide connection/i }),
+      ).not.toBeInTheDocument();
     });
   });
 });

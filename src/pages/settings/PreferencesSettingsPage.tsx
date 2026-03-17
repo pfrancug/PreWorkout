@@ -84,7 +84,9 @@ export const PreferencesSettingsPage = () => {
         <CardContent className={'space-y-6'}>
           <div className={'flex items-center justify-between'}>
             <div className={'space-y-0.5'}>
-              <Label>{t('settings.preferences.layout.sidebar')}</Label>
+              <Label htmlFor={'sidebar-switch'}>
+                {t('settings.preferences.layout.sidebar')}
+              </Label>
 
               <p className={'text-sm text-muted-foreground'}>
                 {t('settings.preferences.layout.sidebarDescription')}
@@ -93,6 +95,7 @@ export const PreferencesSettingsPage = () => {
 
             <Switch
               checked={preferences.sidebarOpen}
+              id={'sidebar-switch'}
               onCheckedChange={(checked) =>
                 updatePreference('sidebarOpen', checked)
               }
@@ -101,7 +104,9 @@ export const PreferencesSettingsPage = () => {
 
           <div className={'flex items-center justify-between'}>
             <div className={'space-y-0.5'}>
-              <Label>{t('settings.preferences.layout.chatPanel')}</Label>
+              <Label htmlFor={'chat-panel-switch'}>
+                {t('settings.preferences.layout.chatPanel')}
+              </Label>
 
               <p className={'text-sm text-muted-foreground'}>
                 {t('settings.preferences.layout.chatPanelDescription')}
@@ -110,6 +115,7 @@ export const PreferencesSettingsPage = () => {
 
             <Switch
               checked={preferences.chatPanelOpen}
+              id={'chat-panel-switch'}
               onCheckedChange={(checked) =>
                 updatePreference('chatPanelOpen', checked)
               }
@@ -169,7 +175,9 @@ export const PreferencesSettingsPage = () => {
           <CardContent className={'space-y-6'}>
             <div className={'flex items-center justify-between'}>
               <div className={'space-y-0.5'}>
-                <Label>{t('settings.preferences.menu.hideConnection')}</Label>
+                <Label htmlFor={'hide-connection-switch'}>
+                  {t('settings.preferences.menu.hideConnection')}
+                </Label>
 
                 <p className={'text-sm text-muted-foreground'}>
                   {t('settings.preferences.menu.hideConnectionDescription')}
@@ -178,6 +186,7 @@ export const PreferencesSettingsPage = () => {
 
               <Switch
                 checked={preferences.hideConnectionSection}
+                id={'hide-connection-switch'}
                 onCheckedChange={(checked) =>
                   updatePreference('hideConnectionSection', checked)
                 }

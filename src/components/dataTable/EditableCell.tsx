@@ -49,7 +49,10 @@ export const EditableCell = ({
       } else if (
         ['weight', 'kcal', 'protein', 'fat', 'carbs'].includes(columnId)
       ) {
-        parsedValue = value === '' || value === null ? null : Number(value);
+        parsedValue =
+          value === '' || value === null || value === undefined
+            ? null
+            : Number(value);
       }
 
       meta.updateData(row.index, columnId, parsedValue);
