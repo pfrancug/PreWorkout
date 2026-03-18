@@ -212,6 +212,10 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       _initialized: true,
       items: [{ id: 'cat1', icon: 'run', name: 'Running', color: 'blue' }],
     });
+    await adminSet(`users/${userA.uid}/sharingPreferences`, {
+      shareDiary: true,
+      shareCalendarActivities: true,
+    });
   });
 
   afterAll(async () => {
@@ -734,6 +738,13 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(res.ok).toBe(true);
     });
 
+    it("trainer denied trainee's data when shareDiary is false", async () => {
+      await adminSet(`users/${userA.uid}/sharingPreferences/shareDiary`, false);
+      const res = await dbGet(`users/${userA.uid}/data`, trainer.token);
+      expect(res.ok).toBe(false);
+      await adminSet(`users/${userA.uid}/sharingPreferences/shareDiary`, true);
+    });
+
     it("trainer cannot write trainee's data", async () => {
       const res = await dbSet(
         `users/${userA.uid}/data`,
@@ -875,6 +886,22 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
       expect(res.ok).toBe(true);
     });
 
+    it("trainer denied trainee's notes when shareCalendarActivities is false", async () => {
+      await adminSet(
+        `users/${userA.uid}/sharingPreferences/shareCalendarActivities`,
+        false,
+      );
+      const res = await dbGet(
+        `users/${userA.uid}/calendarNotes`,
+        trainer.token,
+      );
+      expect(res.ok).toBe(false);
+      await adminSet(
+        `users/${userA.uid}/sharingPreferences/shareCalendarActivities`,
+        true,
+      );
+    });
+
     it('other user cannot read calendar notes', async () => {
       const res = await dbGet(`users/${userA.uid}/calendarNotes`, userB.token);
       expect(res.ok).toBe(false);
@@ -946,6 +973,22 @@ describe.runIf(emulatorsAvailable)('Database Security Rules', () => {
         trainer.token,
       );
       expect(res.ok).toBe(true);
+    });
+
+    it("trainer denied trainee's entries when shareCalendarActivities is false", async () => {
+      await adminSet(
+        `users/${userA.uid}/sharingPreferences/shareCalendarActivities`,
+        false,
+      );
+      const res = await dbGet(
+        `users/${userA.uid}/calendarEntries`,
+        trainer.token,
+      );
+      expect(res.ok).toBe(false);
+      await adminSet(
+        `users/${userA.uid}/sharingPreferences/shareCalendarActivities`,
+        true,
+      );
     });
 
     it('other user cannot read calendar entries', async () => {

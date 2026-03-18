@@ -151,14 +151,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const updated = { ...prev.preferences, [field]: value };
         if (user) {
           saveUserPreferences(user.uid, updated).catch(() => {
-            toast.error('Failed to save preferences.');
+            toast.error(i18n.t('settings.savePreferencesError'));
           });
         }
 
         return { ...prev, preferences: updated };
       });
     },
-    [user],
+    [user, i18n],
   );
 
   const updateSharingPreference = useCallback(
@@ -171,14 +171,14 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const updated = { ...prev.sharingPreferences, [field]: value };
         if (user) {
           saveSharingPreferences(user.uid, updated).catch(() => {
-            toast.error('Failed to save sharing preferences.');
+            toast.error(i18n.t('settings.saveSharingPreferencesError'));
           });
         }
 
         return { ...prev, sharingPreferences: updated };
       });
     },
-    [user],
+    [user, i18n],
   );
 
   const changeLanguage = useCallback(
@@ -205,12 +205,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             return { ...prev, settings: newSettings };
           });
         } catch {
-          toast.error('Failed to save settings.');
+          toast.error(i18n.t('settings.saveSettingsError'));
           throw new Error('Save failed');
         }
       }
     },
-    [user],
+    [user, i18n],
   );
 
   // Don't render children until auth and settings are loaded

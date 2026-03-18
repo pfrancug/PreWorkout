@@ -54,7 +54,7 @@ export interface ISharingPreferences {
 export interface IAllUserData {
   settings: IUserSettings | null;
   preferences: IUserPreferences | null;
-  sharingPreferences: ISharingPreferences | null;
+  sharingPreferences?: ISharingPreferences | null;
   messages: Message[] | null;
   data: IRowData[] | null;
   limits: IMessageLimitConfig | null;

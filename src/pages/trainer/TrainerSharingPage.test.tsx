@@ -3,7 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TrainerSharingPage } from './TrainerSharingPage';
 
-const mockUpdateSharingPreference = vi.fn();
+const { mockSharingPreferences, mockUpdateSharingPreference } = vi.hoisted(
+  () => ({
+    mockSharingPreferences: {
+      shareCalendarActivities: false,
+      shareDiary: false,
+    },
+    mockUpdateSharingPreference: vi.fn(),
+  }),
+);
 
 vi.mock('@contexts/useSettings', () => ({
   useSettings: () => ({
@@ -12,18 +20,11 @@ vi.mock('@contexts/useSettings', () => ({
   }),
 }));
 
-let mockSharingPreferences = {
-  shareCalendarActivities: false,
-  shareDiary: false,
-};
-
 describe('TrainerSharingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSharingPreferences = {
-      shareCalendarActivities: false,
-      shareDiary: false,
-    };
+    mockSharingPreferences.shareCalendarActivities = false;
+    mockSharingPreferences.shareDiary = false;
   });
 
   it('renders the page title', () => {
@@ -67,10 +68,8 @@ describe('TrainerSharingPage', () => {
   });
 
   it('reflects enabled state for calendar activities', () => {
-    mockSharingPreferences = {
-      shareCalendarActivities: true,
-      shareDiary: false,
-    };
+    mockSharingPreferences.shareCalendarActivities = true;
+    mockSharingPreferences.shareDiary = false;
 
     render(<TrainerSharingPage />);
 
@@ -80,10 +79,8 @@ describe('TrainerSharingPage', () => {
   });
 
   it('reflects enabled state for diary', () => {
-    mockSharingPreferences = {
-      shareCalendarActivities: false,
-      shareDiary: true,
-    };
+    mockSharingPreferences.shareCalendarActivities = false;
+    mockSharingPreferences.shareDiary = true;
 
     render(<TrainerSharingPage />);
 
@@ -117,10 +114,8 @@ describe('TrainerSharingPage', () => {
   });
 
   it('calls updateSharingPreference with false when disabling calendar', () => {
-    mockSharingPreferences = {
-      shareCalendarActivities: true,
-      shareDiary: false,
-    };
+    mockSharingPreferences.shareCalendarActivities = true;
+    mockSharingPreferences.shareDiary = false;
 
     render(<TrainerSharingPage />);
 

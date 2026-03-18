@@ -82,6 +82,9 @@
     },
     "saveChanges": "Zapisz zmiany",
     "savedSuccess": "Ustawienia zapisane!",
+    "savePreferencesError": "Nie udało się zapisać preferencji.",
+    "saveSharingPreferencesError": "Nie udało się zapisać preferencji udostępniania.",
+    "saveSettingsError": "Nie udało się zapisać ustawień.",
     "avatar": {
       "title": "Zdjęcie profilowe",
       "description": "JPG, PNG lub GIF. Zostanie przycięte do kwadratu.",

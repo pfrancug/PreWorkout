@@ -82,6 +82,9 @@
     },
     "saveChanges": "Save Changes",
     "savedSuccess": "Settings saved successfully!",
+    "savePreferencesError": "Failed to save preferences.",
+    "saveSharingPreferencesError": "Failed to save sharing preferences.",
+    "saveSettingsError": "Failed to save settings.",
     "avatar": {
       "title": "Profile Photo",
       "description": "JPG, PNG or GIF. Will be cropped to square.",

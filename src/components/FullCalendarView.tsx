@@ -60,6 +60,7 @@ export const FullCalendarView = ({
     connectionId: connectionIdProp,
     readOnly,
     allowTrainerToggle,
+    filterActivities,
   });
 
   const [modalView, setModalView] = useState<ModalView | null>(null);

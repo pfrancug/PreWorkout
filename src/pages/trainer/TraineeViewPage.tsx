@@ -98,12 +98,12 @@ export const TraineeViewPage = () => {
 
   // Subscribe to trainee's sharing preferences
   useEffect(() => {
-    if (!traineeId) {
+    if (!user || !traineeId) {
       return;
     }
 
     return subscribeToSharingPreferences(traineeId, setSharingPrefs);
-  }, [traineeId]);
+  }, [user, traineeId]);
 
   if (!user || !traineeId) {
     return null;
