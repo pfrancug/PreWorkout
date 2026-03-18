@@ -30,6 +30,7 @@ export const FullCalendarView = ({
   readOnly = false,
   allowTrainerToggle = false,
   connectionId: connectionIdProp,
+  filterActivities = false,
 }: FullCalendarViewProps) => {
   const { t, i18n } = useTranslation();
   const { preferences } = useSettings();
@@ -59,6 +60,7 @@ export const FullCalendarView = ({
     connectionId: connectionIdProp,
     readOnly,
     allowTrainerToggle,
+    filterActivities,
   });
 
   const [modalView, setModalView] = useState<ModalView | null>(null);
@@ -73,13 +75,20 @@ export const FullCalendarView = ({
   const events = useMemo(
     () =>
       mapCalendarEvents({
-        calendarEntries,
-        calendarNotes,
+        calendarEntries: filterActivities ? null : calendarEntries,
+        calendarNotes: filterActivities ? null : calendarNotes,
         categories,
         trainingSessions,
         t,
       }),
-    [calendarEntries, calendarNotes, categories, trainingSessions, t],
+    [
+      calendarEntries,
+      calendarNotes,
+      categories,
+      trainingSessions,
+      t,
+      filterActivities,
+    ],
   );
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -185,11 +194,13 @@ export const FullCalendarView = ({
 
   const modalEntries = useMemo(
     () =>
-      getModalEntries({
-        date: modalDate,
-        calendarEntries,
-      }),
-    [modalDate, calendarEntries],
+      filterActivities
+        ? []
+        : getModalEntries({
+            date: modalDate,
+            calendarEntries,
+          }),
+    [modalDate, calendarEntries, filterActivities],
   );
 
   const modalSessions = useMemo(
@@ -202,8 +213,13 @@ export const FullCalendarView = ({
   );
 
   const modalNote = useMemo(
-    () => (modalDate ? (calendarNotes?.[modalDate] ?? '') : ''),
-    [modalDate, calendarNotes],
+    () =>
+      filterActivities
+        ? ''
+        : modalDate
+          ? (calendarNotes?.[modalDate] ?? '')
+          : '',
+    [modalDate, calendarNotes, filterActivities],
   );
 
   const initialView =

@@ -1,10 +1,13 @@
 import type { IUserPreferences, IUserSettings } from './SettingsContext';
+import type { ISharingPreferences } from '@firebase-config/database';
 import type { ReactNode } from 'react';
 
 import { Loader } from '@components/Loader';
 import {
+  loadSharingPreferences,
   loadUserPreferences,
   loadUserSettings,
+  saveSharingPreferences,
   saveUserPreferences,
   saveUserSettings,
   updateUserDisplayName,
@@ -22,6 +25,7 @@ import { toast } from 'sonner';
 import {
   defaultPreferences,
   defaultSettings,
+  defaultSharingPreferences,
   SettingsContext,
 } from './SettingsContext';
 import { useAuth } from './useAuth';
@@ -52,12 +56,27 @@ const fetchUserPreferences = async (
     : defaultPreferences;
 };
 
+const fetchSharingPreferences = async (
+  userId: string | null,
+): Promise<ISharingPreferences> => {
+  if (!userId) {
+    return defaultSharingPreferences;
+  }
+
+  const firebaseSharingPrefs = await loadSharingPreferences(userId);
+
+  return firebaseSharingPrefs
+    ? { ...defaultSharingPreferences, ...firebaseSharingPrefs }
+    : defaultSharingPreferences;
+};
+
 type SettingsState =
   | { status: 'loading' }
   | {
       status: 'loaded';
       settings: IUserSettings;
       preferences: IUserPreferences;
+      sharingPreferences: ISharingPreferences;
     };
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -88,24 +107,38 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     Promise.all([
       fetchUserSettings(currentUserId),
       fetchUserPreferences(currentUserId),
-    ]).then(([loadedSettings, loadedPreferences]) => {
-      // Apply saved language preference
-      if (
-        loadedPreferences.language &&
-        loadedPreferences.language !== i18n.language
-      ) {
-        i18n.changeLanguage(loadedPreferences.language);
-        localStorage.setItem('i18nextLng', loadedPreferences.language);
-      }
+      fetchSharingPreferences(currentUserId),
+    ])
+      .then(([loadedSettings, loadedPreferences, loadedSharingPrefs]) => {
+        // Apply saved language preference
+        if (
+          loadedPreferences.language &&
+          loadedPreferences.language !== i18n.language
+        ) {
+          i18n.changeLanguage(loadedPreferences.language);
+          localStorage.setItem('i18nextLng', loadedPreferences.language);
+        }
 
-      startTransition(() => {
-        setState({
-          status: 'loaded',
-          settings: loadedSettings,
-          preferences: loadedPreferences,
+        startTransition(() => {
+          setState({
+            status: 'loaded',
+            settings: loadedSettings,
+            preferences: loadedPreferences,
+            sharingPreferences: loadedSharingPrefs,
+          });
+        });
+      })
+      .catch(() => {
+        // Fall back to defaults so the app doesn't stay stuck on the loader
+        startTransition(() => {
+          setState({
+            status: 'loaded',
+            settings: defaultSettings,
+            preferences: defaultPreferences,
+            sharingPreferences: defaultSharingPreferences,
+          });
         });
       });
-    });
   }, [user, i18n]);
 
   const updatePreference = useCallback(
@@ -118,14 +151,34 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         const updated = { ...prev.preferences, [field]: value };
         if (user) {
           saveUserPreferences(user.uid, updated).catch(() => {
-            toast.error('Failed to save preferences.');
+            toast.error(i18n.t('settings.savePreferencesError'));
           });
         }
 
         return { ...prev, preferences: updated };
       });
     },
-    [user],
+    [user, i18n],
+  );
+
+  const updateSharingPreference = useCallback(
+    (field: keyof ISharingPreferences, value: boolean) => {
+      setState((prev) => {
+        if (prev.status !== 'loaded') {
+          return prev;
+        }
+
+        const updated = { ...prev.sharingPreferences, [field]: value };
+        if (user) {
+          saveSharingPreferences(user.uid, updated).catch(() => {
+            toast.error(i18n.t('settings.saveSharingPreferencesError'));
+          });
+        }
+
+        return { ...prev, sharingPreferences: updated };
+      });
+    },
+    [user, i18n],
   );
 
   const changeLanguage = useCallback(
@@ -152,12 +205,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             return { ...prev, settings: newSettings };
           });
         } catch {
-          toast.error('Failed to save settings.');
+          toast.error(i18n.t('settings.saveSettingsError'));
           throw new Error('Save failed');
         }
       }
     },
-    [user],
+    [user, i18n],
   );
 
   // Don't render children until auth and settings are loaded
@@ -170,7 +223,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       value={{
         settings: state.settings,
         preferences: state.preferences,
+        sharingPreferences: state.sharingPreferences,
         updatePreference,
+        updateSharingPreference,
         saveSettings,
         changeLanguage,
       }}

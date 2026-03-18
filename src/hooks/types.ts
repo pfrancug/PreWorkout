@@ -3,4 +3,5 @@ export interface UseCalendarDataOptions {
   connectionId?: string;
   readOnly?: boolean;
   allowTrainerToggle?: boolean;
+  filterActivities?: boolean;
 }

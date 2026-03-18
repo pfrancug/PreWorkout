@@ -46,9 +46,15 @@ export type ICalendarEntries = {
   [date: string]: { [entryId: string]: ICalendarEntry };
 };
 
+export interface ISharingPreferences {
+  shareCalendarActivities: boolean;
+  shareDiary: boolean;
+}
+
 export interface IAllUserData {
   settings: IUserSettings | null;
   preferences: IUserPreferences | null;
+  sharingPreferences?: ISharingPreferences | null;
   messages: Message[] | null;
   data: IRowData[] | null;
   limits: IMessageLimitConfig | null;

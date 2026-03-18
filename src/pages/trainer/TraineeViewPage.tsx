@@ -1,4 +1,5 @@
 import type { Tab } from './types';
+import type { ISharingPreferences } from '@firebase-config/database';
 
 import { ReadOnlyDataTable } from '@components/dataTable/ReadOnlyDataTable';
 import { FullCalendarView } from '@components/FullCalendarView';
@@ -12,6 +13,7 @@ import { getReadOnlyColumns } from '@data/readOnlyColumns';
 import {
   getUserAvatarUrl,
   getUserDisplayName,
+  subscribeToSharingPreferences,
   subscribeToTrainerConnections,
 } from '@firebase-config/database';
 import { useTraineeDataSet } from '@hooks/useTraineeDataSet';
@@ -31,9 +33,19 @@ export const TraineeViewPage = () => {
   const [traineeAvatar, setTraineeAvatar] = useState<string | null>(null);
   const [infoLoading, setInfoLoading] = useState(true);
   const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [sharingPrefs, setSharingPrefs] = useState<ISharingPreferences | null>(
+    null,
+  );
+
+  const showDiary = sharingPrefs?.shareDiary === true;
+  const showActivities = sharingPrefs?.shareCalendarActivities === true;
+
+  // Fall back to calendar when diary is not shared
+  const effectiveTab =
+    activeTab === 'diary' && !showDiary ? 'calendar' : activeTab;
 
   const { dataSet, isLoading: diaryLoading } = useTraineeDataSet(
-    activeTab === 'diary' ? traineeId : undefined,
+    effectiveTab === 'diary' && showDiary ? traineeId : undefined,
   );
 
   const columns = useMemo(() => getReadOnlyColumns(t), [t]);
@@ -84,6 +96,15 @@ export const TraineeViewPage = () => {
     return unsub;
   }, [user, traineeId]);
 
+  // Subscribe to trainee's sharing preferences
+  useEffect(() => {
+    if (!user || !traineeId) {
+      return;
+    }
+
+    return subscribeToSharingPreferences(traineeId, setSharingPrefs);
+  }, [user, traineeId]);
+
   if (!user || !traineeId) {
     return null;
   }
@@ -97,7 +118,15 @@ export const TraineeViewPage = () => {
       labelKey: 'settings.trainer.tabCalendar',
       icon: CalendarDays,
     },
-    { id: 'diary', labelKey: 'settings.trainer.tabDiary', icon: BookOpen },
+    ...(showDiary
+      ? [
+          {
+            id: 'diary' as Tab,
+            labelKey: 'settings.trainer.tabDiary',
+            icon: BookOpen,
+          },
+        ]
+      : []),
     {
       id: 'sessions',
       labelKey: 'settings.trainer.tabSessions',
@@ -155,7 +184,7 @@ export const TraineeViewPage = () => {
             onClick={() => setActiveTab(tab.id)}
             type={'button'}
             className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.id
+              effectiveTab === tab.id
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             }`}
@@ -167,16 +196,17 @@ export const TraineeViewPage = () => {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'calendar' && (
+      {effectiveTab === 'calendar' && (
         <FullCalendarView
           allowTrainerToggle
           readOnly
           connectionId={connectionId ?? undefined}
+          filterActivities={!showActivities}
           userId={traineeId}
         />
       )}
 
-      {activeTab === 'diary' && (
+      {effectiveTab === 'diary' && (
         <div className={'w-full'}>
           {diaryLoading ? (
             <div className={'space-y-3'}>
@@ -190,7 +220,7 @@ export const TraineeViewPage = () => {
         </div>
       )}
 
-      {activeTab === 'sessions' && connectionId && (
+      {effectiveTab === 'sessions' && connectionId && (
         <TrainingSessions connectionId={connectionId} role={'trainer'} />
       )}
     </div>

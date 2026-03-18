@@ -22,6 +22,7 @@ import { useCalendarHandlers } from './useCalendarHandlers';
 export const useCalendarData = ({
   userId: propUserId,
   connectionId: connectionIdProp,
+  filterActivities = false,
 }: UseCalendarDataOptions) => {
   const { user } = useAuth();
 
@@ -57,23 +58,24 @@ export const useCalendarData = ({
     if (!targetUserId) {
       return;
     }
-    const unsubEntries = subscribeToCalendarEntries(
-      targetUserId,
-      setCalendarEntries,
-    );
-    const unsubNotes = subscribeToCalendarNotes(targetUserId, setCalendarNotes);
-    const unsubCategories = subscribeToActivityCategories(
-      targetUserId,
-      setCategories,
-      DEFAULT_CATEGORIES,
+    const unsubs: (() => void)[] = [];
+
+    if (!filterActivities) {
+      unsubs.push(subscribeToCalendarEntries(targetUserId, setCalendarEntries));
+      unsubs.push(subscribeToCalendarNotes(targetUserId, setCalendarNotes));
+    }
+    unsubs.push(
+      subscribeToActivityCategories(
+        targetUserId,
+        setCategories,
+        DEFAULT_CATEGORIES,
+      ),
     );
 
     return () => {
-      unsubEntries();
-      unsubNotes();
-      unsubCategories();
+      unsubs.forEach((unsub) => unsub());
     };
-  }, [targetUserId]);
+  }, [targetUserId, filterActivities]);
 
   // Training sessions subscription
   useEffect(() => {

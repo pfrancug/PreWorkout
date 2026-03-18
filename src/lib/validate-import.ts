@@ -15,6 +15,7 @@ export const validateImportData = (data: unknown): data is IAllUserData => {
   const knownKeys = new Set([
     'settings',
     'preferences',
+    'sharingPreferences',
     'messages',
     'data',
     'limits',
